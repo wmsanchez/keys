@@ -543,10 +543,14 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         if (!adjKey) adjKey = @"Exposure2012";
     }
 
-    NSString *defaultVal = @"1";
+    NSString *defaultVal = @"";
     NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:adjKey];
-    if (limits && limits[@"min"] && limits[@"min"] != [NSNull null]) {
-        defaultVal = [NSString stringWithFormat:@"%g", [limits[@"min"] doubleValue]];
+    if (limits) {
+        if (limits[@"min"] && limits[@"min"] != [NSNull null]) {
+            defaultVal = [NSString stringWithFormat:@"%g", [limits[@"min"] doubleValue]];
+        } else {
+            defaultVal = @"1";
+        }
     }
 
     NSMutableDictionary *newBinding = [@{
@@ -745,7 +749,19 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     NSMutableDictionary *b = self.bindings[(NSUInteger)row];
     b[kBindAdj] = newAdj;
     self.lastUsedAdjKey = newAdj;
-    b[kBindValue] = [self clampValue:b[kBindValue] forAdjustment:newAdj];
+    
+    // If the new command is a variable slider (has limits), clamp or assign a default.
+    // If it is a button/action command (no limits), clear the value.
+    NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:newAdj];
+    if (limits) {
+        NSString *clamped = [self clampValue:b[kBindValue] forAdjustment:newAdj];
+        if ([clamped length] == 0) {
+            clamped = (limits[@"min"] && limits[@"min"] != [NSNull null]) ? [NSString stringWithFormat:@"%g", [limits[@"min"] doubleValue]] : @"1";
+        }
+        b[kBindValue] = clamped;
+    } else {
+        b[kBindValue] = @"";
+    }
     [self.tableView reloadData];
 }
 
@@ -831,14 +847,16 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     }
 
     if ([colId isEqualToString:kColValue]) {
+        NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:b[kBindAdj]];
+        BOOL isVariable = (limits != nil);
+
         NSTextFieldCell *cell = [[NSTextFieldCell alloc] initTextCell:b[kBindValue] ?: @""];
-        [cell setEditable:YES];
+        [cell setEditable:isVariable];
         [cell setFont:[NSFont systemFontOfSize:11]];
-        [cell setTextColor:[NSColor colorWithCalibratedWhite:0.9 alpha:1]];
+        [cell setTextColor:isVariable ? [NSColor colorWithCalibratedWhite:0.9 alpha:1] : [NSColor colorWithCalibratedWhite:0.45 alpha:1]];
         [cell setBackgroundColor:[NSColor colorWithCalibratedWhite:0.22 alpha:1]];
         [cell setDrawsBackground:YES];
-        
-        NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:b[kBindAdj]];
+
         if (limits) {
             id minObj = [limits objectForKey:@"min"];
             id maxObj = [limits objectForKey:@"max"];
@@ -847,6 +865,8 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
             } else if (maxObj != nil && maxObj != [NSNull null]) {
                 [cell setPlaceholderString:[NSString stringWithFormat:@"max %@", maxObj]];
             }
+        } else {
+            [cell setPlaceholderString:@"—"];
         }
         return cell;
     }

@@ -41,6 +41,11 @@ local LrMD5 = import "LrMD5"
 local LrFileUtils = import "LrFileUtils"
 local prefs = import 'LrPrefs'.prefsForPlugin()
 
+local ACTIONS = nil
+pcall(function()
+  ACTIONS = require "ActionsTable"
+end)
+
 Client = {
   done = false,
   uuid = tostring(notUUID()),
@@ -156,39 +161,65 @@ function Client:loop()
         end
       end
 
-      -- apply batched image changes using direct LrDevelopController (MIDI2LR method)
-      if (json and self.currentPhoto) then
-        if LrApplicationView.getCurrentModuleName() ~= 'develop' then
-          LrApplicationView.switchToModule('develop')
-          LrTasks.yield()
-        end
-
+      -- apply batched image changes or actions
+      if (json and table.count(json) > 0) then
         for k, v in pairs(json) do
-          local numVal = tonumber(v)
-          if numVal ~= nil then
-            local currentVal = LrDevelopController.getValue(k)
-            if type(currentVal) == 'number' then
-              local minVal, maxVal = LrDevelopController.getRange(k)
-              local targetVal = currentVal + numVal
-              if minVal ~= nil and maxVal ~= nil then
-                targetVal = math.min(math.max(targetVal, minVal), maxVal)
-              elseif DevelopSettings[k] then
-                targetVal = math.min(math.max(targetVal, DevelopSettings[k].min), DevelopSettings[k].max)
-              end
-              LrDevelopController.setValue(k, targetVal)
-              logging:log('Applied ' .. k .. ' -> ' .. tostring(targetVal))
+          if ACTIONS and ACTIONS[k] then
+            -- 1) Comprehensive button/action command (e.g. Next, Prev, QuickDevCropAspect3x4, AutoTone, etc.)
+            local ok, err = pcall(ACTIONS[k])
+            if ok then
+              logging:log('Executed action ' .. k)
             else
-              LrDevelopController.setValue(k, numVal)
-              logging:log('Applied direct ' .. k .. ' -> ' .. tostring(numVal))
+              logging:log('Error executing action ' .. k .. ': ' .. tostring(err))
+            end
+          elseif k:sub(1,5) == 'Reset' then
+            -- 2) Parameter reset command (e.g. ResetExposure, ResetTint, ResetContrast)
+            local resetparam = k:sub(6)
+            local ok, err = pcall(function()
+              if LrApplicationView.getCurrentModuleName() ~= 'develop' then
+                LrApplicationView.switchToModule('develop')
+                LrTasks.yield()
+              end
+              LrDevelopController.resetToDefault(resetparam)
+            end)
+            if ok then
+              logging:log('Reset ' .. resetparam)
+            else
+              logging:log('Error resetting ' .. resetparam .. ': ' .. tostring(err))
             end
           else
-            LrDevelopController.setValue(k, v)
-            logging:log('Applied string ' .. k .. ' -> ' .. tostring(v))
+            -- 3) Variable development adjustments (e.g. Exposure2012, Contrast2012, etc.)
+            if self.currentPhoto then
+              if LrApplicationView.getCurrentModuleName() ~= 'develop' then
+                LrApplicationView.switchToModule('develop')
+                LrTasks.yield()
+              end
+
+              local numVal = tonumber(v)
+              if numVal ~= nil then
+                local currentVal = LrDevelopController.getValue(k)
+                if type(currentVal) == 'number' then
+                  local minVal, maxVal = LrDevelopController.getRange(k)
+                  local targetVal = currentVal + numVal
+                  if minVal ~= nil and maxVal ~= nil then
+                    targetVal = math.min(math.max(targetVal, minVal), maxVal)
+                  elseif DevelopSettings[k] then
+                    targetVal = math.min(math.max(targetVal, DevelopSettings[k].min), DevelopSettings[k].max)
+                  end
+                  LrDevelopController.setValue(k, targetVal)
+                  logging:log('Applied ' .. k .. ' -> ' .. tostring(targetVal))
+                else
+                  LrDevelopController.setValue(k, numVal)
+                  logging:log('Applied direct ' .. k .. ' -> ' .. tostring(numVal))
+                end
+              else
+                LrDevelopController.setValue(k, v)
+                logging:log('Applied string ' .. k .. ' -> ' .. tostring(v))
+              end
+            else
+              LrDialogs.message( "Please select a photo before making edits." )
+            end
           end
-        end
-      else
-        if (json and table.count(json) > 0) then
-          LrDialogs.message( "Please select a photo before making edits." )
         end
       end
 
