@@ -57,19 +57,11 @@
 		307BFF5E15BF962A005F514E /* AdjustmentMapping.json in Resources */ = {isa = PBXBuildFile; fileRef = 307BFF5D15BF962A005F514E /* AdjustmentMapping.json */; };
 		307BFF5E15BF962A005F514F /* AdjustmentLimits.json in Resources */ = {isa = PBXBuildFile; fileRef = 307BFF5D15BF962A005F514F /* AdjustmentLimits.json */; };
 		307BFF5E15BF962A005F5150 /* CommandCategories.json in Resources */ = {isa = PBXBuildFile; fileRef = 307BFF5D15BF962A005F5150 /* CommandCategories.json */; };
-		307D83FD15B9FBF4007A396B /* Test_Detail.vkeys in Resources */ = {isa = PBXBuildFile; fileRef = 307D83FC15B9FBF4007A396B /* Test_Detail.vkeys */; };
-		307D840115BA003B007A396B /* Test_Parametric.vkeys in Resources */ = {isa = PBXBuildFile; fileRef = 307D840015BA003B007A396B /* Test_Parametric.vkeys */; };
-		307D840515BA0865007A396B /* Test_HSL.vkeys in Resources */ = {isa = PBXBuildFile; fileRef = 307D840315BA0865007A396B /* Test_HSL.vkeys */; };
-		307D840915BA0C0D007A396B /* Test_Effects.vkeys in Resources */ = {isa = PBXBuildFile; fileRef = 307D840715BA0C0D007A396B /* Test_Effects.vkeys */; };
-		307D840D15BA101C007A396B /* Test_Split.vkeys in Resources */ = {isa = PBXBuildFile; fileRef = 307D840B15BA101C007A396B /* Test_Split.vkeys */; };
-		307D841115BA129C007A396B /* Test_Calib.vkeys in Resources */ = {isa = PBXBuildFile; fileRef = 307D840F15BA129C007A396B /* Test_Calib.vkeys */; };
-		307D841515BA1D63007A396B /* Test_Lens.vkeys in Resources */ = {isa = PBXBuildFile; fileRef = 307D841315BA1D63007A396B /* Test_Lens.vkeys */; };
 		307DCDC515B62AC200CED242 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 304A7B7C15994DF700DB7327 /* Foundation.framework */; };
 		307DD51E15A2295A00884B03 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 304A7B7715994DF700DB7327 /* Cocoa.framework */; };
 		307DD51F15A22F8D00884B03 /* VSCOKeysActivator in Resources */ = {isa = PBXBuildFile; fileRef = 308283FA159ED126008A2997 /* VSCOKeysActivator */; };
 		307EE03115BDF3AB00EC0284 /* AboutWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 307EE03015BDF3AB00EC0284 /* AboutWindowController.m */; };
 		307EE03815BDFE4400EC0284 /* MainWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 307EE03715BDFE4400EC0284 /* MainWindowController.m */; };
-		307F60E315B8900700B3E2D2 /* Test_Mod.vkeys in Resources */ = {isa = PBXBuildFile; fileRef = 307F60E215B8900700B3E2D2 /* Test_Mod.vkeys */; };
 		307FF1C415CB25FE0046B150 /* NSButton+TextColor.m in Sources */ = {isa = PBXBuildFile; fileRef = 307FF1C315CB25FE0046B150 /* NSButton+TextColor.m */; };
 		3081C28B15B4ECE6001BE904 /* NSData+Cryption.m in Sources */ = {isa = PBXBuildFile; fileRef = 3081C28A15B4ECE6001BE904 /* NSData+Cryption.m */; };
 		3081C28E15B4EF1A001BE904 /* KeyControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 3081C28D15B4EF1A001BE904 /* KeyControl.m */; };
@@ -226,26 +218,18 @@
 		307BFF5D15BF962A005F514F /* AdjustmentLimits.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = AdjustmentLimits.json; sourceTree = "<group>"; };
 		307BFF5D15BF962A005F5150 /* CommandCategories.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = CommandCategories.json; sourceTree = "<group>"; };
 		307D83FA15B9FBE2007A396B /* Test_Detail.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Test_Detail.json; sourceTree = "<group>"; };
-		307D83FC15B9FBF4007A396B /* Test_Detail.vkeys */ = {isa = PBXFileReference; lastKnownFileType = file; path = Test_Detail.vkeys; sourceTree = "<group>"; };
 		307D83FE15B9FF72007A396B /* Test_Parametric.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Test_Parametric.json; sourceTree = "<group>"; };
-		307D840015BA003B007A396B /* Test_Parametric.vkeys */ = {isa = PBXFileReference; lastKnownFileType = file; path = Test_Parametric.vkeys; sourceTree = "<group>"; };
 		307D840215BA0865007A396B /* Test_HSL.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Test_HSL.json; sourceTree = "<group>"; };
-		307D840315BA0865007A396B /* Test_HSL.vkeys */ = {isa = PBXFileReference; lastKnownFileType = file; path = Test_HSL.vkeys; sourceTree = "<group>"; };
 		307D840615BA0C0D007A396B /* Test_Effects.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Test_Effects.json; sourceTree = "<group>"; };
-		307D840715BA0C0D007A396B /* Test_Effects.vkeys */ = {isa = PBXFileReference; lastKnownFileType = file; path = Test_Effects.vkeys; sourceTree = "<group>"; };
 		307D840A15BA101C007A396B /* Test_Split.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Test_Split.json; sourceTree = "<group>"; };
-		307D840B15BA101C007A396B /* Test_Split.vkeys */ = {isa = PBXFileReference; lastKnownFileType = file; path = Test_Split.vkeys; sourceTree = "<group>"; };
 		307D840E15BA129C007A396B /* Test_Calib.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Test_Calib.json; sourceTree = "<group>"; };
-		307D840F15BA129C007A396B /* Test_Calib.vkeys */ = {isa = PBXFileReference; lastKnownFileType = file; path = Test_Calib.vkeys; sourceTree = "<group>"; };
 		307D841215BA1D63007A396B /* Test_Lens.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Test_Lens.json; sourceTree = "<group>"; };
-		307D841315BA1D63007A396B /* Test_Lens.vkeys */ = {isa = PBXFileReference; lastKnownFileType = file; path = Test_Lens.vkeys; sourceTree = "<group>"; };
 		307DCDC315B6218300CED242 /* Constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
 		307EE02F15BDF3AB00EC0284 /* AboutWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AboutWindowController.h; sourceTree = "<group>"; };
 		307EE03015BDF3AB00EC0284 /* AboutWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AboutWindowController.m; sourceTree = "<group>"; };
 		307EE03615BDFE4400EC0284 /* MainWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MainWindowController.h; sourceTree = "<group>"; };
 		307EE03715BDFE4400EC0284 /* MainWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = MainWindowController.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		307F60DF15B88FF600B3E2D2 /* Test_Mod.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Test_Mod.json; sourceTree = "<group>"; };
-		307F60E215B8900700B3E2D2 /* Test_Mod.vkeys */ = {isa = PBXFileReference; lastKnownFileType = file; path = Test_Mod.vkeys; sourceTree = "<group>"; };
 		307FF1C215CB25FE0046B150 /* NSButton+TextColor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSButton+TextColor.h"; sourceTree = "<group>"; };
 		307FF1C315CB25FE0046B150 /* NSButton+TextColor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSButton+TextColor.m"; sourceTree = "<group>"; };
 		3081C28915B4ECE6001BE904 /* NSData+Cryption.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSData+Cryption.h"; sourceTree = "<group>"; };
@@ -615,21 +599,13 @@
 				30F99FD715F7EA6F0093FB62 /* VSCOSimple.vkeys */,
 				30F99FD915F7EA6F0093FB62 /* VSCOStandard_LR3.vkeys */,
 				30F99FDB15F7EA6F0093FB62 /* VSCOStandard.vkeys */,
-				307D841315BA1D63007A396B /* Test_Lens.vkeys */,
 				307D841215BA1D63007A396B /* Test_Lens.json */,
-				307D840F15BA129C007A396B /* Test_Calib.vkeys */,
 				307D840E15BA129C007A396B /* Test_Calib.json */,
-				307D840B15BA101C007A396B /* Test_Split.vkeys */,
 				307D840A15BA101C007A396B /* Test_Split.json */,
-				307D840715BA0C0D007A396B /* Test_Effects.vkeys */,
 				307D840615BA0C0D007A396B /* Test_Effects.json */,
-				307D840315BA0865007A396B /* Test_HSL.vkeys */,
 				307D840215BA0865007A396B /* Test_HSL.json */,
-				307D840015BA003B007A396B /* Test_Parametric.vkeys */,
 				307D83FE15B9FF72007A396B /* Test_Parametric.json */,
-				307D83FC15B9FBF4007A396B /* Test_Detail.vkeys */,
 				307D83FA15B9FBE2007A396B /* Test_Detail.json */,
-				307F60E215B8900700B3E2D2 /* Test_Mod.vkeys */,
 				307F60DF15B88FF600B3E2D2 /* Test_Mod.json */,
 			);
 			name = Keysets;
@@ -646,7 +622,6 @@
 				304A7B7015994DF700DB7327 /* Frameworks */,
 				304A7B7115994DF700DB7327 /* Resources */,
 				3056AA1015DAE7DC00205B11 /* CopyFiles */,
-				307F60E415B8917F00B3E2D2 /* ShellScript */,
 				A0B1C2D3E4F5061728394A5B /* Build Lightroom plugin */,
 			);
 			buildRules = (
@@ -738,14 +713,6 @@
 				30F99FDF15F7EA700093FB62 /* VSCOSimple.vkeys in Resources */,
 				30F99FE115F7EA700093FB62 /* VSCOStandard_LR3.vkeys in Resources */,
 				30F99FE315F7EA700093FB62 /* VSCOStandard.vkeys in Resources */,
-				307F60E315B8900700B3E2D2 /* Test_Mod.vkeys in Resources */,
-				307D83FD15B9FBF4007A396B /* Test_Detail.vkeys in Resources */,
-				307D840115BA003B007A396B /* Test_Parametric.vkeys in Resources */,
-				307D840515BA0865007A396B /* Test_HSL.vkeys in Resources */,
-				307D840915BA0C0D007A396B /* Test_Effects.vkeys in Resources */,
-				307D840D15BA101C007A396B /* Test_Split.vkeys in Resources */,
-				307D841115BA129C007A396B /* Test_Calib.vkeys in Resources */,
-				307D841515BA1D63007A396B /* Test_Lens.vkeys in Resources */,
 				307BFF5C15BF95DB005F514E /* KeyMapping.json in Resources */,
 				307BFF5E15BF962A005F514E /* AdjustmentMapping.json in Resources */,
 				307BFF5E15BF962A005F514F /* AdjustmentLimits.json in Resources */,
@@ -795,19 +762,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# Run the unit tests in this test bundle.\n\"${SYSTEM_DEVELOPER_DIR}/Tools/RunUnitTests\"\n";
-		};
-		307F60E415B8917F00B3E2D2 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [ \"$CONFIGURATION\" != \"Debug\" ]; then\nrm ${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/Test_*.vkeys\nfi";
 		};
 		A0B1C2D3E4F5061728394A5B /* Build Lightroom plugin */ = {
 			isa = PBXShellScriptBuildPhase;
