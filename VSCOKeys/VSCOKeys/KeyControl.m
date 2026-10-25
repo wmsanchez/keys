@@ -83,6 +83,7 @@
 @synthesize adjustmentMapping;
 @synthesize adjustmentLimits;
 @synthesize commandCategories;
+@synthesize availableDevelopPresets;
 
 @synthesize numFormatter;
 @synthesize blackStyle;
@@ -172,6 +173,20 @@
 - (void)checkServerAvailability
 {
     [self sendUpdate:[NSDictionary dictionary]];
+}
+
+- (void)loadAvailableDevelopPresetsWithCompletion:(void (^)(NSArray *presets))completion
+{
+    [HttpRequest sendGetTo:SERVER_PRESETS_ENDPOINT responded:^(NSURLConnection *connection, NSURLResponse *response, NSData *data, NSString *mimeType) {
+        NSString *body = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        id decoded = [body JSONValue];
+        NSArray *presets = [decoded isKindOfClass:[NSArray class]] ? decoded : [NSArray array];
+        self.availableDevelopPresets = presets;
+        if (completion) completion(presets);
+    } failed:^(NSURLConnection *connection, NSError *error) {
+        DualLog(@"Unable to load Lightroom develop presets: %@", error);
+        if (completion) completion(self.availableDevelopPresets ?: [NSArray array]);
+    }];
 }
 
 

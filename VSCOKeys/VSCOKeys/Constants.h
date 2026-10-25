@@ -51,6 +51,7 @@
 #define DEFAULTS_KEYFILE_FORMAT @"keyfile_%@"
 
 #define SERVER_UPDATE_ENDPOINT @"http://127.0.0.1:49657/Update/"
+#define SERVER_PRESETS_ENDPOINT @"http://127.0.0.1:49657/Presets/"
 
 #define LIGHTROOM_BUNDLE_LR3 @"com.adobe.Lightroom3"
 #define LIGHTROOM_BUNDLE_LR4 @"com.adobe.Lightroom4"

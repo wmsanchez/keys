@@ -20,6 +20,7 @@ function()
   local lastPoll = os.time()
 
   local currentPhotoStatus = {}
+  local availablePresets = {}
   local clientUpdates = {}
   local hasUpdates = false
 
@@ -40,6 +41,18 @@ function()
         isDone = true
 
         logger:debug("Server was shutdown because of a request.")
+        return Http.createResponse(data)
+      end
+    },
+    {
+      condition = function(data) return data.path:find("/Presets/") end,
+      action = function(data,skt)
+        if data.method == "POST" and type(data.json) == "table" then
+          availablePresets = data.json
+          data.json = {ok=true}
+        else
+          data.json = availablePresets
+        end
         return Http.createResponse(data)
       end
     },

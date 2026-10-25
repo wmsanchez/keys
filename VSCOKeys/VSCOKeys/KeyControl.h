@@ -72,6 +72,7 @@
 @property (retain) NSDictionary *adjustmentMapping;
 @property (retain) NSDictionary *adjustmentLimits;
 @property (retain) NSArray *commandCategories;
+@property (retain) NSArray *availableDevelopPresets;
 
 @property (retain) NSNumberFormatter *numFormatter;
 @property (retain) NSDictionary *blackStyle;
@@ -103,6 +104,7 @@
 
 - (void)deleteKeyfile:(NSDictionary *)keyfile;
 - (void)loadAllKeyfiles;
+- (void)loadAvailableDevelopPresetsWithCompletion:(void (^)(NSArray *presets))completion;
 - (void)activateKeyfileWithUUID:(NSString *)uuid;
 
 @end

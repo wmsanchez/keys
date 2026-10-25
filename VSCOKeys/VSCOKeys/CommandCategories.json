@@ -2400,6 +2400,10 @@
         "name": "Amount"
       },
       {
+        "id": "_SetPreset",
+        "name": "Apply preset"
+      },
+      {
         "id": "Preset_1",
         "name": "Develop Preset 1"
       },

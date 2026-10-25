@@ -50,6 +50,25 @@ Client = {
 
 function Client:loop()
   local ACTIONS = require "ActionsTable"()
+  local availablePresets = {}
+  for _, folder in ipairs(LrApplication.developPresetFolders()) do
+    local folderName = folder:getName()
+    for _, preset in ipairs(folder:getDevelopPresets()) do
+      table.insert(availablePresets, folderName .. "/" .. preset:getName())
+    end
+  end
+  table.sort(availablePresets, function(a, b) return a:lower() < b:lower() end)
+  local presetResponse, presetHeaders = LrHttp.post(
+    CLIENT_PRESETS_ENDPOINT,
+    JSON:encode(availablePresets),
+    {{field="Content-Type", value="application/json"}},
+    "POST",
+    1
+  )
+  if presetResponse == nil then
+    logging:log("Could not publish develop presets: " .. to_string(presetHeaders.error))
+  end
+
   self.lastValidData = os.time()
   local counter = 0
   while (not self.done) do
@@ -105,56 +124,49 @@ function Client:loop()
         end
       end
 
-      -- SPECIAL CASE for presets
-      if (json and self.currentPhoto and json._SetPreset) then
-        -- find named preset in hierarchy
-        logging:log("setting preset: ".. json._SetPreset)
+      -- Resolve named presets here so they don't fall through to setValue.
+      if (json and json._SetPreset) then
+        local requestedPreset = tostring(json._SetPreset)
+        if self.currentPhoto and requestedPreset ~= "" then
+          local path = string.explode("/", requestedPreset)
+          local folderName = nil
+          local presetName = requestedPreset:gsub("%s", ""):lower()
 
-        local path = string.explode("/", json._SetPreset)
-        local folders = LrApplication.developPresetFolders()
-        local folderName = nil
-        local presetName = json._SetPreset:gsub("%s",""):lower()
+          if (#path == 2) then
+            folderName = path[1]:gsub("%s", ""):lower()
+            presetName = path[2]:gsub("%s", ""):lower()
+          end
 
-        if (#path == 2) then
-          folderName = path[1]:gsub("%s",""):lower()
-          presetName = path[2]:gsub("%s",""):lower()
-        end
-
-        local preset = nil
-        logging:log("path: " .. tostring(folderName) .. "/" .. tostring(presetName))
-
-        for _,v in ipairs(folders) do
-          local currentFolderName = v:getName():gsub("%s",""):lower()
-          --logging:log("folder: ".. currentFolderName)
-
-          if (folderName == nil or currentFolderName == folderName) then
-            local presets = v:getDevelopPresets()
-
-            for _,v in ipairs(presets) do
-              local currentPresetName = v:getName():gsub("%s",""):lower()
-              --logging:log("preset: ".. currentPresetName)
-
-              if (currentPresetName == presetName) then
-                preset = v
-                break
+          local preset = nil
+          for _, folder in ipairs(LrApplication.developPresetFolders()) do
+            local currentFolderName = folder:getName():gsub("%s", ""):lower()
+            if folderName == nil or currentFolderName == folderName then
+              for _, candidate in ipairs(folder:getDevelopPresets()) do
+                local currentPresetName = candidate:getName():gsub("%s", ""):lower()
+                if currentPresetName == presetName then
+                  preset = candidate
+                  break
+                end
               end
-            end
-
-            if (preset ~= nil) then
-              break
+              if preset then break end
             end
           end
-        end
 
-        if (preset) then
-          logging:log("Preset found -- applying")
-          local photos = self.currentPhoto.catalog.targetPhotos
-          for i,photo in ipairs(photos) do
-            photo.catalog:withWriteAccessDo("VSCO Keys", function()
-              photo:applyDevelopPreset(preset)
-            end, {asynchronous = true})
+          if preset then
+            local photos = self.currentPhoto.catalog.targetPhotos
+            for _, photo in ipairs(photos) do
+              photo.catalog:withWriteAccessDo("VSCO Keys", function()
+                photo:applyDevelopPreset(preset)
+              end, {asynchronous = true})
+            end
+            logging:log("Applied preset " .. requestedPreset)
+          else
+            logging:log("Preset not found: " .. requestedPreset)
           end
+        else
+          logging:log("Cannot apply preset without a selected photo: " .. requestedPreset)
         end
+        json._SetPreset = nil
       end
 
       -- apply batched image changes using direct LrDevelopController (MIDI2LR method)
@@ -407,12 +419,15 @@ function Client:init()
     self:sendKillMessageToServer()
 
     logging:log("Booting server")
-    LrTasks.startAsyncTask(function()
-      LrTasks.execute("cd " .. _PLUGIN.path .. "/halfway_server; ./lua Server.lua &")
-    end, "Boot mac server")
-    LrTasks.startAsyncTask(function()
-      LrTasks.execute("cd " .. _PLUGIN.path .. "\\halfway_server & lua5.1.exe Server.lua")
-    end, "Boot win server")
+    if WIN_ENV then
+      LrTasks.startAsyncTask(function()
+        LrTasks.execute("cd " .. _PLUGIN.path .. "\\halfway_server & lua5.1.exe Server.lua")
+      end, "Boot win server")
+    else
+      LrTasks.startAsyncTask(function()
+        LrTasks.execute("cd \"" .. _PLUGIN.path .. "/halfway_server\" && /usr/bin/python3 server.py > server.log 2>&1 &")
+      end, "Boot mac server")
+    end
 
     LrTasks.sleep(CLIENT_WAIT_FOR_SERVER_TIME)
 

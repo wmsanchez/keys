@@ -511,6 +511,9 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 
     [self.tableView reloadData];
     [self.statusLabel setStringValue:@""];
+    [self.keyControl loadAvailableDevelopPresetsWithCompletion:^(NSArray *presets) {
+        [self.tableView reloadData];
+    }];
 }
 
 - (void)startNewLayout
@@ -525,6 +528,9 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 
     [self.bindings removeAllObjects];
     [self.tableView reloadData];
+    [self.keyControl loadAvailableDevelopPresetsWithCompletion:^(NSArray *presets) {
+        [self.tableView reloadData];
+    }];
     [self.statusLabel setStringValue:@"New layout ready"];
 }
 
@@ -743,9 +749,14 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     NSString *newAdj = [item representedObject];
     if (!newAdj || row < 0 || row >= (NSInteger)self.bindings.count) return;
     NSMutableDictionary *b = self.bindings[(NSUInteger)row];
+    NSString *oldAdj = b[kBindAdj];
     b[kBindAdj] = newAdj;
     self.lastUsedAdjKey = newAdj;
-    b[kBindValue] = [self clampValue:b[kBindValue] forAdjustment:newAdj];
+    if ([newAdj isEqualToString:@"_SetPreset"] && ![oldAdj isEqualToString:newAdj]) {
+        b[kBindValue] = @"";
+    } else {
+        b[kBindValue] = [self clampValue:b[kBindValue] forAdjustment:newAdj];
+    }
     [self.tableView reloadData];
 }
 
@@ -848,6 +859,21 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     }
 
     if ([colId isEqualToString:kColValue]) {
+        if ([b[kBindAdj] isEqualToString:@"_SetPreset"]) {
+            NSComboBoxCell *cell = [[NSComboBoxCell alloc] initTextCell:b[kBindValue] ?: @""];
+            [cell setEditable:YES];
+            [cell setCompletes:YES];
+            [cell setFont:[NSFont systemFontOfSize:11]];
+            [cell setTextColor:[NSColor colorWithCalibratedWhite:0.9 alpha:1]];
+            [cell setBackgroundColor:[NSColor colorWithCalibratedWhite:0.22 alpha:1]];
+            [cell setDrawsBackground:YES];
+            [cell addItemsWithObjectValues:self.keyControl.availableDevelopPresets ?: [NSArray array]];
+            if (self.keyControl.availableDevelopPresets.count == 0) {
+                [cell setPlaceholderString:@"No presets loaded; enter Folder/Preset"];
+            }
+            return cell;
+        }
+
         NSTextFieldCell *cell = [[NSTextFieldCell alloc] initTextCell:b[kBindValue] ?: @""];
         [cell setEditable:YES];
         [cell setFont:[NSFont systemFontOfSize:11]];
@@ -856,7 +882,9 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         [cell setDrawsBackground:YES];
 
         NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:b[kBindAdj]];
-        if (limits) {
+        if ([b[kBindAdj] isEqualToString:@"_SetPreset"]) {
+            [cell setPlaceholderString:@"Folder/Preset"];
+        } else if (limits) {
             id minObj = [limits objectForKey:@"min"];
             id maxObj = [limits objectForKey:@"max"];
             if (minObj != nil && minObj != [NSNull null] && maxObj != nil && maxObj != [NSNull null]) {
