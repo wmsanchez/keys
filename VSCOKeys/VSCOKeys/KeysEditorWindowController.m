@@ -58,6 +58,10 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 @property (retain) NSTableView   *tableView;
 @property (retain) NSScrollView  *scrollView;
 
+// ── Action buttons (bulk) ────────────────────────────────────────────────────
+@property (retain) NSButton *bulkDupBtn;
+@property (retain) NSButton *bulkDelBtn;
+
 // ── Data ─────────────────────────────────────────────────────────────────────
 /// Current UUID being edited (new layouts get a fresh one on startNewLayout)
 @property (retain) NSString      *currentUUID;
@@ -65,6 +69,9 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 @property (retain) NSString      *currentFilename;
 /// Flat list of {bKey, bMod, bAdj, bValue}
 @property (retain) NSMutableArray *bindings;
+
+// ── Last-used adjustment (remembered across Add Binding calls) ───────────────
+@property (retain) NSString      *lastUsedAdjKey;
 
 // ── Sorted lookup arrays (index → code/key) ──────────────────────────────────
 @property (retain) NSArray *sortedKeyCodes;    // sorted by display name: ["0","11",…]
@@ -87,7 +94,9 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 
 @synthesize nameField, authorField, descField, modeKeyPopup;
 @synthesize tableView, scrollView;
+@synthesize bulkDupBtn, bulkDelBtn;
 @synthesize currentUUID, currentFilename, bindings;
+@synthesize lastUsedAdjKey;
 @synthesize sortedKeyCodes, sortedKeyNames, sortedAdjKeys, sortedAdjNames;
 @synthesize modBitmasks, modTitles;
 @synthesize statusLabel;
@@ -102,6 +111,8 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     if (self) {
         self.keyControl = kc;
         self.bindings   = [NSMutableArray array];
+        // Default new binding adjustment: Exposure2012
+        self.lastUsedAdjKey = @"Exposure2012";
         [self buildLookupTables];
         [self buildUI];
     }
@@ -352,19 +363,39 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     [rightPanel setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
     [root addSubview:rightPanel];
 
-    // "ADD BINDING" button
+    // ── Toolbar row: ADD + DUPLICATE SELECTED + DELETE SELECTED ───────────────
+    CGFloat toolY = 425;
+
     NSButton *addBtn = [self makeButtonWithTitle:@"+ ADD BINDING" darkStyle:NO];
-    [addBtn setFrame:NSMakeRect(10, 425, 140, 26)];
+    [addBtn setFrame:NSMakeRect(10, toolY, 130, 26)];
     [addBtn setAutoresizingMask:NSViewMinYMargin];
     [addBtn setTarget:self];
     [addBtn setAction:@selector(addBindingClicked:)];
     [rightPanel addSubview:addBtn];
 
+    self.bulkDupBtn = [self makeButtonWithTitle:@"⧉ DUPLICATE" darkStyle:YES];
+    [self.bulkDupBtn setFrame:NSMakeRect(148, toolY, 120, 26)];
+    [self.bulkDupBtn setAutoresizingMask:NSViewMinYMargin];
+    [self.bulkDupBtn setTarget:self];
+    [self.bulkDupBtn setAction:@selector(bulkDuplicateClicked:)];
+    [rightPanel addSubview:self.bulkDupBtn];
+
+    self.bulkDelBtn = [self makeButtonWithTitle:@"✕ DELETE" darkStyle:YES];
+    [self.bulkDelBtn setFrame:NSMakeRect(276, toolY, 100, 26)];
+    [self.bulkDelBtn setAutoresizingMask:NSViewMinYMargin];
+    [self.bulkDelBtn setTarget:self];
+    [self.bulkDelBtn setAction:@selector(bulkDeleteClicked:)];
+    // Style delete button red tint
+    [self.bulkDelBtn setAttributedTitle:[[NSAttributedString alloc] initWithString:@"✕ DELETE"
+        attributes:@{NSForegroundColorAttributeName:[NSColor colorWithCalibratedRed:1.0 green:0.45 blue:0.45 alpha:1],
+                     NSFontAttributeName:[NSFont fontWithName:PROXIMA_FONT_NAME size:11]}]];
+    [rightPanel addSubview:self.bulkDelBtn];
+
     // Column header labels
     CGFloat hY = 406;
     NSArray *headers = @[@"KEY", @"MOD", @"ACTION", @"VALUE", @"", @""];
-    NSArray *headerX = @[@10,   @90,    @190,      @430,      @515, @545];
-    NSArray *headerW = @[@75,   @95,    @235,       @80,       @28,  @28];
+    NSArray *headerX = @[@10,   @90,    @190,      @430,    @515, @545];
+    NSArray *headerW = @[@75,   @95,    @235,       @80,     @28,  @28];
     for (int i = 0; i < (int)headers.count; i++) {
         NSTextField *h = [self makeLabelWithText:headers[i]];
         [h setFrame:NSMakeRect([headerX[i] floatValue], hY, [headerW[i] floatValue], 16)];
@@ -387,19 +418,21 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     [self.tableView setGridColor:[NSColor colorWithCalibratedWhite:0.25 alpha:1]];
     [self.tableView setBackgroundColor:[NSColor colorWithCalibratedWhite:0.18 alpha:1]];
     [self.tableView setHeaderView:nil];   // no built-in header (we drew our own)
-    [self.tableView setSelectionHighlightStyle:NSTableViewSelectionHighlightStyleNone];
+    // Allow multi-select so users can select multiple rows with shift/cmd-click
+    [self.tableView setAllowsMultipleSelection:YES];
+    [self.tableView setSelectionHighlightStyle:NSTableViewSelectionHighlightStyleRegular];
     [self.tableView setDataSource:self];
     [self.tableView setDelegate:self];
 
     // ── Table columns ─────────────────────────────────────────────────────────
     struct ColDef { NSString *ident; CGFloat w; BOOL resize; };
     struct ColDef coldefs[] = {
-        { kColKey,    80, NO },
-        { kColMod,   100, NO },
+        { kColKey,    80, NO  },
+        { kColMod,   100, NO  },
         { kColAction,240, YES },
-        { kColValue,  85, NO },
-        { kColDup,    30, NO },
-        { kColDel,    30, NO },
+        { kColValue,  85, NO  },
+        { kColDup,    30, NO  },
+        { kColDel,    30, NO  },
     };
     for (int i = 0; i < 6; i++) {
         NSTableColumn *col = [[NSTableColumn alloc] initWithIdentifier:coldefs[i].ident];
@@ -433,8 +466,6 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     NSString *modeKeyCode = [keyfile objectForKey:KEYFILE_MODEKEY_NODENAME] ?: @"53";
     NSUInteger mki = [self.sortedKeyCodes indexOfObject:modeKeyCode];
     if (mki != NSNotFound) [self.modeKeyPopup selectItemAtIndex:(NSInteger)mki];
-
-
 
     // Bindings
     [self.bindings removeAllObjects];
@@ -474,9 +505,17 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 
 - (IBAction)addBindingClicked:(id)sender
 {
-    NSString *firstAdj = [self.sortedAdjKeys firstObject] ?: @"Exposure2012";
+    // Use last-used adjustment (defaults to Exposure2012 on first use)
+    NSString *adjKey = self.lastUsedAdjKey;
+    // Verify the key still exists in the lookup (in case mappings were reloaded)
+    if (![self.sortedAdjKeys containsObject:adjKey]) {
+        adjKey = [self.sortedAdjKeys containsObject:@"Exposure2012"] ? @"Exposure2012"
+                                                                      : [self.sortedAdjKeys firstObject];
+        if (!adjKey) adjKey = @"Exposure2012";
+    }
+
     NSString *defaultVal = @"1";
-    NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:firstAdj];
+    NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:adjKey];
     if (limits && limits[@"min"] && limits[@"min"] != [NSNull null]) {
         defaultVal = [NSString stringWithFormat:@"%g", [limits[@"min"] doubleValue]];
     }
@@ -484,13 +523,48 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     NSMutableDictionary *newBinding = [@{
         kBindKey:   [self.sortedKeyCodes firstObject] ?: @"0",
         kBindMod:   @"0",
-        kBindAdj:   firstAdj,
+        kBindAdj:   adjKey,
         kBindValue: defaultVal
     } mutableCopy];
     [self.bindings addObject:newBinding];
     [self.tableView reloadData];
-    // scroll to the new row
+    // Scroll to the new row
     [self.tableView scrollRowToVisible:(NSInteger)self.bindings.count - 1];
+}
+
+// ── Bulk duplicate: duplicate all selected rows (in reverse order to preserve indices) ──
+- (IBAction)bulkDuplicateClicked:(id)sender
+{
+    NSIndexSet *selected = [self.tableView selectedRowIndexes];
+    if (selected.count == 0) return;
+
+    // Insert duplicates right after each selected row, traversing from last→first
+    // so that earlier indices aren't shifted
+    [selected enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger idx, BOOL *stop) {
+        if (idx < self.bindings.count) {
+            NSMutableDictionary *dup = [self.bindings[idx] mutableCopy];
+            [self.bindings insertObject:dup atIndex:idx + 1];
+        }
+    }];
+
+    [self.tableView reloadData];
+}
+
+// ── Bulk delete: remove all selected rows ────────────────────────────────────
+- (IBAction)bulkDeleteClicked:(id)sender
+{
+    NSIndexSet *selected = [self.tableView selectedRowIndexes];
+    if (selected.count == 0) return;
+
+    // Remove in reverse so indices stay valid
+    [selected enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger idx, BOOL *stop) {
+        if (idx < self.bindings.count) {
+            [self.bindings removeObjectAtIndex:idx];
+        }
+    }];
+
+    [self.tableView deselectAll:nil];
+    [self.tableView reloadData];
 }
 
 - (NSString *)clampValue:(NSString *)valStr forAdjustment:(NSString *)adjKey
@@ -793,6 +867,8 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         if (idx >= 0 && idx < (NSInteger)self.sortedAdjKeys.count) {
             NSString *newAdj = self.sortedAdjKeys[(NSUInteger)idx];
             b[kBindAdj] = newAdj;
+            // Remember the last adjustment used for "Add Binding" default
+            self.lastUsedAdjKey = newAdj;
             // Re-validate and clamp current value against new adjustment's limits
             b[kBindValue] = [self clampValue:b[kBindValue] forAdjustment:newAdj];
             [self.tableView reloadData];
@@ -803,30 +879,28 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         b[kBindValue] = [self clampValue:rawVal forAdjustment:b[kBindAdj]];
     }
     else if ([colId isEqualToString:kColDup]) {
-        // Duplicate this binding right after the current row
-        if (row >= 0 && row < (NSInteger)self.bindings.count) {
-            NSMutableDictionary *dup = [self.bindings[(NSUInteger)row] mutableCopy];
-            NSUInteger insertIdx = (NSUInteger)row + 1;
-            [self.bindings insertObject:dup atIndex:insertIdx];
-            [self.tableView reloadData];
-            [self.tableView scrollRowToVisible:(NSInteger)insertIdx];
-        }
+        // Single-row duplicate button (inline ⧉)
+        NSMutableDictionary *dup = [self.bindings[(NSUInteger)row] mutableCopy];
+        NSUInteger insertIdx = (NSUInteger)row + 1;
+        [self.bindings insertObject:dup atIndex:insertIdx];
+        [self.tableView reloadData];
+        [self.tableView scrollRowToVisible:(NSInteger)insertIdx];
     }
     else if ([colId isEqualToString:kColDel]) {
-        // Delete this row
-        if (row >= 0 && row < (NSInteger)self.bindings.count) {
-            [self.bindings removeObjectAtIndex:(NSUInteger)row];
-            [self.tableView reloadData];
-        }
+        // Single-row delete button (inline ✕)
+        [self.bindings removeObjectAtIndex:(NSUInteger)row];
+        [self.tableView reloadData];
     }
 }
 
-/// Alternating row background colors
+/// Alternating row background colors; highlight selected rows
 - (void)tableView:(NSTableView *)tv willDisplayCell:(id)cell forTableColumn:(NSTableColumn *)col row:(NSInteger)row
 {
-    NSColor *evenBg = [NSColor colorWithCalibratedWhite:0.18 alpha:1];
-    NSColor *oddBg  = [NSColor colorWithCalibratedWhite:0.21 alpha:1];
-    NSColor *bg     = (row % 2 == 0) ? evenBg : oddBg;
+    BOOL isSelected = [tv isRowSelected:row];
+    NSColor *evenBg   = [NSColor colorWithCalibratedWhite:0.18 alpha:1];
+    NSColor *oddBg    = [NSColor colorWithCalibratedWhite:0.21 alpha:1];
+    NSColor *selBg    = [NSColor colorWithCalibratedRed:0.2 green:0.4 blue:0.7 alpha:0.5];
+    NSColor *bg       = isSelected ? selBg : (row % 2 == 0 ? evenBg : oddBg);
 
     if ([cell respondsToSelector:@selector(setBackgroundColor:)]) {
         [cell setBackgroundColor:bg];
