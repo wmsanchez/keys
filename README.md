@@ -1,64 +1,94 @@
-# Support Notice 11/03/2017
+# Keys (for Adobe Lightroom Classic)
 
-Be aware that the new releases of Lightroom have broken Keys functionality.
+Keys was originally created by Visual Supply Company (VSCO) to provide keyboard shortcut workflows for editing in Adobe Lightroom. In August 2015, it was open-sourced under the GPLv2 license.
 
-# Keys
+This fork modernizes Keys to run reliably on modern macOS (Apple Silicon / Intel) and modern Adobe Lightroom Classic by replacing deprecated Lightroom 3/4 calls with direct `LrDevelopController` APIs and adding a built-in layout editor.
 
-Keys was originally distributed by Visual Supply Company in order to
-give users a speed boost when editing images in Adobe Photoshop Lightroom.
-In August 2015, it was discontinued as a product for purchase, and is now
-open source and available for free download.
-
-Before downloading Keys, remove any pre-existing versions of VSCO Keys.
+---
 
 ## License
 
-Keys is released under the GPLv2 (or any later version). See full license
-in [LICENSE](LICENSE).
+Keys is released under the GNU General Public License v2 (or any later version). See full license in [LICENSE](LICENSE).
 
-## Installing
+---
 
-Go to the Releases page, and download the `.zip` file for the [latest release](https://github.com/cajames/keys/releases/latest).
-Unzip the downloaded file and double-click the installer. Follow the prompts and it will be installed.
+## Installing & Prerequisites (macOS)
 
-**On Mac**
-After installing, please be sure to add the `VSCOKeys.app` to have accessibility privileges.
+1. **Lightroom Plugin**:
+   Copy or link `VSCOKeys.lrdevplugin` into your Lightroom Modules directory:
+   ```bash
+   cp -R VSCOKeys.lrdevplugin "$HOME/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin"
+   ```
+
+2. **Accessibility Privileges**:
+   VSCO Keys intercepts keystrokes via macOS Accessibility APIs (`CGEventTap`). Add `VSCOKeys.app` to your trusted applications:
+   ```
+   System Settings -> Privacy & Security -> Accessibility -> Allow VSCOKeys
+   ```
+
+---
+
+## Development Guide: How to Compile, Build, and Test (macOS)
+
+When making modifications to the macOS application or Lightroom plugin, use this step-by-step workflow to build and test:
+
+### 1. Build the macOS Application via Xcode CLI
+
+You can build the project directly from the terminal without opening Xcode:
+
+```bash
+cd VSCOKeys
+xcodebuild -scheme VSCOKeys -configuration Debug build
 ```
-System Preferences -> Security & Privacy -> Privacy -> Accessibility.
-// Add VSCOKeys.app to that list
+
+The built application bundle will be created at:
+```
+~/Library/Developer/Xcode/DerivedData/VSCOKeys-*/Build/Products/Debug/VSCOKeys.app
 ```
 
-## Contributing
+### 2. Deploy the Built App to `/Applications`
 
-How to build Keys installers for OS X and Windows:
+Deploy the fresh binary so macOS launches the new version with your Accessibility permissions:
 
-Instructions below are for use on a OS X machine.
+```bash
+# 1. Quit running instances
+killall VSCOKeys 2>/dev/null || true
 
-Prerequisite: Download Bitrock InstallBuilder
-(http://installbuilder.bitrock.com/download.html)
+# 2. Copy the newly compiled build to /Applications
+cp -R ~/Library/Developer/Xcode/DerivedData/VSCOKeys-*/Build/Products/Debug/VSCOKeys.app /Applications/VSCOKeys.app
+```
 
-1. Put appropriate application files in correct folders to build installer. (This setting may be change in Tools/VSCOKeys.xml)
-    - For OS X app generated from Xcode, VSCOKeys.app, place .app file in `Build/` directory
-    - For Windows app generated from Visual Studio, `VSCOKeys.exe`, place `.exe` file in `Build/VSCOKeys/` directory
-2. Open Terminal and run `Tools/BuildInstallerOnOSX.sh`, both OS X and Windows installer will be built
-3. Installers can be found in `Build/`, zip files and they are ready to distribute
+### 3. Deploy Lightroom Plugin Modifications
 
-For setting on installer, such as build directory and naming of installers, changes can be made to `Tools/VSCOKeys.xml`.
+If you modified files in `VSCOKeys.lrdevplugin` (such as `Client.lua` or `server.py`), sync them to your active Lightroom modules folder:
 
-## Creating your own Layout file
+```bash
+cp -R VSCOKeys.lrdevplugin/* "$HOME/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/"
+```
 
-1. Open the [`sampleLayout.keysjson`](Layout/sampleLayout.keysjson) file in a text editor of your choice (you may edit this file directly or create a new file with the extension `.keysjson`) to create your own layout.
-2. To find the correct values for input, please use the [`Layout/keymap.json`](Layout/keymap.json) and [`Layout/toolkitlistlr4.json`](Layout/toolkitlistlr4.json) for reference. Change the `key` value and the name of the adjustment in `adj` (e.g. `Saturation`). Use `keymap.json` to find the imtxcode that maps to the desired key on your keyboard. Refer to `toolkitlistlr4.json` for the adjustment names and values.
+> **Note**: Whenever modifying plugin Lua files, **restart Adobe Lightroom Classic** so Lightroom reloads the plugin.
 
-        Layout/sampleLayout.keysjson Example:
-            Line 10 sets `Q` to the preset "C - Fuji 160C from Film 01"
-            Line 11 sets `W` to decrease saturation by 1
-            Line 12 sets `E` to increase saturation by 1
-            Line 13 sets Ctrl + `W` to decrease exposure by 1
-            Line 14 sets Ctrl + `E` to increase exposure by 1
+### 4. Quick One-Line Rebuild & Run Script
 
-3. Change the `uuid` line and the `name` line to what you prefer.
-4. Save the file.
-5. Launch Lightroom with VSCO Keys 2.0 enabled.
-6. Double click the saved file to load the file into VSCO Keys 2.0. (make a backup of file if you want to update later)
-7. Click on the VSCO Keys 2.0 Icon to change the layout.
+For rapid testing after code edits, run this command from the repository root:
+
+```bash
+cd VSCOKeys && \
+xcodebuild -scheme VSCOKeys -configuration Debug build && \
+killall VSCOKeys 2>/dev/null || true && \
+cp -R ~/Library/Developer/Xcode/DerivedData/VSCOKeys-*/Build/Products/Debug/VSCOKeys.app /Applications/VSCOKeys.app && \
+open -a /Applications/VSCOKeys.app
+```
+
+---
+
+## Layouts & In-App Layout Editor
+
+- **Built-in Editor**: Click the VSCO Keys menu bar icon, open **Settings / Layouts**, select any layout, and click **EDIT LAYOUT** to customize keys and adjustments directly.
+- **Manual `.keysjson` Files**: Layout files reside in:
+  ```
+  ~/Library/Application Support/VSCOKeys/
+  ```
+  You can also inspect or edit `.keysjson` files directly. Reference parameter names and slider limits are defined in:
+  - [`VSCOKeys/VSCOKeys/AdjustmentMapping.json`](VSCOKeys/VSCOKeys/AdjustmentMapping.json)
+  - [`VSCOKeys/VSCOKeys/AdjustmentLimits.json`](VSCOKeys/VSCOKeys/AdjustmentLimits.json)
