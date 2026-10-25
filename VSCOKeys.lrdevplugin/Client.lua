@@ -29,6 +29,8 @@ local DevelopSettings = require "DevelopSettings"
 local LrTasks = import "LrTasks"
 local LrHttp = import "LrHttp"
 local LrApplication = import "LrApplication"
+local LrApplicationView = import "LrApplicationView"
+local LrDevelopController = import "LrDevelopController"
 local LrDialogs = import "LrDialogs"
 
 local LrBinding = import "LrBinding"
@@ -154,105 +156,34 @@ function Client:loop()
         end
       end
 
-      -- apply batched image changes
+      -- apply batched image changes using direct LrDevelopController (MIDI2LR method)
       if (json and self.currentPhoto) then
-
-        -- strip out edits not in our settings table or of old version
-        for k,v in pairs(json) do
-          if (not DevelopSettings[k] or (DevelopSettings[k].maxVersion ~= nil and DevelopSettings[k].maxVersion < LrApplication.versionTable().major)) then
-            json[k] = nil
-            logging:log(k .. " not in settings table or outdated.")
-          end
+        if LrApplicationView.getCurrentModuleName() ~= 'develop' then
+          LrApplicationView.switchToModule('develop')
+          LrTasks.yield()
         end
 
-        -- if there's one target photo then there can be more
-        local photos = self.currentPhoto.catalog.targetPhotos
-        for i,photo in ipairs(photos) do
-
-          local edits = table.shallowcopy(json)
-
-          photoData = photo:getDevelopSettings()
-
-          -- clamp values and find out what our edit text looks like
-          local editText = ""
-          for k,v in pairs(edits) do
-
-            -- SPECIAL CASE for white balance changes
-            -- TODO: move out into data somewhere / somehow
-            if (photoData.WhiteBalance ~= "Custom" and (k == "IncrementalTemperature" or k == "IncrementalTint" or k == "Temperature" or k == "Tint")) then
-              -- need to update the photo state before we can do the other operation -- complete a full write of the whitebalance change
-              --  before applying the changes in the json response
-              local wbDict = { WhiteBalance = "Custom" }
-
-              photo.catalog:withWriteAccessDo("VSCO Keys", function()
-                local preset = LrApplication.addDevelopPresetForPlugin(_PLUGIN, "WhiteBalance   Custom   Custom", wbDict)
-                photo:applyDevelopPreset(preset, _PLUGIN)
-              end, {asynchronous = true})
-
-              -- requery the photo data to get the current whitebalance data
-              photoData = photo:getDevelopSettings()
-            end
-
-            -- SPECIAL CASE for lens correction rotation
-            -- TODO: move out into data somewhere / somehow
-            if (photoData.CropConstrainToWarp ~= 1 and k == "PerspectiveRotate") then
-              -- need to update the photo state before we can do the other operation -- complete a full write of the constrain change
-              --  before applying the changes in the json response
-              local wbDict = { CropConstrainToWarp = 1 }
-
-              logging:log("Locking constrain to warp.")
-
-              photo.catalog:withWriteAccessDo("VSCO Keys", function()
-                local preset = LrApplication.addDevelopPresetForPlugin(_PLUGIN, "Crop Constrain To Warp   Yes   Yes", wbDict)
-                photo:applyDevelopPreset(preset, _PLUGIN)
-              end, {asynchronous = true})
-
-              -- requery the photo data to get the current constrain data
-              photoData = photo:getDevelopSettings()
-            end
-
-            -- add incrementally if both values are a number
-            if (photoData[k] ~= nil and type(photoData[k]) == "number" and type(v) == "number") then
-              edits[k] = photoData[k] + v
-            else
-              if (photoData[k]) then
-                edits[k] = v
-              else
-                edits[k] = nil
-                logging:log("No data in photo for " .. k)
+        for k, v in pairs(json) do
+          local numVal = tonumber(v)
+          if numVal ~= nil then
+            local currentVal = LrDevelopController.getValue(k)
+            if type(currentVal) == 'number' then
+              local minVal, maxVal = LrDevelopController.getRange(k)
+              local targetVal = currentVal + numVal
+              if minVal ~= nil and maxVal ~= nil then
+                targetVal = math.min(math.max(targetVal, minVal), maxVal)
+              elseif DevelopSettings[k] then
+                targetVal = math.min(math.max(targetVal, DevelopSettings[k].min), DevelopSettings[k].max)
               end
-            end
-
-            -- clamp value to valid range
-            if (type(edits[k]) == "number") then
-              edits[k] = math.min(math.max(edits[k],DevelopSettings[k].min),DevelopSettings[k].max)
-            end
-
-            -- guard to only show edits that will actually take
-            if (photoData[k]) then
-              if (editText == "") then
-                local plus = ""
-
-                if (type(v) == "number" and v > 0) then
-                  plus = "+"
-                end
-
-                editText = DevelopSettings[k].name .. "  " .. plus .. v .. "  " .. edits[k]
-              else
-                editText = "Multiple Edits"
-              end
+              LrDevelopController.setValue(k, targetVal)
+              logging:log('Applied ' .. k .. ' -> ' .. tostring(targetVal))
             else
-              logging:log("Edit ignored for " .. k)
+              LrDevelopController.setValue(k, numVal)
+              logging:log('Applied direct ' .. k .. ' -> ' .. tostring(numVal))
             end
-          end
-
-          if (table.count(edits) > 0) then
-            photo.catalog:withWriteAccessDo("VSCO Keys", function()
-              local preset = LrApplication.addDevelopPresetForPlugin(_PLUGIN, editText, edits)
-              photo:applyDevelopPreset(preset, _PLUGIN)
-
-              logging:log("Edit Applied " .. to_string(edits))
-            end, {asynchronous = true})
+          else
+            LrDevelopController.setValue(k, v)
+            logging:log('Applied string ' .. k .. ' -> ' .. tostring(v))
           end
         end
       else
