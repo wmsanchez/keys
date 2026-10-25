@@ -1,0 +1,346 @@
+{
+  "Blacks2012": {
+    "max": 25,
+    "min": 1
+  },
+  "BlueHue": {
+    "max": 25,
+    "min": 1
+  },
+  "BlueSaturation": {
+    "max": 25,
+    "min": 1
+  },
+  "Clarity2012": {
+    "max": 25,
+    "min": null
+  },
+  "ColorNoiseReduction": {
+    "max": 25,
+    "min": 1
+  },
+  "ColorNoiseReductionDetail": {
+    "max": 25,
+    "min": 1
+  },
+  "Contrast2012": {
+    "max": 50,
+    "min": 1
+  },
+  "DefringeGreenAmount": {
+    "max": 10,
+    "min": 1
+  },
+  "DefringeGreenHueHi": {
+    "max": 25,
+    "min": 1
+  },
+  "DefringeGreenHueLo": {
+    "max": 25,
+    "min": 1
+  },
+  "DefringePurpleAmount": {
+    "max": 10,
+    "min": 1
+  },
+  "DefringePurpleHueHi": {
+    "max": 25,
+    "min": 1
+  },
+  "DefringePurpleHueLo": {
+    "max": 25,
+    "min": 1
+  },
+  "Exposure2012": {
+    "max": 1,
+    "min": 0.1
+  },
+  "GrainAmount": {
+    "max": 25,
+    "min": 1
+  },
+  "GrainFrequency": {
+    "max": 25,
+    "min": 1
+  },
+  "GrainSize": {
+    "max": 25,
+    "min": 1
+  },
+  "GreenHue": {
+    "max": 25,
+    "min": 1
+  },
+  "GreenSaturation": {
+    "max": 25,
+    "min": 1
+  },
+  "Highlights2012": {
+    "max": 25,
+    "min": 1
+  },
+  "HueAdjustmentAqua": {
+    "max": 25,
+    "min": 1
+  },
+  "HueAdjustmentBlue": {
+    "max": 25,
+    "min": 1
+  },
+  "HueAdjustmentGreen": {
+    "max": 25,
+    "min": 1
+  },
+  "HueAdjustmentMagenta": {
+    "max": 25,
+    "min": 1
+  },
+  "HueAdjustmentOrange": {
+    "max": 25,
+    "min": 1
+  },
+  "HueAdjustmentPurple": {
+    "max": 25,
+    "min": 1
+  },
+  "HueAdjustmentRed": {
+    "max": 25,
+    "min": 1
+  },
+  "HueAdjustmentYellow": {
+    "max": 25,
+    "min": 1
+  },
+  "IncrementalTemperature": {
+    "max": 2000,
+    "min": 100
+  },
+  "IncrementalTint": {
+    "max": 25,
+    "min": 1
+  },
+  "LensManualDistortionAmount": {
+    "max": 25,
+    "min": 1
+  },
+  "LuminanceAdjustmentAqua": {
+    "max": 25,
+    "min": 1
+  },
+  "LuminanceAdjustmentBlue": {
+    "max": 25,
+    "min": 1
+  },
+  "LuminanceAdjustmentGreen": {
+    "max": 25,
+    "min": 1
+  },
+  "LuminanceAdjustmentMagenta": {
+    "max": 25,
+    "min": 1
+  },
+  "LuminanceAdjustmentOrange": {
+    "max": 25,
+    "min": 1
+  },
+  "LuminanceAdjustmentPurple": {
+    "max": 25,
+    "min": 1
+  },
+  "LuminanceAdjustmentRed": {
+    "max": 25,
+    "min": 1
+  },
+  "LuminanceAdjustmentYellow": {
+    "max": 25,
+    "min": 1
+  },
+  "LuminanceNoiseReductionContrast": {
+    "max": 25,
+    "min": 1
+  },
+  "LuminanceNoiseReductionDetail": {
+    "max": 25,
+    "min": 1
+  },
+  "LuminanceSmoothing": {
+    "max": 25,
+    "min": 1
+  },
+  "ParametricDarks": {
+    "max": 25,
+    "min": 1
+  },
+  "ParametricHighlightSplit": {
+    "max": 10,
+    "min": 1
+  },
+  "ParametricHighlights": {
+    "max": 25,
+    "min": 1
+  },
+  "ParametricLights": {
+    "max": 25,
+    "min": 1
+  },
+  "ParametricMidtoneSplit": {
+    "max": 10,
+    "min": 1
+  },
+  "ParametricShadowSplit": {
+    "max": 10,
+    "min": 1
+  },
+  "ParametricShadows": {
+    "max": 25,
+    "min": 1
+  },
+  "PerspectiveHorizontal": {
+    "max": 25,
+    "min": 1
+  },
+  "PerspectiveRotate": {
+    "max": 5,
+    "min": 0.1
+  },
+  "PerspectiveScale": {
+    "max": 25,
+    "min": 1
+  },
+  "PerspectiveVertical": {
+    "max": 25,
+    "min": 1
+  },
+  "PostCropVignetteAmount": {
+    "max": 50,
+    "min": 1
+  },
+  "PostCropVignetteFeather": {
+    "max": 25,
+    "min": 1
+  },
+  "PostCropVignetteHighlightContrast": {
+    "max": 25,
+    "min": 1
+  },
+  "PostCropVignetteMidpoint": {
+    "max": 25,
+    "min": 1
+  },
+  "PostCropVignetteRoundness": {
+    "max": 50,
+    "min": 1
+  },
+  "RedHue": {
+    "max": 25,
+    "min": 1
+  },
+  "RedSaturation": {
+    "max": 25,
+    "min": 1
+  },
+  "Saturation": {
+    "max": 25,
+    "min": 1
+  },
+  "SaturationAdjustmentAqua": {
+    "max": 25,
+    "min": 1
+  },
+  "SaturationAdjustmentBlue": {
+    "max": 25,
+    "min": 1
+  },
+  "SaturationAdjustmentGreen": {
+    "max": 25,
+    "min": 1
+  },
+  "SaturationAdjustmentMagenta": {
+    "max": 25,
+    "min": 1
+  },
+  "SaturationAdjustmentOrange": {
+    "max": 25,
+    "min": 1
+  },
+  "SaturationAdjustmentPurple": {
+    "max": 25,
+    "min": 1
+  },
+  "SaturationAdjustmentRed": {
+    "max": 25,
+    "min": 1
+  },
+  "SaturationAdjustmentYellow": {
+    "max": 25,
+    "min": 1
+  },
+  "ShadowTint": {
+    "max": 25,
+    "min": 1
+  },
+  "Shadows2012": {
+    "max": 25,
+    "min": 1
+  },
+  "SharpenDetail": {
+    "max": 25,
+    "min": 1
+  },
+  "SharpenEdgeMasking": {
+    "max": 25,
+    "min": 1
+  },
+  "SharpenRadius": {
+    "max": 1,
+    "min": 0.1
+  },
+  "Sharpness": {
+    "max": 25,
+    "min": 1
+  },
+  "SplitToningBalance": {
+    "max": 50,
+    "min": 1
+  },
+  "SplitToningHighlightHue": {
+    "max": 50,
+    "min": 1
+  },
+  "SplitToningHighlightSaturation": {
+    "max": 25,
+    "min": 1
+  },
+  "SplitToningShadowHue": {
+    "max": 50,
+    "min": 1
+  },
+  "SplitToningShadowSaturation": {
+    "max": 25,
+    "min": 1
+  },
+  "Temperature": {
+    "max": 2000,
+    "min": 100
+  },
+  "Tint": {
+    "max": 25,
+    "min": 1
+  },
+  "Vibrance": {
+    "max": 25,
+    "min": 1
+  },
+  "VignetteAmount": {
+    "max": 50,
+    "min": 1
+  },
+  "VignetteMidpoint": {
+    "max": 25,
+    "min": 1
+  },
+  "Whites2012": {
+    "max": 25,
+    "min": 1
+  }
+}
