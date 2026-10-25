@@ -71,6 +71,7 @@
 @property (retain) NSDictionary *keyMapping;
 @property (retain) NSDictionary *adjustmentMapping;
 @property (retain) NSDictionary *adjustmentLimits;
+@property (retain) NSArray *commandCategories;
 
 @property (retain) NSNumberFormatter *numFormatter;
 @property (retain) NSDictionary *blackStyle;

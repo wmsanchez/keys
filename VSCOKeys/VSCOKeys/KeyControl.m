@@ -82,6 +82,7 @@
 @synthesize keyMapping;
 @synthesize adjustmentMapping;
 @synthesize adjustmentLimits;
+@synthesize commandCategories;
 
 @synthesize numFormatter;
 @synthesize blackStyle;
@@ -954,6 +955,30 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
     self.adjustmentMapping = [[NSString stringWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"AdjustmentMapping" ofType:@"json"] encoding:NSUTF8StringEncoding error:nil] JSONValue];
 
     self.adjustmentLimits = [[NSString stringWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"AdjustmentLimits" ofType:@"json"] encoding:NSUTF8StringEncoding error:nil] JSONValue];
+
+    // Load command categories (from MIDI2LR / LR SDK 15)
+    NSString *catsPath = [[NSBundle mainBundle] pathForResource:@"CommandCategories" ofType:@"json"];
+    if (catsPath) {
+        NSData *catsData = [NSData dataWithContentsOfFile:catsPath];
+        if (catsData) {
+            self.commandCategories = [NSJSONSerialization JSONObjectWithData:catsData options:0 error:nil];
+            if (self.commandCategories) {
+                // Merge all category command IDs and display names into adjustmentMapping
+                NSMutableDictionary *mergedAdj = [self.adjustmentMapping mutableCopy] ?: [NSMutableDictionary dictionary];
+                for (NSDictionary *cat in self.commandCategories) {
+                    NSArray *items = [cat objectForKey:@"items"];
+                    for (NSDictionary *item in items) {
+                        NSString *cid   = [item objectForKey:@"id"];
+                        NSString *cname = [item objectForKey:@"name"];
+                        if (cid && cname && ![mergedAdj objectForKey:cid]) {
+                            [mergedAdj setObject:cname forKey:cid];
+                        }
+                    }
+                }
+                self.adjustmentMapping = mergedAdj;
+            }
+        }
+    }
 }
 
 - (NSString *)getKeynameForVirtual:(NSString *)virtKey

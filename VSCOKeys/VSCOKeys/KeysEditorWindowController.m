@@ -84,6 +84,9 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 // ── Status label ─────────────────────────────────────────────────────────────
 @property (retain) NSTextField *statusLabel;
 
+// ── Categorized action menu template (built once, cloned per row) ─────────────
+@property (retain) NSMenu *actionMenuTemplate;
+
 @end
 
 @implementation KeysEditorWindowController
@@ -100,6 +103,7 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 @synthesize sortedKeyCodes, sortedKeyNames, sortedAdjKeys, sortedAdjNames;
 @synthesize modBitmasks, modTitles;
 @synthesize statusLabel;
+@synthesize actionMenuTemplate;
 
 // ──────────────────────────────────────────────────────────────────────────────
 #pragma mark - Init
@@ -177,6 +181,31 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     self.modTitles   = @[@"—", @"SHIFT", @"CTRL", @"OPT", @"CMD",
                          @"SHIFT+CTRL", @"SHIFT+OPT", @"SHIFT+CMD",
                          @"CTRL+OPT",  @"CTRL+CMD",  @"OPT+CMD"];
+
+    // ── Categorized action menu template ─────────────────────────────────────
+    // Built once from CommandCategories.json; cloned per-row in dataCellForTableColumn.
+    NSArray *cats = self.keyControl.commandCategories;
+    if (cats) {
+        NSMenu *tmpl = [[NSMenu alloc] initWithTitle:@""];
+        [tmpl setAutoenablesItems:NO];
+        for (NSDictionary *cat in cats) {
+            NSString *catName = [cat objectForKey:@"category"];
+            NSArray *catItems = [cat objectForKey:@"items"];
+            NSMenuItem *catItem = [[NSMenuItem alloc] initWithTitle:catName action:nil keyEquivalent:@""];
+            NSMenu *sub = [[NSMenu alloc] initWithTitle:catName];
+            [sub setAutoenablesItems:NO];
+            for (NSDictionary *cmdDict in catItems) {
+                NSString *cid   = [cmdDict objectForKey:@"id"];
+                NSString *cname = [cmdDict objectForKey:@"name"];
+                NSMenuItem *mi  = [[NSMenuItem alloc] initWithTitle:cname action:nil keyEquivalent:@""];
+                [mi setRepresentedObject:cid];
+                [sub addItem:mi];
+            }
+            [catItem setSubmenu:sub];
+            [tmpl addItem:catItem];
+        }
+        self.actionMenuTemplate = tmpl;
+    }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -707,6 +736,19 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     [self startNewLayout];
 }
 
+- (void)actionMenuItemSelected:(id)sender
+{
+    NSMenuItem *item = (NSMenuItem *)sender;
+    NSInteger row = [item tag];
+    NSString *newAdj = [item representedObject];
+    if (!newAdj || row < 0 || row >= (NSInteger)self.bindings.count) return;
+    NSMutableDictionary *b = self.bindings[(NSUInteger)row];
+    b[kBindAdj] = newAdj;
+    self.lastUsedAdjKey = newAdj;
+    b[kBindValue] = [self clampValue:b[kBindValue] forAdjustment:newAdj];
+    [self.tableView reloadData];
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 #pragma mark - NSTableView DataSource & Delegate
 // ──────────────────────────────────────────────────────────────────────────────
@@ -751,20 +793,40 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         NSPopUpButtonCell *cell = [[NSPopUpButtonCell alloc] initTextCell:@"" pullsDown:NO];
         [cell setFont:[NSFont systemFontOfSize:11]];
         [cell setBordered:NO];
-        for (NSString *aname in self.sortedAdjNames) {
-            [cell addItemWithTitle:aname];
-        }
-        
-        // Find by key, or find by matching display name if legacy key used (e.g. Exposure vs Exposure2012)
+
         NSString *currKey = b[kBindAdj];
-        NSUInteger sel = [self.sortedAdjKeys indexOfObject:currKey];
-        if (sel == NSNotFound) {
-            NSString *currDisp = [self.keyControl.adjustmentMapping objectForKey:currKey];
-            if (currDisp) {
-                sel = [self.sortedAdjNames indexOfObject:currDisp];
+        NSString *currName = [self.keyControl.adjustmentMapping objectForKey:currKey] ?: currKey;
+
+        NSMenu *rowMenu = [[NSMenu alloc] initWithTitle:@""];
+        [rowMenu setAutoenablesItems:NO];
+
+        // Hidden dummy item so the cell displays the current command name
+        NSMenuItem *dummy = [[NSMenuItem alloc] initWithTitle:currName ?: @"" action:nil keyEquivalent:@""];
+        [dummy setHidden:YES];
+        [rowMenu addItem:dummy];
+
+        // Build categorized submenus from template
+        for (NSMenuItem *tmplCat in [self.actionMenuTemplate itemArray]) {
+            NSMenuItem *catItem = [[NSMenuItem alloc] initWithTitle:[tmplCat title] action:nil keyEquivalent:@""];
+            if ([tmplCat hasSubmenu]) {
+                NSMenu *catSub = [[NSMenu alloc] initWithTitle:[tmplCat title]];
+                [catSub setAutoenablesItems:NO];
+                for (NSMenuItem *tmplCmd in [[tmplCat submenu] itemArray]) {
+                    NSMenuItem *cmdItem = [[NSMenuItem alloc] initWithTitle:[tmplCmd title]
+                                           action:@selector(actionMenuItemSelected:) keyEquivalent:@""];
+                    [cmdItem setTarget:self];
+                    [cmdItem setTag:row];
+                    [cmdItem setRepresentedObject:[tmplCmd representedObject]];
+                    [catSub addItem:cmdItem];
+                }
+                [catItem setSubmenu:catSub];
             }
+            [rowMenu addItem:catItem];
         }
-        if (sel != NSNotFound) [cell selectItemAtIndex:(NSInteger)sel];
+
+        [cell setMenu:rowMenu];
+        [cell selectItem:dummy];
+        [cell setTitle:currName ?: @""];
         return cell;
     }
 
@@ -833,15 +895,7 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         return idx != NSNotFound ? @(idx) : @0;
     }
     if ([colId isEqualToString:kColAction]) {
-        NSString *currKey = b[kBindAdj];
-        NSUInteger idx = [self.sortedAdjKeys indexOfObject:currKey];
-        if (idx == NSNotFound) {
-            NSString *currDisp = [self.keyControl.adjustmentMapping objectForKey:currKey];
-            if (currDisp) {
-                idx = [self.sortedAdjNames indexOfObject:currDisp];
-            }
-        }
-        return idx != NSNotFound ? @(idx) : @0;
+        return @"";  // Display title managed by NSPopUpButtonCell; selection handled by actionMenuItemSelected:
     }
     if ([colId isEqualToString:kColValue]) {
         return b[kBindValue] ?: @"";
@@ -874,16 +928,7 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         }
     }
     else if ([colId isEqualToString:kColAction]) {
-        NSInteger idx = [obj integerValue];
-        if (idx >= 0 && idx < (NSInteger)self.sortedAdjKeys.count) {
-            NSString *newAdj = self.sortedAdjKeys[(NSUInteger)idx];
-            b[kBindAdj] = newAdj;
-            // Remember the last adjustment used for "Add Binding" default
-            self.lastUsedAdjKey = newAdj;
-            // Re-validate and clamp current value against new adjustment's limits
-            b[kBindValue] = [self clampValue:b[kBindValue] forAdjustment:newAdj];
-            [self.tableView reloadData];
-        }
+        // Selection handled by actionMenuItemSelected: action callback
     }
     else if ([colId isEqualToString:kColValue]) {
         NSString *rawVal = [obj description] ?: @"";

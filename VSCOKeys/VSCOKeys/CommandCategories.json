@@ -1,0 +1,4198 @@
+[
+  {
+    "category": "Keyboard Shortcuts for User",
+    "items": [
+      {
+        "id": "Key1",
+        "name": "Key 1"
+      },
+      {
+        "id": "Key2",
+        "name": "Key 2"
+      },
+      {
+        "id": "Key3",
+        "name": "Key 3"
+      },
+      {
+        "id": "Key4",
+        "name": "Key 4"
+      },
+      {
+        "id": "Key5",
+        "name": "Key 5"
+      },
+      {
+        "id": "Key6",
+        "name": "Key 6"
+      },
+      {
+        "id": "Key7",
+        "name": "Key 7"
+      },
+      {
+        "id": "Key8",
+        "name": "Key 8"
+      },
+      {
+        "id": "Key9",
+        "name": "Key 9"
+      },
+      {
+        "id": "Key10",
+        "name": "Key 10"
+      },
+      {
+        "id": "Key11",
+        "name": "Key 11"
+      },
+      {
+        "id": "Key12",
+        "name": "Key 12"
+      },
+      {
+        "id": "Key13",
+        "name": "Key 13"
+      },
+      {
+        "id": "Key14",
+        "name": "Key 14"
+      },
+      {
+        "id": "Key15",
+        "name": "Key 15"
+      },
+      {
+        "id": "Key16",
+        "name": "Key 16"
+      },
+      {
+        "id": "Key17",
+        "name": "Key 17"
+      },
+      {
+        "id": "Key18",
+        "name": "Key 18"
+      },
+      {
+        "id": "Key19",
+        "name": "Key 19"
+      },
+      {
+        "id": "Key20",
+        "name": "Key 20"
+      },
+      {
+        "id": "Key21",
+        "name": "Key 21"
+      },
+      {
+        "id": "Key22",
+        "name": "Key 22"
+      },
+      {
+        "id": "Key23",
+        "name": "Key 23"
+      },
+      {
+        "id": "Key24",
+        "name": "Key 24"
+      },
+      {
+        "id": "Key25",
+        "name": "Key 25"
+      },
+      {
+        "id": "Key26",
+        "name": "Key 26"
+      },
+      {
+        "id": "Key27",
+        "name": "Key 27"
+      },
+      {
+        "id": "Key28",
+        "name": "Key 28"
+      },
+      {
+        "id": "Key29",
+        "name": "Key 29"
+      },
+      {
+        "id": "Key30",
+        "name": "Key 30"
+      },
+      {
+        "id": "Key31",
+        "name": "Key 31"
+      },
+      {
+        "id": "Key32",
+        "name": "Key 32"
+      },
+      {
+        "id": "Key33",
+        "name": "Key 33"
+      },
+      {
+        "id": "Key34",
+        "name": "Key 34"
+      },
+      {
+        "id": "Key35",
+        "name": "Key 35"
+      },
+      {
+        "id": "Key36",
+        "name": "Key 36"
+      },
+      {
+        "id": "Key37",
+        "name": "Key 37"
+      },
+      {
+        "id": "Key38",
+        "name": "Key 38"
+      },
+      {
+        "id": "Key39",
+        "name": "Key 39"
+      },
+      {
+        "id": "Key40",
+        "name": "Key 40"
+      },
+      {
+        "id": "Key2Key1",
+        "name": "Key 2 \u2013 Key 1"
+      },
+      {
+        "id": "Key4Key3",
+        "name": "Key 4 \u2013 Key 3"
+      },
+      {
+        "id": "Key6Key5",
+        "name": "Key 6 \u2013 Key 5"
+      },
+      {
+        "id": "Key8Key7",
+        "name": "Key 8 \u2013 Key 7"
+      },
+      {
+        "id": "Key10Key9",
+        "name": "Key 10 \u2013 Key 9"
+      },
+      {
+        "id": "Key12Key11",
+        "name": "Key 12 \u2013 Key 11"
+      },
+      {
+        "id": "Key14Key13",
+        "name": "Key 14 \u2013 Key 13"
+      },
+      {
+        "id": "Key16Key15",
+        "name": "Key 16 \u2013 Key 15"
+      },
+      {
+        "id": "Key18Key17",
+        "name": "Key 18 \u2013 Key 17"
+      },
+      {
+        "id": "Key20Key19",
+        "name": "Key 20 \u2013 Key 19"
+      },
+      {
+        "id": "Key22Key21",
+        "name": "Key 22 \u2013 Key 21"
+      },
+      {
+        "id": "Key24Key23",
+        "name": "Key 24 \u2013 Key 23"
+      },
+      {
+        "id": "Key26Key25",
+        "name": "Key 26 \u2013 Key 25"
+      },
+      {
+        "id": "Key28Key27",
+        "name": "Key 28 \u2013 Key 27"
+      },
+      {
+        "id": "Key30Key29",
+        "name": "Key 30 \u2013 Key 29"
+      },
+      {
+        "id": "Key32Key31",
+        "name": "Key 32 \u2013 Key 31"
+      },
+      {
+        "id": "Key34Key33",
+        "name": "Key 34 \u2013 Key 33"
+      },
+      {
+        "id": "Key36Key35",
+        "name": "Key 36 \u2013 Key 35"
+      },
+      {
+        "id": "Key38Key37",
+        "name": "Key 38 \u2013 Key 37"
+      },
+      {
+        "id": "Key40Key39",
+        "name": "Key 40 \u2013 Key 39"
+      }
+    ]
+  },
+  {
+    "category": "Command sequence",
+    "items": [
+      {
+        "id": "ActionSeries1",
+        "name": "Command sequence 1"
+      },
+      {
+        "id": "ActionSeries2",
+        "name": "Command sequence 2"
+      },
+      {
+        "id": "ActionSeries3",
+        "name": "Command sequence 3"
+      },
+      {
+        "id": "ActionSeries4",
+        "name": "Command sequence 4"
+      },
+      {
+        "id": "ActionSeries5",
+        "name": "Command sequence 5"
+      },
+      {
+        "id": "ActionSeries6",
+        "name": "Command sequence 6"
+      },
+      {
+        "id": "ActionSeries7",
+        "name": "Command sequence 7"
+      },
+      {
+        "id": "ActionSeries8",
+        "name": "Command sequence 8"
+      },
+      {
+        "id": "ActionSeries9",
+        "name": "Command sequence 9"
+      },
+      {
+        "id": "ActionSeries10",
+        "name": "Command sequence 10"
+      },
+      {
+        "id": "ActionSeries11",
+        "name": "Command sequence 11"
+      },
+      {
+        "id": "ActionSeries12",
+        "name": "Command sequence 12"
+      },
+      {
+        "id": "ActionSeries13",
+        "name": "Command sequence 13"
+      },
+      {
+        "id": "ActionSeries14",
+        "name": "Command sequence 14"
+      },
+      {
+        "id": "ActionSeries15",
+        "name": "Command sequence 15"
+      },
+      {
+        "id": "ActionSeries16",
+        "name": "Command sequence 16"
+      }
+    ]
+  },
+  {
+    "category": "Library filter",
+    "items": [
+      {
+        "id": "Filter_1",
+        "name": "Library filter 1"
+      },
+      {
+        "id": "Filter_2",
+        "name": "Library filter 2"
+      },
+      {
+        "id": "Filter_3",
+        "name": "Library filter 3"
+      },
+      {
+        "id": "Filter_4",
+        "name": "Library filter 4"
+      },
+      {
+        "id": "Filter_5",
+        "name": "Library filter 5"
+      },
+      {
+        "id": "Filter_6",
+        "name": "Library filter 6"
+      },
+      {
+        "id": "Filter_7",
+        "name": "Library filter 7"
+      },
+      {
+        "id": "Filter_8",
+        "name": "Library filter 8"
+      },
+      {
+        "id": "Filter_9",
+        "name": "Library filter 9"
+      },
+      {
+        "id": "Filter_10",
+        "name": "Library filter 10"
+      },
+      {
+        "id": "Filter_11",
+        "name": "Library filter 11"
+      },
+      {
+        "id": "Filter_12",
+        "name": "Library filter 12"
+      },
+      {
+        "id": "FilterNone",
+        "name": "No filter"
+      }
+    ]
+  },
+  {
+    "category": "View",
+    "items": [
+      {
+        "id": "SwToMlibrary",
+        "name": "Show Library"
+      },
+      {
+        "id": "ShoVwpeople",
+        "name": "Primary Display People"
+      },
+      {
+        "id": "ShoVwgrid",
+        "name": "Primary Display Grid"
+      },
+      {
+        "id": "GridViewStyle",
+        "name": "Cycle grid views"
+      },
+      {
+        "id": "ShoVwloupe",
+        "name": "Primary Display Loupe"
+      },
+      {
+        "id": "CycleLoupeViewInfo",
+        "name": "Loupe Cycle view style"
+      },
+      {
+        "id": "ShoVwcompare",
+        "name": "Primary Display Compare"
+      },
+      {
+        "id": "ShoVwsurvey",
+        "name": "Primary Display Survey"
+      },
+      {
+        "id": "ShoFullHidePanels",
+        "name": "Full screen, hide panels"
+      },
+      {
+        "id": "ShoFullPreview",
+        "name": "Full screen preview"
+      },
+      {
+        "id": "NextScreenMode",
+        "name": "Cycle to next screen mode"
+      },
+      {
+        "id": "ToggleLoupe",
+        "name": "Loupe view activate/inactivate"
+      },
+      {
+        "id": "ToggleZoomOffOn",
+        "name": "Enable/Disable Zoom"
+      },
+      {
+        "id": "ZoomInOut",
+        "name": "Zoom In Less Zoom Out Less"
+      },
+      {
+        "id": "ZoomOutIn",
+        "name": "Zoom Out Less Zoom In Less"
+      },
+      {
+        "id": "ZoomInLargeStep",
+        "name": "Zoom In"
+      },
+      {
+        "id": "ZoomInSmallStep",
+        "name": "Zoom In Less"
+      },
+      {
+        "id": "ZoomOutSmallStep",
+        "name": "Zoom Out Less"
+      },
+      {
+        "id": "ZoomOutLargeStep",
+        "name": "Zoom Out"
+      },
+      {
+        "id": "ZoomTo100",
+        "name": "Zoom to 100%"
+      },
+      {
+        "id": "ShowSlideShow",
+        "name": "Enter Impromptu Slideshow mode"
+      }
+    ]
+  },
+  {
+    "category": "Rating",
+    "items": [
+      {
+        "id": "SetRating0",
+        "name": "0 Stars"
+      },
+      {
+        "id": "SetRating1",
+        "name": "1 star"
+      },
+      {
+        "id": "SetRating2",
+        "name": "2 stars"
+      },
+      {
+        "id": "SetRating3",
+        "name": "3 stars"
+      },
+      {
+        "id": "SetRating4",
+        "name": "4 stars"
+      },
+      {
+        "id": "SetRating5",
+        "name": "5 stars"
+      },
+      {
+        "id": "IncreaseRating",
+        "name": "Increase Rating"
+      },
+      {
+        "id": "DecreaseRating",
+        "name": "Decrease Rating"
+      },
+      {
+        "id": "IncreaseDecreaseRating",
+        "name": "Increase Rating \u2014 Decrease Rating"
+      },
+      {
+        "id": "SetRating",
+        "name": "Set Rating"
+      }
+    ]
+  },
+  {
+    "category": "Flagging",
+    "items": [
+      {
+        "id": "Pick",
+        "name": "Set Pick Flag"
+      },
+      {
+        "id": "Reject",
+        "name": "Set Rejected Flag"
+      },
+      {
+        "id": "ToggleFlag",
+        "name": "Toggle Flag"
+      },
+      {
+        "id": "RemoveFlag",
+        "name": "Unflagged"
+      },
+      {
+        "id": "ToggleBlue",
+        "name": "Label Blue Enable/Disable"
+      },
+      {
+        "id": "ToggleGreen",
+        "name": "Label Green Enable/Disable"
+      },
+      {
+        "id": "ToggleRed",
+        "name": "Label Red Enable/Disable"
+      },
+      {
+        "id": "TogglePurple",
+        "name": "Label Purple Enable/Disable"
+      },
+      {
+        "id": "ToggleYellow",
+        "name": "Label Yellow Enable/Disable"
+      },
+      {
+        "id": "ColorLabelNone",
+        "name": "Remove color label"
+      }
+    ]
+  },
+  {
+    "category": "Photos",
+    "items": [
+      {
+        "id": "AddOrRemoveFromTargetColl",
+        "name": "Add to the target collection"
+      },
+      {
+        "id": "EditPhotoshop",
+        "name": "Edit in Photoshop"
+      },
+      {
+        "id": "openExportDialog",
+        "name": "Export..."
+      },
+      {
+        "id": "openExportWithPreviousDialog",
+        "name": "Export again"
+      },
+      {
+        "id": "SelectRightLeft",
+        "name": "Add to Selection Left Right"
+      },
+      {
+        "id": "Select1Left",
+        "name": "Add to Selection Left"
+      },
+      {
+        "id": "Select1Right",
+        "name": "Add to Selection Right"
+      },
+      {
+        "id": "NextPrev",
+        "name": "Next Photo \u2014 Previous Photo"
+      },
+      {
+        "id": "Next",
+        "name": "Next Photo"
+      },
+      {
+        "id": "Prev",
+        "name": "Previous Photo"
+      },
+      {
+        "id": "RotateLeft",
+        "name": "Rotate left"
+      },
+      {
+        "id": "RotateRight",
+        "name": "Rotate right"
+      },
+      {
+        "id": "FullRefresh",
+        "name": "Manual Update"
+      },
+      {
+        "id": "CloseApp",
+        "name": "Stop Server"
+      }
+    ]
+  },
+  {
+    "category": "Quick develop",
+    "items": [
+      {
+        "id": "QuickDevTempLarge",
+        "name": "Quick develop Make warmer 20"
+      },
+      {
+        "id": "QuickDevTempLargeDec",
+        "name": "Quick develop Make cooler -20"
+      },
+      {
+        "id": "QuickDevTempSmall",
+        "name": "Quick develop Make warmer 5"
+      },
+      {
+        "id": "QuickDevTempSmalDec",
+        "name": "Quick develop Make cooler -5"
+      },
+      {
+        "id": "QuickDevTempAdj",
+        "name": "Quick develop Temperature"
+      },
+      {
+        "id": "QuickDevTintLarge",
+        "name": "Quick develop Tint more magenta 20"
+      },
+      {
+        "id": "QuickDevTintLargeDec",
+        "name": "Quick develop Tint more green -20"
+      },
+      {
+        "id": "QuickDevTintSmall",
+        "name": "Quick develop Tint more magenta 5"
+      },
+      {
+        "id": "QuickDevTintSmallDec",
+        "name": "Quick develop Tint more green -5"
+      },
+      {
+        "id": "QuickDevTintAdj",
+        "name": "Quick develop Tint"
+      },
+      {
+        "id": "QuickDevExpLarge",
+        "name": "Quick develop Increase exposure 1 stop"
+      },
+      {
+        "id": "QuickDevExpLargeDec",
+        "name": "Quick develop Decrease exposure 1 stop"
+      },
+      {
+        "id": "QuickDevExpSmall",
+        "name": "Quick develop Increase exposure 1/3 stop"
+      },
+      {
+        "id": "QuickDevExpSmallDec",
+        "name": "Quick develop Decrease exposure 1/3 stop"
+      },
+      {
+        "id": "QuickDevExpSmHalf",
+        "name": "Quick develop Increase exposure 1/6 stop"
+      },
+      {
+        "id": "QuickDevExpSmHalfDec",
+        "name": "Quick develop Decrease exposure 1/6 stop"
+      },
+      {
+        "id": "QuickDevExpAdj",
+        "name": "Quick develop Exposure"
+      },
+      {
+        "id": "QuickDevContrastLarge",
+        "name": "Quick develop Increase contrast 20"
+      },
+      {
+        "id": "QuickDevContrastLargeDec",
+        "name": "Quick develop Decrease contrast -20"
+      },
+      {
+        "id": "QuickDevContrastSmall",
+        "name": "Quick develop Increase contrast 5"
+      },
+      {
+        "id": "QuickDevContrastSmallDec",
+        "name": "Quick develop Decrease contrast -5"
+      },
+      {
+        "id": "QuickDevContrastAdj",
+        "name": "Quick develop Contrast"
+      },
+      {
+        "id": "QuickDevHighlightsLarge",
+        "name": "Quick develop Increase highlights 20"
+      },
+      {
+        "id": "QuickDevHighlightsLargeDec",
+        "name": "Quick develop Decrease highlights -20"
+      },
+      {
+        "id": "QuickDevHighlightsSmall",
+        "name": "Quick develop Increase highlights 5"
+      },
+      {
+        "id": "QuickDevHighlightsSmallDec",
+        "name": "Quick develop Decrease highlights -5"
+      },
+      {
+        "id": "QuickDevHighlightsAdj",
+        "name": "Quick develop Highlights"
+      },
+      {
+        "id": "QuickDevShadowsLarge",
+        "name": "Quick develop Decrease shadows 20"
+      },
+      {
+        "id": "QuickDevShadowsLargeDec",
+        "name": "Quick develop Increase shadows -20"
+      },
+      {
+        "id": "QuickDevShadowsSmall",
+        "name": "Quick develop Decrease shadows 5"
+      },
+      {
+        "id": "QuickDevShadowsSmallDec",
+        "name": "Quick develop Increase shadows -5"
+      },
+      {
+        "id": "QuickDevShadowsAdj",
+        "name": "Quick develop Shadows"
+      },
+      {
+        "id": "QuickDevWhitesLarge",
+        "name": "Quick develop Increase white clipping 20"
+      },
+      {
+        "id": "QuickDevWhitesLargeDec",
+        "name": "Quick develop Decrease white clipping -20"
+      },
+      {
+        "id": "QuickDevWhitesSmall",
+        "name": "Quick develop Increase white clipping 5"
+      },
+      {
+        "id": "QuickDevWhitesSmallDec",
+        "name": "Quick develop Decrease white clipping -5"
+      },
+      {
+        "id": "QuickDevWhitesAdj",
+        "name": "Quick develop Whites"
+      },
+      {
+        "id": "QuickDevBlacksLarge",
+        "name": "Quick develop Decrease black clipping 20"
+      },
+      {
+        "id": "QuickDevBlacksLargeDec",
+        "name": "Quick develop Increase black clipping -20"
+      },
+      {
+        "id": "QuickDevBlacksSmall",
+        "name": "Quick develop Decrease black clipping 5"
+      },
+      {
+        "id": "QuickDevBlacksSmallDec",
+        "name": "Quick develop Increase black clipping -5"
+      },
+      {
+        "id": "QuickDevBlacksAdj",
+        "name": "Quick develop Blacks"
+      },
+      {
+        "id": "QuickDevClarityLarge",
+        "name": "Quick develop Increase clarity 20"
+      },
+      {
+        "id": "QuickDevClarityLargeDec",
+        "name": "Quick develop Decrease clarity -20"
+      },
+      {
+        "id": "QuickDevClaritySmall",
+        "name": "Quick develop Increase clarity 5"
+      },
+      {
+        "id": "QuickDevClaritySmallDec",
+        "name": "Quick develop Decrease clarity -5"
+      },
+      {
+        "id": "QuickDevClarityAdj",
+        "name": "Quick develop Clarity"
+      },
+      {
+        "id": "QuickDevVibranceLarge",
+        "name": "Quick develop Increase vibrance 20"
+      },
+      {
+        "id": "QuickDevVibranceLargeDec",
+        "name": "Quick develop Decrease vibrance -20"
+      },
+      {
+        "id": "QuickDevVibranceSmall",
+        "name": "Quick develop Increase vibrance 5"
+      },
+      {
+        "id": "QuickDevVibranceSmallDec",
+        "name": "Quick develop Decrease vibrance -5"
+      },
+      {
+        "id": "QuickDevVibranceAdj",
+        "name": "Quick develop Vibrance"
+      },
+      {
+        "id": "QuickDevSatLarge",
+        "name": "Quick develop Increase Saturation: 20"
+      },
+      {
+        "id": "QuickDevSatLargeDec",
+        "name": "Quick develop Decrease Saturation: -20"
+      },
+      {
+        "id": "QuickDevSatSmall",
+        "name": "Quick develop Increase Saturation: 5"
+      },
+      {
+        "id": "QuickDevSatSmallDec",
+        "name": "Quick develop Decrease Saturation: -5"
+      },
+      {
+        "id": "QuickDevSatAdj",
+        "name": "Quick develop Saturation"
+      },
+      {
+        "id": "QuickDevWBAuto",
+        "name": "Quick develop White Balance Auto"
+      },
+      {
+        "id": "QuickDevWBDaylight",
+        "name": "Quick develop White Balance Daylight"
+      },
+      {
+        "id": "QuickDevWBCloudy",
+        "name": "Quick develop White Balance Cloudy"
+      },
+      {
+        "id": "QuickDevWBShade",
+        "name": "Quick develop White Balance Shade"
+      },
+      {
+        "id": "QuickDevWBTungsten",
+        "name": "Quick develop White Balance Tungsten"
+      },
+      {
+        "id": "QuickDevWBFluorescent",
+        "name": "Quick develop White Balance Fluorescent"
+      },
+      {
+        "id": "QuickDevWBFlash",
+        "name": "Quick develop White Balance Flash"
+      },
+      {
+        "id": "SetTreatmentBW",
+        "name": "Quick develop Set treatment B&W"
+      },
+      {
+        "id": "SetTreatmentColor",
+        "name": "Quick develop Set treatment Color"
+      },
+      {
+        "id": "QuickDevCropAspectOriginal",
+        "name": "Quick develop Set crop ratio: Original"
+      },
+      {
+        "id": "QuickDevCropAspectAsShot",
+        "name": "Quick develop Set crop ratio: As shot"
+      },
+      {
+        "id": "QuickDevCropAspect1x1",
+        "name": "Quick develop Set crop ratio: 1 x 1"
+      },
+      {
+        "id": "QuickDevCropAspect2x3",
+        "name": "Quick develop Set crop ratio: 2 x 3"
+      },
+      {
+        "id": "QuickDevCropAspect3x4",
+        "name": "Quick develop Set crop ratio: 3 x 4"
+      },
+      {
+        "id": "QuickDevCropAspect4x5",
+        "name": "Quick develop Set crop ratio: 4 x 5"
+      },
+      {
+        "id": "QuickDevCropAspect5x7",
+        "name": "Quick develop Set crop ratio: 5 x 7"
+      },
+      {
+        "id": "QuickDevCropAspect85x11",
+        "name": "Quick develop Set crop ratio: 8.5 x 11"
+      },
+      {
+        "id": "QuickDevCropAspect9x16",
+        "name": "Quick develop Set crop ratio: 9 x 16"
+      }
+    ]
+  },
+  {
+    "category": "Develop",
+    "items": [
+      {
+        "id": "SwToMdevelop",
+        "name": "Show Develop"
+      },
+      {
+        "id": "LRCopy",
+        "name": "Lightroom Copy Settings"
+      },
+      {
+        "id": "LRPaste",
+        "name": "Lightroom Paste Settings"
+      },
+      {
+        "id": "VirtualCopy",
+        "name": "Create Virtual Copy"
+      },
+      {
+        "id": "ResetAll",
+        "name": "Reset Settings"
+      },
+      {
+        "id": "ResetLast",
+        "name": "Reset Last Modified"
+      },
+      {
+        "id": "ChangeLastDevelopParameter",
+        "name": "More \u2013 Less Last Modified"
+      },
+      {
+        "id": "IncrementLastDevelopParameter",
+        "name": "Increase Last Modified"
+      },
+      {
+        "id": "DecrementLastDevelopParameter",
+        "name": "Decrease Last Modified"
+      },
+      {
+        "id": "ChangeCurrentSlider",
+        "name": "More \u2013 Less"
+      },
+      {
+        "id": "SliderIncrease",
+        "name": "More"
+      },
+      {
+        "id": "SliderDecrease",
+        "name": "Less"
+      },
+      {
+        "id": "Fine2",
+        "name": "Fine correction 2\u00d7"
+      },
+      {
+        "id": "Fine4",
+        "name": "Fine correction 4\u00d7"
+      },
+      {
+        "id": "Fine8",
+        "name": "Fine correction 8\u00d7"
+      },
+      {
+        "id": "Fine16",
+        "name": "Fine correction 16\u00d7"
+      },
+      {
+        "id": "FineOff",
+        "name": "Fine correction Off"
+      },
+      {
+        "id": "FineIncrease",
+        "name": "Fine correction increase: 2\u00d7"
+      },
+      {
+        "id": "FineDecrease",
+        "name": "Fine correction decrease: 2\u00d7"
+      },
+      {
+        "id": "RedoUndo",
+        "name": "Redo \u2013 Undo"
+      },
+      {
+        "id": "Undo",
+        "name": "Undo"
+      },
+      {
+        "id": "Redo",
+        "name": "Redo"
+      },
+      {
+        "id": "PV1",
+        "name": "Update process version to 1"
+      },
+      {
+        "id": "PV2",
+        "name": "Update process version to 2"
+      },
+      {
+        "id": "PV3",
+        "name": "Update process version to 3"
+      },
+      {
+        "id": "PV4",
+        "name": "Update process version to 4"
+      },
+      {
+        "id": "PV5",
+        "name": "Update process version to 5"
+      },
+      {
+        "id": "PVLatest",
+        "name": "Update to current process version"
+      },
+      {
+        "id": "ShowClipping",
+        "name": "Show clipping"
+      },
+      {
+        "id": "ShoVwdevelop_before_after_horiz",
+        "name": "Primary Display Before/After Left/Right"
+      },
+      {
+        "id": "ShoVwdevelop_before_after_vert",
+        "name": "Primary Display Before/After Top/Bottom"
+      },
+      {
+        "id": "ShoVwdevelop_before",
+        "name": "Primary Display Before"
+      },
+      {
+        "id": "ShoVwRefHoriz",
+        "name": "Primary Display Reference View \u2014 Left/Right"
+      },
+      {
+        "id": "ShoVwRefVert",
+        "name": "Primary Display Reference View \u2014 Top/Bottom"
+      },
+      {
+        "id": "ShoVwdevelop_loupe",
+        "name": "Primary Display Loupe"
+      }
+    ]
+  },
+  {
+    "category": "Basic Tone",
+    "items": [
+      {
+        "id": "RevealPanelAdjust",
+        "name": "Show Basic Tone"
+      },
+      {
+        "id": "HoldAltOpt",
+        "name": "Alt press and hold Activate/Deactivate"
+      },
+      {
+        "id": "WhiteBalanceAs_Shot",
+        "name": "White Balance As Shot"
+      },
+      {
+        "id": "WhiteBalanceAuto",
+        "name": "White Balance Auto"
+      },
+      {
+        "id": "WhiteBalanceDaylight",
+        "name": "White Balance Daylight"
+      },
+      {
+        "id": "WhiteBalanceCloudy",
+        "name": "White Balance Cloudy"
+      },
+      {
+        "id": "WhiteBalanceShade",
+        "name": "White Balance Shade"
+      },
+      {
+        "id": "WhiteBalanceTungsten",
+        "name": "White Balance Tungsten"
+      },
+      {
+        "id": "WhiteBalanceFluorescent",
+        "name": "White Balance Fluorescent"
+      },
+      {
+        "id": "WhiteBalanceFlash",
+        "name": "White Balance Flash"
+      },
+      {
+        "id": "AutoTone",
+        "name": "Auto Tone"
+      },
+      {
+        "id": "Temperature",
+        "name": "Temperature"
+      },
+      {
+        "id": "Tint",
+        "name": "Tint"
+      },
+      {
+        "id": "Exposure",
+        "name": "Exposure"
+      },
+      {
+        "id": "Contrast",
+        "name": "Contrast"
+      },
+      {
+        "id": "Highlights",
+        "name": "Highlights (Highlight Recovery in PV 1 and PV 2)"
+      },
+      {
+        "id": "Brightness",
+        "name": "Brightness"
+      },
+      {
+        "id": "Shadows",
+        "name": "Shadows (Fill Light in PV 1 and PV 2)"
+      },
+      {
+        "id": "Whites",
+        "name": "Whites (Brightness in PV 1 and PV 2)"
+      },
+      {
+        "id": "Blacks",
+        "name": "Blacks"
+      },
+      {
+        "id": "Texture",
+        "name": "Texture (PV 3+)"
+      },
+      {
+        "id": "Clarity",
+        "name": "Clarity"
+      },
+      {
+        "id": "Dehaze",
+        "name": "Dehaze Amount (PV 3+)"
+      },
+      {
+        "id": "Vibrance",
+        "name": "Vibrance"
+      },
+      {
+        "id": "Saturation",
+        "name": "Saturation"
+      },
+      {
+        "id": "ResetTemperature",
+        "name": "Reset Temperature"
+      },
+      {
+        "id": "ResetTint",
+        "name": "Reset Tint"
+      },
+      {
+        "id": "ResetExposure",
+        "name": "Reset Exposure"
+      },
+      {
+        "id": "ResetContrast",
+        "name": "Reset Contrast"
+      },
+      {
+        "id": "ResetHighlights",
+        "name": "Reset Highlights"
+      },
+      {
+        "id": "ResetShadows",
+        "name": "Reset Shadows"
+      },
+      {
+        "id": "ResetWhites",
+        "name": "Reset Whites"
+      },
+      {
+        "id": "ResetBlacks",
+        "name": "Reset Blacks"
+      },
+      {
+        "id": "ResetTexture",
+        "name": "Reset Texture"
+      },
+      {
+        "id": "ResetClarity",
+        "name": "Reset Clarity"
+      },
+      {
+        "id": "ResetDehaze",
+        "name": "Reset Dehaze Amount"
+      },
+      {
+        "id": "ResetVibrance",
+        "name": "Reset Vibrance"
+      },
+      {
+        "id": "ResetSaturation",
+        "name": "Reset Saturation"
+      }
+    ]
+  },
+  {
+    "category": "HDR",
+    "items": [
+      {
+        "id": "HDREditMode",
+        "name": "Enable HDR Edit Mode"
+      },
+      {
+        "id": "SDRBlend",
+        "name": "SDR Rendition Settings: Highlight Saturation"
+      },
+      {
+        "id": "ResetSDRBlend",
+        "name": "Reset SDR Rendition Settings: Highlight Saturation"
+      },
+      {
+        "id": "SDRBrightness",
+        "name": "SDR Rendition Settings: Brightness"
+      },
+      {
+        "id": "ResetSDRBrightness",
+        "name": "Reset SDR Rendition Settings: Brightness"
+      },
+      {
+        "id": "SDRClarity",
+        "name": "SDR Rendition Settings: Clarity"
+      },
+      {
+        "id": "ResetSDRClarity",
+        "name": "Reset SDR Rendition Settings: Clarity"
+      },
+      {
+        "id": "SDRContrast",
+        "name": "SDR Rendition Settings: Contrast"
+      },
+      {
+        "id": "ResetSDRContrast",
+        "name": "Reset SDR Rendition Settings: Contrast"
+      },
+      {
+        "id": "SDRHighlights",
+        "name": "SDR Rendition Settings: Highlights"
+      },
+      {
+        "id": "ResetSDRHighlights",
+        "name": "Reset SDR Rendition Settings: Highlights"
+      },
+      {
+        "id": "SDRShadows",
+        "name": "SDR Rendition Settings: Shadows"
+      },
+      {
+        "id": "ResetSDRShadows",
+        "name": "Reset SDR Rendition Settings: Shadows"
+      },
+      {
+        "id": "SDRWhites",
+        "name": "SDR Rendition Settings: Whites"
+      },
+      {
+        "id": "ResetSDRWhites",
+        "name": "Reset SDR Rendition Settings: Whites"
+      }
+    ]
+  },
+  {
+    "category": "Tone Curve",
+    "items": [
+      {
+        "id": "RevealPanelTone",
+        "name": "Show Tone Curve"
+      },
+      {
+        "id": "EnableToneCurve",
+        "name": "Tone curve enable/disable"
+      },
+      {
+        "id": "ParametricDarks",
+        "name": "Dark Tones"
+      },
+      {
+        "id": "ParametricLights",
+        "name": "Light Tones"
+      },
+      {
+        "id": "ParametricShadows",
+        "name": "Shadow Tones"
+      },
+      {
+        "id": "ParametricHighlights",
+        "name": "Highlight Tones"
+      },
+      {
+        "id": "ParametricShadowSplit",
+        "name": "Shadow Split"
+      },
+      {
+        "id": "ParametricMidtoneSplit",
+        "name": "Midtone Split"
+      },
+      {
+        "id": "ParametricHighlightSplit",
+        "name": "Highlight Split"
+      },
+      {
+        "id": "CurveRefineSaturation",
+        "name": "Refine Saturation"
+      },
+      {
+        "id": "ResetParametricDarks",
+        "name": "Reset Dark Tones"
+      },
+      {
+        "id": "ResetParametricLights",
+        "name": "Reset Light Tones"
+      },
+      {
+        "id": "ResetParametricShadows",
+        "name": "Reset Shadow Tones"
+      },
+      {
+        "id": "ResetParametricHighlights",
+        "name": "Reset Highlight Tones"
+      },
+      {
+        "id": "ResetParametricShadowSplit",
+        "name": "Reset Shadow Split"
+      },
+      {
+        "id": "ResetParametricMidtoneSplit",
+        "name": "Reset Midtone Split"
+      },
+      {
+        "id": "ResetParametricHighlightSplit",
+        "name": "Reset Highlight Split"
+      },
+      {
+        "id": "ResetCurveRefineSaturation",
+        "name": "Reset Refine Saturation"
+      },
+      {
+        "id": "PointCurveLinear",
+        "name": "Tone Curve Linear"
+      },
+      {
+        "id": "PointCurveMediumContrast",
+        "name": "Tone Curve Medium Contrast"
+      },
+      {
+        "id": "PointCurveStrongContrast",
+        "name": "Tone Curve Strong Contrast"
+      },
+      {
+        "id": "PointCurveBlacksUpDown",
+        "name": "Gradation Curve Blacks"
+      },
+      {
+        "id": "PointCurveHighlightsUpDown",
+        "name": "Gradation Curve Highlights"
+      }
+    ]
+  },
+  {
+    "category": "Color Adjustments",
+    "items": [
+      {
+        "id": "RevealPanelMixer",
+        "name": "Show Color Adjustments"
+      },
+      {
+        "id": "EnableColorAdjustments",
+        "name": "Color adjustments enable/disable"
+      },
+      {
+        "id": "SaturationAdjustmentRed",
+        "name": "Saturation Adjustment Red"
+      },
+      {
+        "id": "SaturationAdjustmentOrange",
+        "name": "Saturation Adjustment Orange"
+      },
+      {
+        "id": "SaturationAdjustmentYellow",
+        "name": "Saturation Adjustment Yellow"
+      },
+      {
+        "id": "SaturationAdjustmentGreen",
+        "name": "Saturation Adjustment Green"
+      },
+      {
+        "id": "SaturationAdjustmentAqua",
+        "name": "Saturation Adjustment Aqua"
+      },
+      {
+        "id": "SaturationAdjustmentBlue",
+        "name": "Saturation Adjustment Blue"
+      },
+      {
+        "id": "SaturationAdjustmentPurple",
+        "name": "Saturation Adjustment Purple"
+      },
+      {
+        "id": "SaturationAdjustmentMagenta",
+        "name": "Saturation Adjustment Magenta"
+      },
+      {
+        "id": "AllSaturationAdjustment",
+        "name": "Saturation \u2014 Change all"
+      },
+      {
+        "id": "HueAdjustmentRed",
+        "name": "Hue Adjustment Red"
+      },
+      {
+        "id": "HueAdjustmentOrange",
+        "name": "Hue Adjustment Orange"
+      },
+      {
+        "id": "HueAdjustmentYellow",
+        "name": "Hue Adjustment Yellow"
+      },
+      {
+        "id": "HueAdjustmentGreen",
+        "name": "Hue Adjustment Green"
+      },
+      {
+        "id": "HueAdjustmentAqua",
+        "name": "Hue Adjustment Aqua"
+      },
+      {
+        "id": "HueAdjustmentBlue",
+        "name": "Hue Adjustment Blue"
+      },
+      {
+        "id": "HueAdjustmentPurple",
+        "name": "Hue Adjustment Purple"
+      },
+      {
+        "id": "HueAdjustmentMagenta",
+        "name": "Hue Adjustment Magenta"
+      },
+      {
+        "id": "LuminanceAdjustmentRed",
+        "name": "Luminance Adjustment Red"
+      },
+      {
+        "id": "LuminanceAdjustmentOrange",
+        "name": "Luminance Adjustment Orange"
+      },
+      {
+        "id": "LuminanceAdjustmentYellow",
+        "name": "Luminance Adjustment Yellow"
+      },
+      {
+        "id": "LuminanceAdjustmentGreen",
+        "name": "Luminance Adjustment Green"
+      },
+      {
+        "id": "LuminanceAdjustmentAqua",
+        "name": "Luminance Adjustment Aqua"
+      },
+      {
+        "id": "LuminanceAdjustmentBlue",
+        "name": "Luminance Adjustment Blue"
+      },
+      {
+        "id": "LuminanceAdjustmentPurple",
+        "name": "Luminance Adjustment Purple"
+      },
+      {
+        "id": "LuminanceAdjustmentMagenta",
+        "name": "Luminance Adjustment Magenta"
+      },
+      {
+        "id": "ConvertToGrayscale",
+        "name": "Convert to Grayscale"
+      },
+      {
+        "id": "EnableGrayscaleMix",
+        "name": "Grayscale mix enable/disable"
+      },
+      {
+        "id": "GrayMixerRed",
+        "name": "Gray Mixer Red"
+      },
+      {
+        "id": "GrayMixerOrange",
+        "name": "Gray Mixer Orange"
+      },
+      {
+        "id": "GrayMixerYellow",
+        "name": "Gray Mixer Yellow"
+      },
+      {
+        "id": "GrayMixerGreen",
+        "name": "Gray Mixer Green"
+      },
+      {
+        "id": "GrayMixerAqua",
+        "name": "Gray Mixer Aqua"
+      },
+      {
+        "id": "GrayMixerBlue",
+        "name": "Gray Mixer Blue"
+      },
+      {
+        "id": "GrayMixerPurple",
+        "name": "Gray Mixer Purple"
+      },
+      {
+        "id": "GrayMixerMagenta",
+        "name": "Gray Mixer Magenta"
+      }
+    ]
+  },
+  {
+    "category": "Reset Color Adjustments",
+    "items": [
+      {
+        "id": "ResetSaturationAdjustmentRed",
+        "name": "Reset Saturation Adjustment Red"
+      },
+      {
+        "id": "ResetSaturationAdjustmentOrange",
+        "name": "Reset Saturation Adjustment Orange"
+      },
+      {
+        "id": "ResetSaturationAdjustmentYellow",
+        "name": "Reset Saturation Adjustment Yellow"
+      },
+      {
+        "id": "ResetSaturationAdjustmentGreen",
+        "name": "Reset Saturation Adjustment Green"
+      },
+      {
+        "id": "ResetSaturationAdjustmentAqua",
+        "name": "Reset Saturation Adjustment Aqua"
+      },
+      {
+        "id": "ResetSaturationAdjustmentBlue",
+        "name": "Reset Saturation Adjustment Blue"
+      },
+      {
+        "id": "ResetSaturationAdjustmentPurple",
+        "name": "Reset Saturation Adjustment Purple"
+      },
+      {
+        "id": "ResetSaturationAdjustmentMagenta",
+        "name": "Reset Saturation Adjustment Magenta"
+      },
+      {
+        "id": "ResetAllSaturationAdjustment",
+        "name": "Reset Saturation Adjustments"
+      },
+      {
+        "id": "ResetHueAdjustmentRed",
+        "name": "Reset Hue Adjustment Red"
+      },
+      {
+        "id": "ResetHueAdjustmentOrange",
+        "name": "Reset Hue Adjustment Orange"
+      },
+      {
+        "id": "ResetHueAdjustmentYellow",
+        "name": "Reset Hue Adjustment Yellow"
+      },
+      {
+        "id": "ResetHueAdjustmentGreen",
+        "name": "Reset Hue Adjustment Green"
+      },
+      {
+        "id": "ResetHueAdjustmentAqua",
+        "name": "Reset Hue Adjustment Aqua"
+      },
+      {
+        "id": "ResetHueAdjustmentBlue",
+        "name": "Reset Hue Adjustment Blue"
+      },
+      {
+        "id": "ResetHueAdjustmentPurple",
+        "name": "Reset Hue Adjustment Purple"
+      },
+      {
+        "id": "ResetHueAdjustmentMagenta",
+        "name": "Reset Hue Adjustment Magenta"
+      },
+      {
+        "id": "ResetAllHueAdjustment",
+        "name": "Reset Hue Adjustments"
+      },
+      {
+        "id": "ResetLuminanceAdjustmentRed",
+        "name": "Reset Luminance Adjustment Red"
+      },
+      {
+        "id": "ResetLuminanceAdjustmentOrange",
+        "name": "Reset Luminance Adjustment Orange"
+      },
+      {
+        "id": "ResetLuminanceAdjustmentYellow",
+        "name": "Reset Luminance Adjustment Yellow"
+      },
+      {
+        "id": "ResetLuminanceAdjustmentGreen",
+        "name": "Reset Luminance Adjustment Green"
+      },
+      {
+        "id": "ResetLuminanceAdjustmentAqua",
+        "name": "Reset Luminance Adjustment Aqua"
+      },
+      {
+        "id": "ResetLuminanceAdjustmentBlue",
+        "name": "Reset Luminance Adjustment Blue"
+      },
+      {
+        "id": "ResetLuminanceAdjustmentPurple",
+        "name": "Reset Luminance Adjustment Purple"
+      },
+      {
+        "id": "ResetLuminanceAdjustmentMagenta",
+        "name": "Reset Luminance Adjustment Magenta"
+      },
+      {
+        "id": "ResetAllLuminanceAdjustment",
+        "name": "Reset Luminance Adjustments"
+      },
+      {
+        "id": "ResetGrayMixerRed",
+        "name": "Reset Gray Mixer Red"
+      },
+      {
+        "id": "ResetGrayMixerOrange",
+        "name": "Reset Gray Mixer Orange"
+      },
+      {
+        "id": "ResetGrayMixerYellow",
+        "name": "Reset Gray Mixer Yellow"
+      },
+      {
+        "id": "ResetGrayMixerGreen",
+        "name": "Reset Gray Mixer Green"
+      },
+      {
+        "id": "ResetGrayMixerAqua",
+        "name": "Reset Gray Mixer Aqua"
+      },
+      {
+        "id": "ResetGrayMixerBlue",
+        "name": "Reset Gray Mixer Blue"
+      },
+      {
+        "id": "ResetGrayMixerPurple",
+        "name": "Reset Gray Mixer Purple"
+      },
+      {
+        "id": "ResetGrayMixerMagenta",
+        "name": "Reset Gray Mixer Magenta"
+      },
+      {
+        "id": "ResetAllGrayMixer",
+        "name": "Reset Gray Mixer"
+      }
+    ]
+  },
+  {
+    "category": "Color Grading",
+    "items": [
+      {
+        "id": "RevealPanelColorGrading",
+        "name": "Show Color Grading"
+      },
+      {
+        "id": "EnableColorGrading",
+        "name": "Color grading enable/disable"
+      },
+      {
+        "id": "ColorGradeBlending",
+        "name": "Color Blending"
+      },
+      {
+        "id": "SplitToningBalance",
+        "name": "Color Grading Balance"
+      },
+      {
+        "id": "ColorGradeGlobalHue",
+        "name": "Global Hue"
+      },
+      {
+        "id": "ColorGradeGlobalLum",
+        "name": "Global Luminance"
+      },
+      {
+        "id": "ColorGradeGlobalSat",
+        "name": "Global Saturation"
+      },
+      {
+        "id": "SplitToningHighlightHue",
+        "name": "Highlight Hue"
+      },
+      {
+        "id": "ColorGradeHighlightLum",
+        "name": "Highlight Luminance"
+      },
+      {
+        "id": "SplitToningHighlightSaturation",
+        "name": "Highlight Saturation"
+      },
+      {
+        "id": "ColorGradeMidtoneHue",
+        "name": "Midtone Hue"
+      },
+      {
+        "id": "ColorGradeMidtoneLum",
+        "name": "Midtone Luminance"
+      },
+      {
+        "id": "ColorGradeMidtoneSat",
+        "name": "Midtone Saturation"
+      },
+      {
+        "id": "SplitToningShadowHue",
+        "name": "Shadow Hue"
+      },
+      {
+        "id": "ColorGradeShadowLum",
+        "name": "Shadow Luminance"
+      },
+      {
+        "id": "SplitToningShadowSaturation",
+        "name": "Shadow Saturation"
+      },
+      {
+        "id": "ColorGradeCopy",
+        "name": "Copy channel settings"
+      },
+      {
+        "id": "ColorGradePaste",
+        "name": "Paste channel settings"
+      },
+      {
+        "id": "ColorGradeReset3way",
+        "name": "Reset 3-way"
+      },
+      {
+        "id": "ColorGradeResetCurrent",
+        "name": "Reset current"
+      },
+      {
+        "id": "ColorGradeResetAll",
+        "name": "Reset all channels"
+      },
+      {
+        "id": "ColorGrade3Way",
+        "name": "Click for 3-Way View"
+      },
+      {
+        "id": "ColorGradeGlobal",
+        "name": "Click for Global View"
+      },
+      {
+        "id": "ColorGradeHighlight",
+        "name": "Click for Highlights View"
+      },
+      {
+        "id": "ColorGradeMidtone",
+        "name": "Click for Midtones View"
+      },
+      {
+        "id": "ColorGradeShadow",
+        "name": "Click for Shadows View"
+      },
+      {
+        "id": "ResetColorGradeBlending",
+        "name": "Reset Color Blending"
+      },
+      {
+        "id": "ResetSplitToningBalance",
+        "name": "Reset Color Grading Balance"
+      },
+      {
+        "id": "ResetColorGradeGlobalHue",
+        "name": "Reset Global Hue"
+      },
+      {
+        "id": "ResetColorGradeGlobalLum",
+        "name": "Reset Global Luminance"
+      },
+      {
+        "id": "ResetColorGradeGlobalSat",
+        "name": "Reset Global Saturation"
+      },
+      {
+        "id": "ResetSplitToningHighlightHue",
+        "name": "Reset Highlight Hue"
+      },
+      {
+        "id": "ResetColorGradeHighlightLum",
+        "name": "Reset Highlight Luminance"
+      },
+      {
+        "id": "ResetSplitToningHighlightSaturation",
+        "name": "Reset Highlight Saturation"
+      },
+      {
+        "id": "ResetColorGradeMidtoneHue",
+        "name": "Reset Midtone Hue"
+      },
+      {
+        "id": "ResetColorGradeMidtoneLum",
+        "name": "Reset Midtone Luminance"
+      },
+      {
+        "id": "ResetColorGradeMidtoneSat",
+        "name": "Reset Midtone Saturation"
+      },
+      {
+        "id": "ResetSplitToningShadowHue",
+        "name": "Reset Shadow Hue"
+      },
+      {
+        "id": "ResetColorGradeShadowLum",
+        "name": "Reset Shadow Luminance"
+      },
+      {
+        "id": "ResetSplitToningShadowSaturation",
+        "name": "Reset Shadow Saturation"
+      }
+    ]
+  },
+  {
+    "category": "Detail",
+    "items": [
+      {
+        "id": "RevealPanelDetail",
+        "name": "Show Detail"
+      },
+      {
+        "id": "EnableDetail",
+        "name": "Detail enable/disable"
+      },
+      {
+        "id": "Sharpness",
+        "name": "Sharpness"
+      },
+      {
+        "id": "SharpenRadius",
+        "name": "Sharpen Radius"
+      },
+      {
+        "id": "SharpenDetail",
+        "name": "Sharpen Detail"
+      },
+      {
+        "id": "SharpenEdgeMasking",
+        "name": "Sharpen Edge Masking"
+      },
+      {
+        "id": "LuminanceSmoothing",
+        "name": "Luminance Smoothing"
+      },
+      {
+        "id": "LuminanceNoiseReductionDetail",
+        "name": "Luminance Detail"
+      },
+      {
+        "id": "LuminanceNoiseReductionContrast",
+        "name": "Luminance Contrast"
+      },
+      {
+        "id": "ColorNoiseReduction",
+        "name": "Color Noise Reduction"
+      },
+      {
+        "id": "ColorNoiseReductionDetail",
+        "name": "Color Noise Reduction Detail"
+      },
+      {
+        "id": "ColorNoiseReductionSmoothness",
+        "name": "Color Noise Reduction Smoothness"
+      },
+      {
+        "id": "ResetSharpness",
+        "name": "Reset Sharpness"
+      },
+      {
+        "id": "ResetSharpenRadius",
+        "name": "Reset Sharpen Radius"
+      },
+      {
+        "id": "ResetSharpenDetail",
+        "name": "Reset Sharpen Detail"
+      },
+      {
+        "id": "ResetSharpenEdgeMasking",
+        "name": "Reset Sharpen Edge Masking"
+      },
+      {
+        "id": "ResetLuminanceSmoothing",
+        "name": "Reset Luminance Smoothing"
+      },
+      {
+        "id": "ResetLuminanceNoiseReductionDetail",
+        "name": "Reset Luminance Detail"
+      },
+      {
+        "id": "ResetLuminanceNoiseReductionContrast",
+        "name": "Reset Luminance Contrast"
+      },
+      {
+        "id": "ResetColorNoiseReduction",
+        "name": "Reset Color Noise Reduction"
+      },
+      {
+        "id": "ResetColorNoiseReductionDetail",
+        "name": "Reset Color Noise Reduction Detail"
+      },
+      {
+        "id": "ResetColorNoiseReductionSmoothness",
+        "name": "Reset Color Noise Reduction Smoothness"
+      }
+    ]
+  },
+  {
+    "category": "Lens Corrections",
+    "items": [
+      {
+        "id": "RevealPanelLens",
+        "name": "Show Lens Corrections"
+      },
+      {
+        "id": "EnableLensCorrections",
+        "name": "Lens corrections enable/disable"
+      },
+      {
+        "id": "LensProfileEnable",
+        "name": "Toggle Profile Corrections"
+      },
+      {
+        "id": "AutoLateralCA",
+        "name": "Remove Chromatic Aberration"
+      },
+      {
+        "id": "LensProfileDistortionScale",
+        "name": "Lens Profile Distortion Scale"
+      },
+      {
+        "id": "LensProfileChromaticAberrationScale",
+        "name": "chromatic Aberration \u2014 Scale"
+      },
+      {
+        "id": "LensProfileVignettingScale",
+        "name": "Lens Profile Vignetting Scale"
+      },
+      {
+        "id": "ResetLensProfileDistortionScale",
+        "name": "Reset Lens Profile Distortion Scale"
+      },
+      {
+        "id": "ResetLensProfileChromaticAberrationScale",
+        "name": "Reset chromatic Aberration \u2014 Scale"
+      },
+      {
+        "id": "ResetLensProfileVignettingScale",
+        "name": "Reset Lens Profile Vignetting Scale"
+      },
+      {
+        "id": "DefringePurpleAmount",
+        "name": "Defringe Purple Amount"
+      },
+      {
+        "id": "DefringePurpleHueLo",
+        "name": "Defringe Purple Hue - Low"
+      },
+      {
+        "id": "DefringePurpleHueHi",
+        "name": "Defringe Purple Hue - High"
+      },
+      {
+        "id": "DefringeGreenAmount",
+        "name": "Defringe Green Amount"
+      },
+      {
+        "id": "DefringeGreenHueLo",
+        "name": "Defringe Green Hue - Low"
+      },
+      {
+        "id": "DefringeGreenHueHi",
+        "name": "Defringe Green Hue - High"
+      },
+      {
+        "id": "ResetDefringePurpleAmount",
+        "name": "Reset Defringe Purple Amount"
+      },
+      {
+        "id": "ResetDefringePurpleHueLo",
+        "name": "Reset Defringe Purple Hue - Low"
+      },
+      {
+        "id": "ResetDefringePurpleHueHi",
+        "name": "Reset Defringe Purple Hue - High"
+      },
+      {
+        "id": "ResetDefringeGreenAmount",
+        "name": "Reset Defringe Green Amount"
+      },
+      {
+        "id": "ResetDefringeGreenHueLo",
+        "name": "Reset Defringe Green Hue - Low"
+      },
+      {
+        "id": "ResetDefringeGreenHueHi",
+        "name": "Reset Defringe Green Hue - High"
+      },
+      {
+        "id": "LensManualDistortionAmount",
+        "name": "Lens Manual Distortion Amount"
+      },
+      {
+        "id": "VignetteAmount",
+        "name": "Vignette Amount"
+      },
+      {
+        "id": "VignetteMidpoint",
+        "name": "Vignette Midpoint"
+      },
+      {
+        "id": "ResetLensManualDistortionAmount",
+        "name": "Reset Lens Manual Distortion Amount"
+      },
+      {
+        "id": "ResetVignetteAmount",
+        "name": "Reset Vignette Amount"
+      },
+      {
+        "id": "ResetVignetteMidpoint",
+        "name": "Reset Vignette Midpoint"
+      }
+    ]
+  },
+  {
+    "category": "Transform",
+    "items": [
+      {
+        "id": "RevealPanelTransform",
+        "name": "Show Transform"
+      },
+      {
+        "id": "EnableTransform",
+        "name": "Transform enable/disable"
+      },
+      {
+        "id": "UprightOff",
+        "name": "Perspective Correction Off"
+      },
+      {
+        "id": "UprightAuto",
+        "name": "Perspective Correction Auto"
+      },
+      {
+        "id": "UprightLevel",
+        "name": "Perspective Correction Level"
+      },
+      {
+        "id": "UprightVertical",
+        "name": "Perspective Correction Vertical"
+      },
+      {
+        "id": "UprightGuided",
+        "name": "Perspective Correction Guided"
+      },
+      {
+        "id": "UprightFull",
+        "name": "Perspective Correction Full"
+      },
+      {
+        "id": "CropConstrainToWarp",
+        "name": "Constrain to Warp"
+      },
+      {
+        "id": "ResetPerspectiveUpright",
+        "name": "Reset Upright Settings"
+      },
+      {
+        "id": "PerspectiveVertical",
+        "name": "Perspective Vertical"
+      },
+      {
+        "id": "PerspectiveHorizontal",
+        "name": "Perspective Horizontal"
+      },
+      {
+        "id": "PerspectiveRotate",
+        "name": "Perspective Rotate"
+      },
+      {
+        "id": "PerspectiveScale",
+        "name": "Perspective Scale"
+      },
+      {
+        "id": "PerspectiveAspect",
+        "name": "Perspective Aspect"
+      },
+      {
+        "id": "PerspectiveX",
+        "name": "Perspective X"
+      },
+      {
+        "id": "PerspectiveY",
+        "name": "Perspective Y"
+      },
+      {
+        "id": "ResetTransforms",
+        "name": "Reset all transforms"
+      },
+      {
+        "id": "ResetPerspectiveVertical",
+        "name": "Reset Perspective Vertical"
+      },
+      {
+        "id": "ResetPerspectiveHorizontal",
+        "name": "Reset Perspective Horizontal"
+      },
+      {
+        "id": "ResetPerspectiveRotate",
+        "name": "Reset Perspective Rotate"
+      },
+      {
+        "id": "ResetPerspectiveScale",
+        "name": "Reset Perspective Scale"
+      },
+      {
+        "id": "ResetPerspectiveAspect",
+        "name": "Reset Perspective Aspect"
+      },
+      {
+        "id": "ResetPerspectiveX",
+        "name": "Reset Perspective X"
+      },
+      {
+        "id": "ResetPerspectiveY",
+        "name": "Reset Perspective Y"
+      }
+    ]
+  },
+  {
+    "category": "Lens Blur",
+    "items": [
+      {
+        "id": "RevealPanelLensBlur",
+        "name": "Show Lens Blur"
+      },
+      {
+        "id": "LensBlurActive",
+        "name": "Apply Lens Blur"
+      },
+      {
+        "id": "LensBlurAmount",
+        "name": "Lens Blur Amount"
+      },
+      {
+        "id": "LensBlurHighlightsBoost",
+        "name": "Highlights Boost"
+      },
+      {
+        "id": "ResetLensBlurAmount",
+        "name": "Reset Lens Blur Amount"
+      },
+      {
+        "id": "ResetLensBlurHighlightsBoost",
+        "name": "Reset Highlights Boost"
+      },
+      {
+        "id": "BokehAnamorphic",
+        "name": "Anamorphic"
+      },
+      {
+        "id": "BokehBlade",
+        "name": "5-Blade"
+      },
+      {
+        "id": "BokehCircle",
+        "name": "Circle"
+      },
+      {
+        "id": "BokehRing",
+        "name": "Ring"
+      },
+      {
+        "id": "BokehSoapBubble",
+        "name": "Bubble"
+      },
+      {
+        "id": "BlurDepthShow",
+        "name": "Visualize Depth"
+      }
+    ]
+  },
+  {
+    "category": "Effects",
+    "items": [
+      {
+        "id": "RevealPanelEffects",
+        "name": "Show Effects"
+      },
+      {
+        "id": "EnableEffects",
+        "name": "Effects enable/disable"
+      },
+      {
+        "id": "PostCropVignetteAmount",
+        "name": "Post Crop Vignette Amount"
+      },
+      {
+        "id": "PostCropVignetteMidpoint",
+        "name": "Post Crop Vignette Midpoint"
+      },
+      {
+        "id": "PostCropVignetteFeather",
+        "name": "Post Crop Vignette Feather"
+      },
+      {
+        "id": "PostCropVignetteRoundness",
+        "name": "Post Crop Vignette Roundness"
+      },
+      {
+        "id": "PostCropVignetteStyle",
+        "name": "Post Crop Vignette Style"
+      },
+      {
+        "id": "PostCropVignetteStyleHighlightPriority",
+        "name": "Highlight Priority"
+      },
+      {
+        "id": "PostCropVignetteStyleColorPriority",
+        "name": "Color Priority"
+      },
+      {
+        "id": "PostCropVignetteStylePaintOverlay",
+        "name": "Paint Overlay"
+      },
+      {
+        "id": "PostCropVignetteHighlightContrast",
+        "name": "Post Crop Vignette Highlight Contrast"
+      },
+      {
+        "id": "GrainAmount",
+        "name": "Grain Amount"
+      },
+      {
+        "id": "GrainSize",
+        "name": "Grain Size"
+      },
+      {
+        "id": "GrainFrequency",
+        "name": "Grain Roughness"
+      },
+      {
+        "id": "ResetPostCropVignetteAmount",
+        "name": "Reset Post Crop Vignette Amount"
+      },
+      {
+        "id": "ResetPostCropVignetteMidpoint",
+        "name": "Reset Post Crop Vignette Midpoint"
+      },
+      {
+        "id": "ResetPostCropVignetteFeather",
+        "name": "Reset Post Crop Vignette Feather"
+      },
+      {
+        "id": "ResetPostCropVignetteRoundness",
+        "name": "Reset Post Crop Vignette Roundness"
+      },
+      {
+        "id": "ResetPostCropVignetteStyle",
+        "name": "Reset Post Crop Vignette Style"
+      },
+      {
+        "id": "ResetPostCropVignetteHighlightContrast",
+        "name": "Reset Post Crop Vignette Highlight Contrast"
+      },
+      {
+        "id": "ResetGrainAmount",
+        "name": "Reset Grain Amount"
+      },
+      {
+        "id": "ResetGrainSize",
+        "name": "Reset Grain Size"
+      },
+      {
+        "id": "ResetGrainFrequency",
+        "name": "Reset Grain Roughness"
+      }
+    ]
+  },
+  {
+    "category": "Calibration",
+    "items": [
+      {
+        "id": "RevealPanelCalibrate",
+        "name": "Show Calibration"
+      },
+      {
+        "id": "EnableCalibration",
+        "name": "Calibration enable/disable"
+      },
+      {
+        "id": "ShadowTint",
+        "name": "Shadow Tint Calibration"
+      },
+      {
+        "id": "RedHue",
+        "name": "Red Hue Calibration"
+      },
+      {
+        "id": "RedSaturation",
+        "name": "Red Saturation Calibration"
+      },
+      {
+        "id": "GreenHue",
+        "name": "Green Hue Calibration"
+      },
+      {
+        "id": "GreenSaturation",
+        "name": "Green Saturation Calibration"
+      },
+      {
+        "id": "BlueHue",
+        "name": "Blue Hue Calibration"
+      },
+      {
+        "id": "BlueSaturation",
+        "name": "Blue Saturation Calibration"
+      },
+      {
+        "id": "ResetShadowTint",
+        "name": "Reset Shadow Tint Calibration"
+      },
+      {
+        "id": "ResetRedHue",
+        "name": "Reset Red Hue Calibration"
+      },
+      {
+        "id": "ResetRedSaturation",
+        "name": "Reset Red Saturation Calibration"
+      },
+      {
+        "id": "ResetGreenHue",
+        "name": "Reset Green Hue Calibration"
+      },
+      {
+        "id": "ResetGreenSaturation",
+        "name": "Reset Green Saturation Calibration"
+      },
+      {
+        "id": "ResetBlueHue",
+        "name": "Reset Blue Hue Calibration"
+      },
+      {
+        "id": "ResetBlueSaturation",
+        "name": "Reset Blue Saturation Calibration"
+      }
+    ]
+  },
+  {
+    "category": "Develop Presets",
+    "items": [
+      {
+        "id": "PresetPrevious",
+        "name": "Previous preset"
+      },
+      {
+        "id": "PresetNext",
+        "name": "Next preset"
+      },
+      {
+        "id": "PresetPreviousNext",
+        "name": "Previous preset\u2014Next preset"
+      },
+      {
+        "id": "PresetAmount",
+        "name": "Amount"
+      },
+      {
+        "id": "Preset_1",
+        "name": "Develop Preset 1"
+      },
+      {
+        "id": "Preset_2",
+        "name": "Develop Preset 2"
+      },
+      {
+        "id": "Preset_3",
+        "name": "Develop Preset 3"
+      },
+      {
+        "id": "Preset_4",
+        "name": "Develop Preset 4"
+      },
+      {
+        "id": "Preset_5",
+        "name": "Develop Preset 5"
+      },
+      {
+        "id": "Preset_6",
+        "name": "Develop Preset 6"
+      },
+      {
+        "id": "Preset_7",
+        "name": "Develop Preset 7"
+      },
+      {
+        "id": "Preset_8",
+        "name": "Develop Preset 8"
+      },
+      {
+        "id": "Preset_9",
+        "name": "Develop Preset 9"
+      },
+      {
+        "id": "Preset_10",
+        "name": "Develop Preset 10"
+      },
+      {
+        "id": "Preset_11",
+        "name": "Develop Preset 11"
+      },
+      {
+        "id": "Preset_12",
+        "name": "Develop Preset 12"
+      },
+      {
+        "id": "Preset_13",
+        "name": "Develop Preset 13"
+      },
+      {
+        "id": "Preset_14",
+        "name": "Develop Preset 14"
+      },
+      {
+        "id": "Preset_15",
+        "name": "Develop Preset 15"
+      },
+      {
+        "id": "Preset_16",
+        "name": "Develop Preset 16"
+      },
+      {
+        "id": "Preset_17",
+        "name": "Develop Preset 17"
+      },
+      {
+        "id": "Preset_18",
+        "name": "Develop Preset 18"
+      },
+      {
+        "id": "Preset_19",
+        "name": "Develop Preset 19"
+      },
+      {
+        "id": "Preset_20",
+        "name": "Develop Preset 20"
+      },
+      {
+        "id": "Preset_21",
+        "name": "Develop Preset 21"
+      },
+      {
+        "id": "Preset_22",
+        "name": "Develop Preset 22"
+      },
+      {
+        "id": "Preset_23",
+        "name": "Develop Preset 23"
+      },
+      {
+        "id": "Preset_24",
+        "name": "Develop Preset 24"
+      },
+      {
+        "id": "Preset_25",
+        "name": "Develop Preset 25"
+      },
+      {
+        "id": "Preset_26",
+        "name": "Develop Preset 26"
+      },
+      {
+        "id": "Preset_27",
+        "name": "Develop Preset 27"
+      },
+      {
+        "id": "Preset_28",
+        "name": "Develop Preset 28"
+      },
+      {
+        "id": "Preset_29",
+        "name": "Develop Preset 29"
+      },
+      {
+        "id": "Preset_30",
+        "name": "Develop Preset 30"
+      },
+      {
+        "id": "Preset_31",
+        "name": "Develop Preset 31"
+      },
+      {
+        "id": "Preset_32",
+        "name": "Develop Preset 32"
+      },
+      {
+        "id": "Preset_33",
+        "name": "Develop Preset 33"
+      },
+      {
+        "id": "Preset_34",
+        "name": "Develop Preset 34"
+      },
+      {
+        "id": "Preset_35",
+        "name": "Develop Preset 35"
+      },
+      {
+        "id": "Preset_36",
+        "name": "Develop Preset 36"
+      },
+      {
+        "id": "Preset_37",
+        "name": "Develop Preset 37"
+      },
+      {
+        "id": "Preset_38",
+        "name": "Develop Preset 38"
+      },
+      {
+        "id": "Preset_39",
+        "name": "Develop Preset 39"
+      },
+      {
+        "id": "Preset_40",
+        "name": "Develop Preset 40"
+      },
+      {
+        "id": "Preset_41",
+        "name": "Develop Preset 41"
+      },
+      {
+        "id": "Preset_42",
+        "name": "Develop Preset 42"
+      },
+      {
+        "id": "Preset_43",
+        "name": "Develop Preset 43"
+      },
+      {
+        "id": "Preset_44",
+        "name": "Develop Preset 44"
+      },
+      {
+        "id": "Preset_45",
+        "name": "Develop Preset 45"
+      },
+      {
+        "id": "Preset_46",
+        "name": "Develop Preset 46"
+      },
+      {
+        "id": "Preset_47",
+        "name": "Develop Preset 47"
+      },
+      {
+        "id": "Preset_48",
+        "name": "Develop Preset 48"
+      },
+      {
+        "id": "Preset_49",
+        "name": "Develop Preset 49"
+      },
+      {
+        "id": "Preset_50",
+        "name": "Develop Preset 50"
+      },
+      {
+        "id": "Preset_51",
+        "name": "Develop Preset 51"
+      },
+      {
+        "id": "Preset_52",
+        "name": "Develop Preset 52"
+      },
+      {
+        "id": "Preset_53",
+        "name": "Develop Preset 53"
+      },
+      {
+        "id": "Preset_54",
+        "name": "Develop Preset 54"
+      },
+      {
+        "id": "Preset_55",
+        "name": "Develop Preset 55"
+      },
+      {
+        "id": "Preset_56",
+        "name": "Develop Preset 56"
+      },
+      {
+        "id": "Preset_57",
+        "name": "Develop Preset 57"
+      },
+      {
+        "id": "Preset_58",
+        "name": "Develop Preset 58"
+      },
+      {
+        "id": "Preset_59",
+        "name": "Develop Preset 59"
+      },
+      {
+        "id": "Preset_60",
+        "name": "Develop Preset 60"
+      },
+      {
+        "id": "Preset_61",
+        "name": "Develop Preset 61"
+      },
+      {
+        "id": "Preset_62",
+        "name": "Develop Preset 62"
+      },
+      {
+        "id": "Preset_63",
+        "name": "Develop Preset 63"
+      },
+      {
+        "id": "Preset_64",
+        "name": "Develop Preset 64"
+      },
+      {
+        "id": "Preset_65",
+        "name": "Develop Preset 65"
+      },
+      {
+        "id": "Preset_66",
+        "name": "Develop Preset 66"
+      },
+      {
+        "id": "Preset_67",
+        "name": "Develop Preset 67"
+      },
+      {
+        "id": "Preset_68",
+        "name": "Develop Preset 68"
+      },
+      {
+        "id": "Preset_69",
+        "name": "Develop Preset 69"
+      },
+      {
+        "id": "Preset_70",
+        "name": "Develop Preset 70"
+      },
+      {
+        "id": "Preset_71",
+        "name": "Develop Preset 71"
+      },
+      {
+        "id": "Preset_72",
+        "name": "Develop Preset 72"
+      },
+      {
+        "id": "Preset_73",
+        "name": "Develop Preset 73"
+      },
+      {
+        "id": "Preset_74",
+        "name": "Develop Preset 74"
+      },
+      {
+        "id": "Preset_75",
+        "name": "Develop Preset 75"
+      },
+      {
+        "id": "Preset_76",
+        "name": "Develop Preset 76"
+      },
+      {
+        "id": "Preset_77",
+        "name": "Develop Preset 77"
+      },
+      {
+        "id": "Preset_78",
+        "name": "Develop Preset 78"
+      },
+      {
+        "id": "Preset_79",
+        "name": "Develop Preset 79"
+      },
+      {
+        "id": "Preset_80",
+        "name": "Develop Preset 80"
+      }
+    ]
+  },
+  {
+    "category": "Keywords",
+    "items": [
+      {
+        "id": "Keyword1",
+        "name": "Keyword 1"
+      },
+      {
+        "id": "Keyword2",
+        "name": "Keyword 2"
+      },
+      {
+        "id": "Keyword3",
+        "name": "Keyword 3"
+      },
+      {
+        "id": "Keyword4",
+        "name": "Keyword 4"
+      },
+      {
+        "id": "Keyword5",
+        "name": "Keyword 5"
+      },
+      {
+        "id": "Keyword6",
+        "name": "Keyword 6"
+      },
+      {
+        "id": "Keyword7",
+        "name": "Keyword 7"
+      },
+      {
+        "id": "Keyword8",
+        "name": "Keyword 8"
+      },
+      {
+        "id": "Keyword9",
+        "name": "Keyword 9"
+      },
+      {
+        "id": "Keyword10",
+        "name": "Keyword 10"
+      },
+      {
+        "id": "Keyword11",
+        "name": "Keyword 11"
+      },
+      {
+        "id": "Keyword12",
+        "name": "Keyword 12"
+      },
+      {
+        "id": "Keyword13",
+        "name": "Keyword 13"
+      },
+      {
+        "id": "Keyword14",
+        "name": "Keyword 14"
+      },
+      {
+        "id": "Keyword15",
+        "name": "Keyword 15"
+      },
+      {
+        "id": "Keyword16",
+        "name": "Keyword 16"
+      },
+      {
+        "id": "Keyword17",
+        "name": "Keyword 17"
+      },
+      {
+        "id": "Keyword18",
+        "name": "Keyword 18"
+      },
+      {
+        "id": "Keyword19",
+        "name": "Keyword 19"
+      },
+      {
+        "id": "Keyword20",
+        "name": "Keyword 20"
+      },
+      {
+        "id": "Keyword21",
+        "name": "Keyword 21"
+      },
+      {
+        "id": "Keyword22",
+        "name": "Keyword 22"
+      },
+      {
+        "id": "Keyword23",
+        "name": "Keyword 23"
+      },
+      {
+        "id": "Keyword24",
+        "name": "Keyword 24"
+      },
+      {
+        "id": "Keyword25",
+        "name": "Keyword 25"
+      },
+      {
+        "id": "Keyword26",
+        "name": "Keyword 26"
+      },
+      {
+        "id": "Keyword27",
+        "name": "Keyword 27"
+      },
+      {
+        "id": "Keyword28",
+        "name": "Keyword 28"
+      },
+      {
+        "id": "Keyword29",
+        "name": "Keyword 29"
+      },
+      {
+        "id": "Keyword30",
+        "name": "Keyword 30"
+      },
+      {
+        "id": "Keyword31",
+        "name": "Keyword 31"
+      },
+      {
+        "id": "Keyword32",
+        "name": "Keyword 32"
+      },
+      {
+        "id": "Keyword33",
+        "name": "Keyword 33"
+      },
+      {
+        "id": "Keyword34",
+        "name": "Keyword 34"
+      },
+      {
+        "id": "Keyword35",
+        "name": "Keyword 35"
+      },
+      {
+        "id": "Keyword36",
+        "name": "Keyword 36"
+      },
+      {
+        "id": "Keyword37",
+        "name": "Keyword 37"
+      },
+      {
+        "id": "Keyword38",
+        "name": "Keyword 38"
+      },
+      {
+        "id": "Keyword39",
+        "name": "Keyword 39"
+      },
+      {
+        "id": "Keyword40",
+        "name": "Keyword 40"
+      },
+      {
+        "id": "Keyword41",
+        "name": "Keyword 41"
+      },
+      {
+        "id": "Keyword42",
+        "name": "Keyword 42"
+      },
+      {
+        "id": "Keyword43",
+        "name": "Keyword 43"
+      },
+      {
+        "id": "Keyword44",
+        "name": "Keyword 44"
+      },
+      {
+        "id": "Keyword45",
+        "name": "Keyword 45"
+      },
+      {
+        "id": "Keyword46",
+        "name": "Keyword 46"
+      },
+      {
+        "id": "Keyword47",
+        "name": "Keyword 47"
+      },
+      {
+        "id": "Keyword48",
+        "name": "Keyword 48"
+      },
+      {
+        "id": "Keyword49",
+        "name": "Keyword 49"
+      },
+      {
+        "id": "Keyword50",
+        "name": "Keyword 50"
+      },
+      {
+        "id": "Keyword51",
+        "name": "Keyword 51"
+      },
+      {
+        "id": "Keyword52",
+        "name": "Keyword 52"
+      },
+      {
+        "id": "Keyword53",
+        "name": "Keyword 53"
+      },
+      {
+        "id": "Keyword54",
+        "name": "Keyword 54"
+      },
+      {
+        "id": "Keyword55",
+        "name": "Keyword 55"
+      },
+      {
+        "id": "Keyword56",
+        "name": "Keyword 56"
+      },
+      {
+        "id": "Keyword57",
+        "name": "Keyword 57"
+      },
+      {
+        "id": "Keyword58",
+        "name": "Keyword 58"
+      },
+      {
+        "id": "Keyword59",
+        "name": "Keyword 59"
+      },
+      {
+        "id": "Keyword60",
+        "name": "Keyword 60"
+      },
+      {
+        "id": "Keyword61",
+        "name": "Keyword 61"
+      },
+      {
+        "id": "Keyword62",
+        "name": "Keyword 62"
+      },
+      {
+        "id": "Keyword63",
+        "name": "Keyword 63"
+      },
+      {
+        "id": "Keyword64",
+        "name": "Keyword 64"
+      }
+    ]
+  },
+  {
+    "category": "Toggle Keyword",
+    "items": [
+      {
+        "id": "Keyword1Toggle",
+        "name": "Toggle Keyword 1"
+      },
+      {
+        "id": "Keyword2Toggle",
+        "name": "Toggle Keyword 2"
+      },
+      {
+        "id": "Keyword3Toggle",
+        "name": "Toggle Keyword 3"
+      },
+      {
+        "id": "Keyword4Toggle",
+        "name": "Toggle Keyword 4"
+      },
+      {
+        "id": "Keyword5Toggle",
+        "name": "Toggle Keyword 5"
+      },
+      {
+        "id": "Keyword6Toggle",
+        "name": "Toggle Keyword 6"
+      },
+      {
+        "id": "Keyword7Toggle",
+        "name": "Toggle Keyword 7"
+      },
+      {
+        "id": "Keyword8Toggle",
+        "name": "Toggle Keyword 8"
+      },
+      {
+        "id": "Keyword9Toggle",
+        "name": "Toggle Keyword 9"
+      },
+      {
+        "id": "Keyword10Toggle",
+        "name": "Toggle Keyword 10"
+      },
+      {
+        "id": "Keyword11Toggle",
+        "name": "Toggle Keyword 11"
+      },
+      {
+        "id": "Keyword12Toggle",
+        "name": "Toggle Keyword 12"
+      },
+      {
+        "id": "Keyword13Toggle",
+        "name": "Toggle Keyword 13"
+      },
+      {
+        "id": "Keyword14Toggle",
+        "name": "Toggle Keyword 14"
+      },
+      {
+        "id": "Keyword15Toggle",
+        "name": "Toggle Keyword 15"
+      },
+      {
+        "id": "Keyword16Toggle",
+        "name": "Toggle Keyword 16"
+      },
+      {
+        "id": "Keyword17Toggle",
+        "name": "Toggle Keyword 17"
+      },
+      {
+        "id": "Keyword18Toggle",
+        "name": "Toggle Keyword 18"
+      },
+      {
+        "id": "Keyword19Toggle",
+        "name": "Toggle Keyword 19"
+      },
+      {
+        "id": "Keyword20Toggle",
+        "name": "Toggle Keyword 20"
+      },
+      {
+        "id": "Keyword21Toggle",
+        "name": "Toggle Keyword 21"
+      },
+      {
+        "id": "Keyword22Toggle",
+        "name": "Toggle Keyword 22"
+      },
+      {
+        "id": "Keyword23Toggle",
+        "name": "Toggle Keyword 23"
+      },
+      {
+        "id": "Keyword24Toggle",
+        "name": "Toggle Keyword 24"
+      },
+      {
+        "id": "Keyword25Toggle",
+        "name": "Toggle Keyword 25"
+      },
+      {
+        "id": "Keyword26Toggle",
+        "name": "Toggle Keyword 26"
+      },
+      {
+        "id": "Keyword27Toggle",
+        "name": "Toggle Keyword 27"
+      },
+      {
+        "id": "Keyword28Toggle",
+        "name": "Toggle Keyword 28"
+      },
+      {
+        "id": "Keyword29Toggle",
+        "name": "Toggle Keyword 29"
+      },
+      {
+        "id": "Keyword30Toggle",
+        "name": "Toggle Keyword 30"
+      },
+      {
+        "id": "Keyword31Toggle",
+        "name": "Toggle Keyword 31"
+      },
+      {
+        "id": "Keyword32Toggle",
+        "name": "Toggle Keyword 32"
+      },
+      {
+        "id": "Keyword33Toggle",
+        "name": "Toggle Keyword 33"
+      },
+      {
+        "id": "Keyword34Toggle",
+        "name": "Toggle Keyword 34"
+      },
+      {
+        "id": "Keyword35Toggle",
+        "name": "Toggle Keyword 35"
+      },
+      {
+        "id": "Keyword36Toggle",
+        "name": "Toggle Keyword 36"
+      },
+      {
+        "id": "Keyword37Toggle",
+        "name": "Toggle Keyword 37"
+      },
+      {
+        "id": "Keyword38Toggle",
+        "name": "Toggle Keyword 38"
+      },
+      {
+        "id": "Keyword39Toggle",
+        "name": "Toggle Keyword 39"
+      },
+      {
+        "id": "Keyword40Toggle",
+        "name": "Toggle Keyword 40"
+      },
+      {
+        "id": "Keyword41Toggle",
+        "name": "Toggle Keyword 41"
+      },
+      {
+        "id": "Keyword42Toggle",
+        "name": "Toggle Keyword 42"
+      },
+      {
+        "id": "Keyword43Toggle",
+        "name": "Toggle Keyword 43"
+      },
+      {
+        "id": "Keyword44Toggle",
+        "name": "Toggle Keyword 44"
+      },
+      {
+        "id": "Keyword45Toggle",
+        "name": "Toggle Keyword 45"
+      },
+      {
+        "id": "Keyword46Toggle",
+        "name": "Toggle Keyword 46"
+      },
+      {
+        "id": "Keyword47Toggle",
+        "name": "Toggle Keyword 47"
+      },
+      {
+        "id": "Keyword48Toggle",
+        "name": "Toggle Keyword 48"
+      },
+      {
+        "id": "Keyword49Toggle",
+        "name": "Toggle Keyword 49"
+      },
+      {
+        "id": "Keyword50Toggle",
+        "name": "Toggle Keyword 50"
+      },
+      {
+        "id": "Keyword51Toggle",
+        "name": "Toggle Keyword 51"
+      },
+      {
+        "id": "Keyword52Toggle",
+        "name": "Toggle Keyword 52"
+      },
+      {
+        "id": "Keyword53Toggle",
+        "name": "Toggle Keyword 53"
+      },
+      {
+        "id": "Keyword54Toggle",
+        "name": "Toggle Keyword 54"
+      },
+      {
+        "id": "Keyword55Toggle",
+        "name": "Toggle Keyword 55"
+      },
+      {
+        "id": "Keyword56Toggle",
+        "name": "Toggle Keyword 56"
+      },
+      {
+        "id": "Keyword57Toggle",
+        "name": "Toggle Keyword 57"
+      },
+      {
+        "id": "Keyword58Toggle",
+        "name": "Toggle Keyword 58"
+      },
+      {
+        "id": "Keyword59Toggle",
+        "name": "Toggle Keyword 59"
+      },
+      {
+        "id": "Keyword60Toggle",
+        "name": "Toggle Keyword 60"
+      },
+      {
+        "id": "Keyword61Toggle",
+        "name": "Toggle Keyword 61"
+      },
+      {
+        "id": "Keyword62Toggle",
+        "name": "Toggle Keyword 62"
+      },
+      {
+        "id": "Keyword63Toggle",
+        "name": "Toggle Keyword 63"
+      },
+      {
+        "id": "Keyword64Toggle",
+        "name": "Toggle Keyword 64"
+      }
+    ]
+  },
+  {
+    "category": "Masking",
+    "items": [
+      {
+        "id": "Mask",
+        "name": "Show Masking"
+      },
+      {
+        "id": "MaskEnable",
+        "name": "Toggle Mask"
+      },
+      {
+        "id": "MaskReset",
+        "name": "Delete all masks"
+      },
+      {
+        "id": "MaskPrevious",
+        "name": "Previous mask group"
+      },
+      {
+        "id": "MaskNext",
+        "name": "Next mask group"
+      },
+      {
+        "id": "MaskInvert",
+        "name": "Invert mask group"
+      },
+      {
+        "id": "MaskInvertDup",
+        "name": "Duplicate and invert mask group"
+      },
+      {
+        "id": "MaskPreviousTool",
+        "name": "Previous mask tool"
+      },
+      {
+        "id": "MaskNextTool",
+        "name": "Next mask tool"
+      },
+      {
+        "id": "MaskDelete",
+        "name": "Delete mask group"
+      },
+      {
+        "id": "MaskDeleteTool",
+        "name": "Delete tool"
+      },
+      {
+        "id": "MaskInvertTool",
+        "name": "Toggle invert for selected tool"
+      },
+      {
+        "id": "MaskHide",
+        "name": "Show/hide mask group"
+      },
+      {
+        "id": "MaskHideTool",
+        "name": "Show/hide tool"
+      },
+      {
+        "id": "MaskNewSubject",
+        "name": "New subject"
+      },
+      {
+        "id": "MaskNewSky",
+        "name": "New sky"
+      },
+      {
+        "id": "MaskNewBack",
+        "name": "New background"
+      },
+      {
+        "id": "MaskNewObj",
+        "name": "New object"
+      },
+      {
+        "id": "MaskNewBrush",
+        "name": "New brush"
+      },
+      {
+        "id": "MaskNewGrad",
+        "name": "New gradient"
+      },
+      {
+        "id": "MaskNewRad",
+        "name": "New radial gradient"
+      },
+      {
+        "id": "MaskNewColor",
+        "name": "New color range"
+      },
+      {
+        "id": "MaskNewLum",
+        "name": "New luminance range"
+      },
+      {
+        "id": "MaskNewDepth",
+        "name": "New depth range"
+      },
+      {
+        "id": "MaskNewPeople",
+        "name": "New persons"
+      },
+      {
+        "id": "MaskNewLand",
+        "name": "New Landscape"
+      },
+      {
+        "id": "MaskAddSubject",
+        "name": "Add subject to the mask"
+      },
+      {
+        "id": "MaskAddSky",
+        "name": "Add sky to the mask"
+      },
+      {
+        "id": "MaskAddBack",
+        "name": "Add background"
+      },
+      {
+        "id": "MaskAddObj",
+        "name": "Add object"
+      },
+      {
+        "id": "MaskAddBrush",
+        "name": "Add brush to the mask"
+      },
+      {
+        "id": "MaskAddGrad",
+        "name": "Add gradient to the mask"
+      },
+      {
+        "id": "MaskAddRad",
+        "name": "Add radial gradient to the mask"
+      },
+      {
+        "id": "MaskAddColor",
+        "name": "Add color range to the mask"
+      },
+      {
+        "id": "MaskAddLum",
+        "name": "Add luminance range to the mask"
+      },
+      {
+        "id": "MaskAddDepth",
+        "name": "Add depth range to the mask"
+      },
+      {
+        "id": "MaskAddPeople",
+        "name": "Add persons"
+      },
+      {
+        "id": "MaskAddLand",
+        "name": "Add Landscape"
+      },
+      {
+        "id": "MaskSubSubject",
+        "name": "Subtract from mask... subject"
+      },
+      {
+        "id": "MaskSubSky",
+        "name": "Subtract from mask... sky"
+      },
+      {
+        "id": "MaskSubBack",
+        "name": "Subtract from mask... background"
+      },
+      {
+        "id": "MaskSubObj",
+        "name": "Subtract from mask... object"
+      },
+      {
+        "id": "MaskSubBrush",
+        "name": "Subtract from mask... brush"
+      },
+      {
+        "id": "MaskSubGrad",
+        "name": "Subtract from mask... gradient"
+      },
+      {
+        "id": "MaskSubRad",
+        "name": "Subtract from mask... radial gradient"
+      },
+      {
+        "id": "MaskSubColor",
+        "name": "Subtract from mask... color range"
+      },
+      {
+        "id": "MaskSubLum",
+        "name": "Subtract from mask... luminance range"
+      },
+      {
+        "id": "MaskSubDepth",
+        "name": "Subtract from mask... depth range"
+      },
+      {
+        "id": "MaskSubPeople",
+        "name": "Subtract from mask... persons"
+      },
+      {
+        "id": "MaskIntSubject",
+        "name": "Intersect with mask... subject"
+      },
+      {
+        "id": "MaskIntSky",
+        "name": "Intersect with mask... sky"
+      },
+      {
+        "id": "MaskIntBrush",
+        "name": "Intersect with mask... brush"
+      },
+      {
+        "id": "MaskIntGrad",
+        "name": "Intersect with mask... gradient"
+      },
+      {
+        "id": "MaskIntRad",
+        "name": "Intersect with mask... radial gradient"
+      },
+      {
+        "id": "MaskIntColor",
+        "name": "Intersect with mask... color range"
+      },
+      {
+        "id": "MaskIntLum",
+        "name": "Intersect with mask... luminance range"
+      },
+      {
+        "id": "MaskIntDepth",
+        "name": "Intersect with mask... depth range"
+      },
+      {
+        "id": "MaskIntBack",
+        "name": "Intersect with mask... background"
+      },
+      {
+        "id": "MaskIntObj",
+        "name": "Intersect with mask... object"
+      },
+      {
+        "id": "MaskIntPeople",
+        "name": "Intersect with mask... persons"
+      },
+      {
+        "id": "MaskIntLand",
+        "name": "Intersect with mask... Landscape"
+      }
+    ]
+  },
+  {
+    "category": "Local Adjustments",
+    "items": [
+      {
+        "id": "RedEye",
+        "name": "Show Red-Eye Correction"
+      },
+      {
+        "id": "SpotRemoval",
+        "name": "Show Spot Removal"
+      },
+      {
+        "id": "ToggleOverlay",
+        "name": "Toggle Mask Overlay"
+      },
+      {
+        "id": "CycleMaskOverlayColor",
+        "name": "Overlay Color"
+      },
+      {
+        "id": "EnableRedEye",
+        "name": "Red-Eye enable/disable"
+      },
+      {
+        "id": "EnableRetouch",
+        "name": "Spot removal enable/disable"
+      },
+      {
+        "id": "ChangeBrushSize",
+        "name": "Brush \u2014 Size"
+      },
+      {
+        "id": "BrushSizeSmaller",
+        "name": "Brush \u2014 Size \u2014 smaller"
+      },
+      {
+        "id": "BrushSizeLarger",
+        "name": "Brush \u2014 Size \u2014 larger"
+      },
+      {
+        "id": "ChangeFeatherSize",
+        "name": "Brush \u2014 Feather"
+      },
+      {
+        "id": "BrushFeatherSmaller",
+        "name": "Brush \u2014 Feather \u2014 smaller"
+      },
+      {
+        "id": "BrushFeatherLarger",
+        "name": "Brush \u2014 Feather \u2014 larger"
+      },
+      {
+        "id": "local_Amount",
+        "name": "Local Adjustments amount"
+      },
+      {
+        "id": "local_Exposure",
+        "name": "Local Adjustments Exposure (PV 2 and PV 3+)"
+      },
+      {
+        "id": "local_Contrast",
+        "name": "Local Adjustments Contrast (PV 2 and PV 3+)"
+      },
+      {
+        "id": "local_Highlights",
+        "name": "Local Adjustments Highlights (PV 3+)"
+      },
+      {
+        "id": "local_Shadows",
+        "name": "Local Adjustments Shadows (PV 3+)"
+      },
+      {
+        "id": "local_Whites",
+        "name": "Local Adjustments Whites (PV 3+)"
+      },
+      {
+        "id": "local_Blacks",
+        "name": "Local Adjustments Blacks (PV 3+)"
+      },
+      {
+        "id": "local_Temperature",
+        "name": "Local Adjustments Temp. (PV 3+)"
+      },
+      {
+        "id": "local_Tint",
+        "name": "Local Adjustments Tint (PV 3+)"
+      },
+      {
+        "id": "local_Hue",
+        "name": "Local Adjustments Hue (PV 5+)"
+      },
+      {
+        "id": "local_Saturation",
+        "name": "Local Adjustments Saturation (PV 2 and PV 3+)"
+      },
+      {
+        "id": "local_RefineSaturation",
+        "name": "Local Adjustments Refine Sat. (PV 6+)"
+      },
+      {
+        "id": "local_Texture",
+        "name": "Local Adjustments Texture (PV 5+)"
+      },
+      {
+        "id": "local_Clarity",
+        "name": "Local Adjustments Clarity (PV 2 and PV 3+)"
+      },
+      {
+        "id": "local_Dehaze",
+        "name": "Local Adjustments Dehaze (PV 3+)"
+      },
+      {
+        "id": "local_Grain",
+        "name": "Local Adjustments Grain (PV 6+)"
+      },
+      {
+        "id": "local_Sharpness",
+        "name": "Local Adjustments Sharpness (PV 2 and PV 3+)"
+      },
+      {
+        "id": "local_LuminanceNoise",
+        "name": "Local Adjustments Luminance Noise Reduction (PV 3+)"
+      },
+      {
+        "id": "local_Moire",
+        "name": "Local Adjustments Moire (PV 3+)"
+      },
+      {
+        "id": "local_Defringe",
+        "name": "Local Adjustments Defringe (PV 3+)"
+      },
+      {
+        "id": "local_ToningHue",
+        "name": "Local Adjustments Toning Hue (PV 3+)"
+      },
+      {
+        "id": "local_ToningSaturation",
+        "name": "Local Adjustments Toning Saturation (PV 3+)"
+      },
+      {
+        "id": "local_ToningLuminance",
+        "name": "Local Adjustments Toning Luminance (PV 2)"
+      }
+    ]
+  },
+  {
+    "category": "Reset Local Adjustments",
+    "items": [
+      {
+        "id": "ResetRedeye",
+        "name": "Reset Red-Eye"
+      },
+      {
+        "id": "ResetSpotRem",
+        "name": "Reset Spot Removal"
+      },
+      {
+        "id": "Resetlocal_Amount",
+        "name": "Reset Local Adjustments amount"
+      },
+      {
+        "id": "ResetSpotRem",
+        "name": "Reset Remove"
+      },
+      {
+        "id": "Resetlocal_Amount",
+        "name": "Reset Local Adjustments amount"
+      },
+      {
+        "id": "Resetlocal_Exposure",
+        "name": "Reset Local Adjustments Exposure (PV 2 and PV 3+)"
+      },
+      {
+        "id": "Resetlocal_Contrast",
+        "name": "Reset Local Adjustments Contrast (PV 2 and PV 3+)"
+      },
+      {
+        "id": "Resetlocal_Highlights",
+        "name": "Reset Local Adjustments Highlights (PV 3+)"
+      },
+      {
+        "id": "Resetlocal_Shadows",
+        "name": "Reset Local Adjustments Shadows (PV 3+)"
+      },
+      {
+        "id": "Resetlocal_Whites",
+        "name": "Reset Local Adjustments Whites (PV 3+)"
+      },
+      {
+        "id": "Resetlocal_Blacks",
+        "name": "Reset Local Adjustments Blacks (PV 3+)"
+      },
+      {
+        "id": "Resetlocal_Temperature",
+        "name": "Reset Local Adjustments Temp. (PV 3+)"
+      },
+      {
+        "id": "Resetlocal_Tint",
+        "name": "Reset Local Adjustments Tint (PV 3+)"
+      },
+      {
+        "id": "Resetlocal_Hue",
+        "name": "Reset Local Adjustments Hue (PV 5+)"
+      },
+      {
+        "id": "Resetlocal_Saturation",
+        "name": "Reset Local Adjustments Saturation (PV 2 and PV 3+)"
+      },
+      {
+        "id": "Resetlocal_RefineSaturation",
+        "name": "Reset Local Adjustments Refine Sat. (PV 6+)"
+      },
+      {
+        "id": "Resetlocal_Texture",
+        "name": "Reset Local Adjustments Texture (PV 5+)"
+      },
+      {
+        "id": "Resetlocal_Clarity",
+        "name": "Reset Local Adjustments Clarity (PV 2 and PV 3+)"
+      },
+      {
+        "id": "Resetlocal_Dehaze",
+        "name": "Reset Local Adjustments Dehaze (PV 3+)"
+      },
+      {
+        "id": "Resetlocal_Grain",
+        "name": "Reset Local Adjustments Grain (PV 6+)"
+      },
+      {
+        "id": "Resetlocal_Sharpness",
+        "name": "Reset Local Adjustments Sharpness (PV 2 and PV 3+)"
+      },
+      {
+        "id": "Resetlocal_LuminanceNoise",
+        "name": "Reset Local Adjustments Luminance Noise Reduction (PV 3+)"
+      },
+      {
+        "id": "Resetlocal_Moire",
+        "name": "Reset Local Adjustments Moire (PV 3+)"
+      },
+      {
+        "id": "Resetlocal_Defringe",
+        "name": "Reset Local Adjustments Defringe (PV 3+)"
+      },
+      {
+        "id": "Resetlocal_ToningLuminance",
+        "name": "Reset Local Adjustments Luminance (PV 2)"
+      }
+    ]
+  },
+  {
+    "category": "Local adjustments presets",
+    "items": [
+      {
+        "id": "LocalPreset1",
+        "name": "Local adjustments presets 1"
+      },
+      {
+        "id": "LocalPreset2",
+        "name": "Local adjustments presets 2"
+      },
+      {
+        "id": "LocalPreset3",
+        "name": "Local adjustments presets 3"
+      },
+      {
+        "id": "LocalPreset4",
+        "name": "Local adjustments presets 4"
+      },
+      {
+        "id": "LocalPreset5",
+        "name": "Local adjustments presets 5"
+      },
+      {
+        "id": "LocalPreset6",
+        "name": "Local adjustments presets 6"
+      },
+      {
+        "id": "LocalPreset7",
+        "name": "Local adjustments presets 7"
+      },
+      {
+        "id": "LocalPreset8",
+        "name": "Local adjustments presets 8"
+      },
+      {
+        "id": "LocalPreset9",
+        "name": "Local adjustments presets 9"
+      },
+      {
+        "id": "LocalPreset10",
+        "name": "Local adjustments presets 10"
+      },
+      {
+        "id": "LocalPreset11",
+        "name": "Local adjustments presets 11"
+      },
+      {
+        "id": "LocalPreset12",
+        "name": "Local adjustments presets 12"
+      },
+      {
+        "id": "LocalPreset13",
+        "name": "Local adjustments presets 13"
+      },
+      {
+        "id": "LocalPreset14",
+        "name": "Local adjustments presets 14"
+      },
+      {
+        "id": "LocalPreset15",
+        "name": "Local adjustments presets 15"
+      },
+      {
+        "id": "LocalPreset16",
+        "name": "Local adjustments presets 16"
+      },
+      {
+        "id": "LocalPreset17",
+        "name": "Local adjustments presets 17"
+      },
+      {
+        "id": "LocalPreset18",
+        "name": "Local adjustments presets 18"
+      },
+      {
+        "id": "LocalPreset19",
+        "name": "Local adjustments presets 19"
+      },
+      {
+        "id": "LocalPreset20",
+        "name": "Local adjustments presets 20"
+      },
+      {
+        "id": "LocalPreset21",
+        "name": "Local adjustments presets 21"
+      },
+      {
+        "id": "LocalPreset22",
+        "name": "Local adjustments presets 22"
+      },
+      {
+        "id": "LocalPreset23",
+        "name": "Local adjustments presets 23"
+      },
+      {
+        "id": "LocalPreset24",
+        "name": "Local adjustments presets 24"
+      },
+      {
+        "id": "LocalPreset25",
+        "name": "Local adjustments presets 25"
+      },
+      {
+        "id": "LocalPreset26",
+        "name": "Local adjustments presets 26"
+      },
+      {
+        "id": "LocalPreset27",
+        "name": "Local adjustments presets 27"
+      },
+      {
+        "id": "LocalPreset28",
+        "name": "Local adjustments presets 28"
+      },
+      {
+        "id": "LocalPreset29",
+        "name": "Local adjustments presets 29"
+      },
+      {
+        "id": "LocalPreset30",
+        "name": "Local adjustments presets 30"
+      },
+      {
+        "id": "LocalPreset31",
+        "name": "Local adjustments presets 31"
+      },
+      {
+        "id": "LocalPreset32",
+        "name": "Local adjustments presets 32"
+      },
+      {
+        "id": "LocalPreset33",
+        "name": "Local adjustments presets 33"
+      },
+      {
+        "id": "LocalPreset34",
+        "name": "Local adjustments presets 34"
+      },
+      {
+        "id": "LocalPreset35",
+        "name": "Local adjustments presets 35"
+      },
+      {
+        "id": "LocalPreset36",
+        "name": "Local adjustments presets 36"
+      },
+      {
+        "id": "LocalPreset37",
+        "name": "Local adjustments presets 37"
+      },
+      {
+        "id": "LocalPreset38",
+        "name": "Local adjustments presets 38"
+      },
+      {
+        "id": "LocalPreset39",
+        "name": "Local adjustments presets 39"
+      },
+      {
+        "id": "LocalPreset40",
+        "name": "Local adjustments presets 40"
+      },
+      {
+        "id": "LocalPreset41",
+        "name": "Local adjustments presets 41"
+      },
+      {
+        "id": "LocalPreset42",
+        "name": "Local adjustments presets 42"
+      },
+      {
+        "id": "LocalPreset43",
+        "name": "Local adjustments presets 43"
+      },
+      {
+        "id": "LocalPreset44",
+        "name": "Local adjustments presets 44"
+      },
+      {
+        "id": "LocalPreset45",
+        "name": "Local adjustments presets 45"
+      },
+      {
+        "id": "LocalPreset46",
+        "name": "Local adjustments presets 46"
+      },
+      {
+        "id": "LocalPreset47",
+        "name": "Local adjustments presets 47"
+      },
+      {
+        "id": "LocalPreset48",
+        "name": "Local adjustments presets 48"
+      },
+      {
+        "id": "LocalPreset49",
+        "name": "Local adjustments presets 49"
+      },
+      {
+        "id": "LocalPreset50",
+        "name": "Local adjustments presets 50"
+      }
+    ]
+  },
+  {
+    "category": "Crop",
+    "items": [
+      {
+        "id": "straightenAngle",
+        "name": "Straighten Angle"
+      },
+      {
+        "id": "CropBottom",
+        "name": "Crop - Bottom"
+      },
+      {
+        "id": "CropLeft",
+        "name": "Crop - Left"
+      },
+      {
+        "id": "CropRight",
+        "name": "Crop - Right"
+      },
+      {
+        "id": "CropTop",
+        "name": "Crop - Top"
+      },
+      {
+        "id": "CropTopLeft",
+        "name": "Crop - Top - Left"
+      },
+      {
+        "id": "CropTopRight",
+        "name": "Crop - Top - Right"
+      },
+      {
+        "id": "CropBottomLeft",
+        "name": "Crop - Bottom - Left"
+      },
+      {
+        "id": "CropBottomRight",
+        "name": "Crop - Bottom - Right"
+      },
+      {
+        "id": "CropAll",
+        "name": "Crop - All"
+      },
+      {
+        "id": "CropMoveVertical",
+        "name": "Crop - move vertically"
+      },
+      {
+        "id": "CropMoveHorizontal",
+        "name": "Crop - move horizontally"
+      },
+      {
+        "id": "ResetCrop",
+        "name": "Reset Crop"
+      },
+      {
+        "id": "ResetstraightenAngle",
+        "name": "Reset Straighten Angle"
+      },
+      {
+        "id": "CropOverlay",
+        "name": "Show Crop"
+      }
+    ]
+  },
+  {
+    "category": "Select Tools, Modules and Panels",
+    "items": [
+      {
+        "id": "Loupe",
+        "name": "Show Loupe"
+      },
+      {
+        "id": "SwToMmap",
+        "name": "Show Map"
+      },
+      {
+        "id": "SwToMbook",
+        "name": "Show Book"
+      },
+      {
+        "id": "SwToMslideshow",
+        "name": "Show Slideshow"
+      },
+      {
+        "id": "SwToMprint",
+        "name": "Show Print"
+      },
+      {
+        "id": "SwToMweb",
+        "name": "Show Web"
+      }
+    ]
+  },
+  {
+    "category": "Secondary Display",
+    "items": [
+      {
+        "id": "ShoScndVwloupe",
+        "name": "Secondary Display Loupe"
+      },
+      {
+        "id": "ShoScndVwlive_loupe",
+        "name": "Secondary Display Live Loupe"
+      },
+      {
+        "id": "ShoScndVwlocked_loupe",
+        "name": "Secondary Display Locked Loupe"
+      },
+      {
+        "id": "ShoScndVwgrid",
+        "name": "Secondary Display Grid"
+      },
+      {
+        "id": "ShoScndVwcompare",
+        "name": "Secondary Display Compare"
+      },
+      {
+        "id": "ShoScndVwsurvey",
+        "name": "Secondary Display Survey"
+      },
+      {
+        "id": "ShoScndVwslideshow",
+        "name": "Secondary Display Slideshow"
+      },
+      {
+        "id": "ToggleScreenTwo",
+        "name": "Secondary Display Show"
+      }
+    ]
+  },
+  {
+    "category": "Profiles",
+    "items": [
+      {
+        "id": "profile1",
+        "name": "Profile: 1"
+      },
+      {
+        "id": "profile2",
+        "name": "Profile: 2"
+      },
+      {
+        "id": "profile3",
+        "name": "Profile: 3"
+      },
+      {
+        "id": "profile4",
+        "name": "Profile: 4"
+      },
+      {
+        "id": "profile5",
+        "name": "Profile: 5"
+      },
+      {
+        "id": "profile6",
+        "name": "Profile: 6"
+      },
+      {
+        "id": "profile7",
+        "name": "Profile: 7"
+      },
+      {
+        "id": "profile8",
+        "name": "Profile: 8"
+      },
+      {
+        "id": "profile9",
+        "name": "Profile: 9"
+      },
+      {
+        "id": "profile10",
+        "name": "Profile: 10"
+      },
+      {
+        "id": "profile11",
+        "name": "Profile: 11"
+      },
+      {
+        "id": "profile12",
+        "name": "Profile: 12"
+      },
+      {
+        "id": "profile13",
+        "name": "Profile: 13"
+      },
+      {
+        "id": "profile14",
+        "name": "Profile: 14"
+      },
+      {
+        "id": "profile15",
+        "name": "Profile: 15"
+      },
+      {
+        "id": "profile16",
+        "name": "Profile: 16"
+      },
+      {
+        "id": "profile17",
+        "name": "Profile: 17"
+      },
+      {
+        "id": "profile18",
+        "name": "Profile: 18"
+      },
+      {
+        "id": "profile19",
+        "name": "Profile: 19"
+      },
+      {
+        "id": "profile20",
+        "name": "Profile: 20"
+      },
+      {
+        "id": "profile21",
+        "name": "Profile: 21"
+      },
+      {
+        "id": "profile22",
+        "name": "Profile: 22"
+      },
+      {
+        "id": "profile23",
+        "name": "Profile: 23"
+      },
+      {
+        "id": "profile24",
+        "name": "Profile: 24"
+      },
+      {
+        "id": "profile25",
+        "name": "Profile: 25"
+      },
+      {
+        "id": "profile26",
+        "name": "Profile: 26"
+      },
+      {
+        "id": "PrevPro",
+        "name": "Previous Profile"
+      },
+      {
+        "id": "NextPro",
+        "name": "Next Profile"
+      }
+    ]
+  }
+]

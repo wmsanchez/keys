@@ -56,6 +56,7 @@
 		307BFF5C15BF95DB005F514E /* KeyMapping.json in Resources */ = {isa = PBXBuildFile; fileRef = 307BFF5B15BF95DB005F514E /* KeyMapping.json */; };
 		307BFF5E15BF962A005F514E /* AdjustmentMapping.json in Resources */ = {isa = PBXBuildFile; fileRef = 307BFF5D15BF962A005F514E /* AdjustmentMapping.json */; };
 		307BFF5E15BF962A005F514F /* AdjustmentLimits.json in Resources */ = {isa = PBXBuildFile; fileRef = 307BFF5D15BF962A005F514F /* AdjustmentLimits.json */; };
+		307BFF5E15BF962A005F5150 /* CommandCategories.json in Resources */ = {isa = PBXBuildFile; fileRef = 307BFF5D15BF962A005F5150 /* CommandCategories.json */; };
 		307D83FD15B9FBF4007A396B /* Test_Detail.vkeys in Resources */ = {isa = PBXBuildFile; fileRef = 307D83FC15B9FBF4007A396B /* Test_Detail.vkeys */; };
 		307D840115BA003B007A396B /* Test_Parametric.vkeys in Resources */ = {isa = PBXBuildFile; fileRef = 307D840015BA003B007A396B /* Test_Parametric.vkeys */; };
 		307D840515BA0865007A396B /* Test_HSL.vkeys in Resources */ = {isa = PBXBuildFile; fileRef = 307D840315BA0865007A396B /* Test_HSL.vkeys */; };
@@ -223,6 +224,7 @@
 		307BFF5B15BF95DB005F514E /* KeyMapping.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = KeyMapping.json; sourceTree = "<group>"; };
 		307BFF5D15BF962A005F514E /* AdjustmentMapping.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = AdjustmentMapping.json; sourceTree = "<group>"; };
 		307BFF5D15BF962A005F514F /* AdjustmentLimits.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = AdjustmentLimits.json; sourceTree = "<group>"; };
+		307BFF5D15BF962A005F5150 /* CommandCategories.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = CommandCategories.json; sourceTree = "<group>"; };
 		307D83FA15B9FBE2007A396B /* Test_Detail.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Test_Detail.json; sourceTree = "<group>"; };
 		307D83FC15B9FBF4007A396B /* Test_Detail.vkeys */ = {isa = PBXFileReference; lastKnownFileType = file; path = Test_Detail.vkeys; sourceTree = "<group>"; };
 		307D83FE15B9FF72007A396B /* Test_Parametric.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Test_Parametric.json; sourceTree = "<group>"; };
@@ -483,6 +485,7 @@
 				307BFF5B15BF95DB005F514E /* KeyMapping.json */,
 				307BFF5D15BF962A005F514E /* AdjustmentMapping.json */,
 				307BFF5D15BF962A005F514F /* AdjustmentLimits.json */,
+				307BFF5D15BF962A005F5150 /* CommandCategories.json */,
 			);
 			name = Mapping;
 			sourceTree = "<group>";
@@ -745,6 +748,7 @@
 				307BFF5C15BF95DB005F514E /* KeyMapping.json in Resources */,
 				307BFF5E15BF962A005F514E /* AdjustmentMapping.json in Resources */,
 				307BFF5E15BF962A005F514F /* AdjustmentLimits.json in Resources */,
+				307BFF5E15BF962A005F5150 /* CommandCategories.json in Resources */,
 				307B7A8E15C7466800B58512 /* SelectedMenu.png in Resources */,
 				307B7A9315C74B3900B58512 /* StatusBarIcon_Active.png in Resources */,
 				307B7A9415C74B3900B58512 /* StatusBarIcon_Error.png in Resources */,
