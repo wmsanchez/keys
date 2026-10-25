@@ -15,7 +15,7 @@ Keys is released under the GNU General Public License v2 (or any later version).
 ## Installing & Prerequisites (macOS)
 
 1. **Lightroom Plugin**:
-   Build the Xcode `VSCOKeys` scheme first; it generates `Build/VSCOKeys.lrplugin` from `VSCOKeys.lrdevplugin`. Sync that generated plugin into Lightroom's Modules directory:
+   Build the Xcode `VSCOKeys` scheme first; it generates a staging copy at `Build/VSCOKeys.lrplugin` from `VSCOKeys.lrdevplugin`. Rebuilding does not replace Lightroom's active plugin. Sync the staging copy into Lightroom's Modules directory only after quitting Lightroom, then restart Lightroom:
    ```bash
    rsync -a --delete --exclude='*.log' --exclude='skey.key' Build/VSCOKeys.lrplugin/ "$HOME/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/"
    ```
@@ -43,7 +43,7 @@ xcodebuild -scheme VSCOKeys -configuration Debug build
 
 The Xcode target also refreshes `Build/VSCOKeys.lrplugin`, the plugin bundle used by the macOS installer. Plugin source changes therefore flow into the installer payload on each build.
 
-Every Debug build automatically replaces `/Applications/VSCOKeys.app` with the freshly built app and quits any running copy first. The install phase skips Release and CI builds. To skip it for a local build, run:
+Every Debug build first backs up `~/Library/Application Support/VSCOKeys` to a timestamped folder under `~/Library/Application Support/VSCOKeys Backups`, then replaces `/Applications/VSCOKeys.app` and quits any running copy. The install phase skips Release and CI builds. To skip it for a local build, run:
 
 ```bash
 VSCO_KEYS_AUTO_INSTALL=NO xcodebuild -scheme VSCOKeys -configuration Debug build
@@ -84,6 +84,7 @@ open -a /Applications/VSCOKeys.app
   ```
   ~/Library/Application Support/VSCOKeys/
   ```
+   The Debug build workflow snapshots this entire folder before replacing the app; backups are stored separately in `~/Library/Application Support/VSCOKeys Backups/`.
   You can also inspect or edit `.keysjson` files directly. Reference parameter names and slider limits are defined in:
   - [`VSCOKeys/VSCOKeys/AdjustmentMapping.json`](VSCOKeys/VSCOKeys/AdjustmentMapping.json)
   - [`VSCOKeys/VSCOKeys/AdjustmentLimits.json`](VSCOKeys/VSCOKeys/AdjustmentLimits.json)

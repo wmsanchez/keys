@@ -40,6 +40,15 @@ trap 'exit 1' HUP INT TERM
 /usr/bin/ditto "$source_app" "$staged_app"
 /usr/bin/killall VSCOKeys >/dev/null 2>&1 || true
 
+layout_dir="$HOME/Library/Application Support/VSCOKeys"
+if [ -d "$layout_dir" ]; then
+    backup_root="$HOME/Library/Application Support/VSCOKeys Backups"
+    /bin/mkdir -p "$backup_root"
+    backup_dir="$backup_root/VSCOKeys-$(/bin/date +%Y%m%d-%H%M%S)-$$"
+    /usr/bin/ditto "$layout_dir" "$backup_dir"
+    echo "Backed up VSCO Keys data to $backup_dir"
+fi
+
 if [ -e "$destination_app" ]; then
     /bin/mv "$destination_app" "$previous_app"
 fi
