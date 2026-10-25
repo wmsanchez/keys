@@ -29,10 +29,12 @@
 @class KeyfileListController;
 @class RSVerticallyCenteredTextFieldCell;
 @class FlatButton;
+@class KeysEditorWindowController;
 
 @interface MainWindowController : NSWindowController<NSTableViewDelegate, NSTextFieldDelegate>
 
 @property (retain) KeyControl *keyControl;
+@property (retain) KeysEditorWindowController *editorController;
 
 @property (assign) NSPoint initialLocation;
 @property (assign) IBOutlet NSTabView *tabv_tabs;
@@ -57,6 +59,7 @@
 @property (assign) IBOutlet NSButton *viewActivateButton;
 @property (assign) IBOutlet NSButton *viewPdfButton;
 @property (assign) IBOutlet NSButton *viewCustomizeButton;
+@property (retain) NSButton *editLayoutButton;
 @property (assign) IBOutlet NSTextField *listDeleteName;
 @property (assign) IBOutlet NSBox *listDeleteBox;
 @property (assign) IBOutlet NSButton *listDeleteOk;
@@ -77,9 +80,14 @@
 
 - (void)openDetailView;
 
+// In-app layout editor
+- (void)setupEditorController;
+- (void)openEditorForKeyfile:(NSDictionary *)keyfile;
+- (void)openNewLayoutEditor;
+
 - (IBAction)viewActivateButtonClicked:(id)sender;
 - (IBAction)viewPdfButtonClicked:(id)sender;
 - (IBAction)viewCustomizeButtonClicked:(id)sender;
-
+- (IBAction)viewEditButtonClicked:(id)sender;
 
 @end

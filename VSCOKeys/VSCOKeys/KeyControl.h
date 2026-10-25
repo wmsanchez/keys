@@ -70,6 +70,7 @@
 
 @property (retain) NSDictionary *keyMapping;
 @property (retain) NSDictionary *adjustmentMapping;
+@property (retain) NSDictionary *adjustmentLimits;
 
 @property (retain) NSNumberFormatter *numFormatter;
 @property (retain) NSDictionary *blackStyle;
@@ -100,5 +101,6 @@
 - (void)resetStatusMenu;
 
 - (void)deleteKeyfile:(NSDictionary *)keyfile;
+- (void)loadAllKeyfiles;
 
 @end

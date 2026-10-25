@@ -204,6 +204,9 @@ void DualLog(NSString* format, ...)
     self.keyControl = [[KeyControl alloc] init];
     self.mainController.keyControl = self.keyControl;
     self.keyControl.mainController = self.mainController;
+    self.keyControl.window = self.window;  // required for showWindow
+
+    [self.mainController setupEditorController];  // wire in-app editor
 
     [self checkTrusted];
 

@@ -81,6 +81,7 @@
 
 @synthesize keyMapping;
 @synthesize adjustmentMapping;
+@synthesize adjustmentLimits;
 
 @synthesize numFormatter;
 @synthesize blackStyle;
@@ -177,10 +178,16 @@
 
 - (void)showWindow
 {
-    [self.window setIsVisible:YES];
-
+    // Prefer self.window (set by AppDelegate); fall back to mainController.window
+    NSWindow *win = self.window ?: self.mainController.window;
+    if (!win) {
+        DualLog(@"showWindow: window is nil, cannot open settings.");
+        return;
+    }
+    [self.mainController listButtonPressed:nil];  // reset to list tab
+    [win setIsVisible:YES];
     [NSApp activateIgnoringOtherApps:YES];
-    [self.window makeKeyAndOrderFront:nil];
+    [win makeKeyAndOrderFront:nil];
 }
 
 - (void)showAbout
@@ -942,6 +949,8 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
     self.keyMapping = [[NSString stringWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"KeyMapping" ofType:@"json"] encoding:NSUTF8StringEncoding error:nil] JSONValue];
 
     self.adjustmentMapping = [[NSString stringWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"AdjustmentMapping" ofType:@"json"] encoding:NSUTF8StringEncoding error:nil] JSONValue];
+
+    self.adjustmentLimits = [[NSString stringWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"AdjustmentLimits" ofType:@"json"] encoding:NSUTF8StringEncoding error:nil] JSONValue];
 }
 
 - (NSString *)getKeynameForVirtual:(NSString *)virtKey

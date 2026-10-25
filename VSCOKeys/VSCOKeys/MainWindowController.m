@@ -27,6 +27,7 @@
 #import <math.h>
 
 #import "KeyControl.h"
+#import "KeysEditorWindowController.h"
 
 #import "RSVerticallyCenteredTextFieldCell.h"
 #import "BackgroundedImageCell.h"
@@ -44,6 +45,7 @@
 @implementation MainWindowController
 
 @synthesize keyControl;
+@synthesize editorController;
 
 @synthesize initialLocation;
 @synthesize tabv_tabs;
@@ -69,6 +71,7 @@
 @synthesize viewActivateButton;
 @synthesize viewPdfButton;
 @synthesize viewCustomizeButton;
+@synthesize editLayoutButton;
 @synthesize listDeleteName;
 @synthesize listDeleteBox;
 @synthesize listDeleteOk;
@@ -187,12 +190,36 @@
                                       [NSFont fontWithName:PROXIMA_FONT_NAME size:13], NSFontAttributeName,
                                       nil];
 
-    [[self.viewActivateButton cell] setBackgroundColor:[NSColor colorWithCalibratedHue:0 saturation:0 brightness:1 alpha:1]];
-    [self.viewActivateButton setAttributedTitle:[[NSAttributedString alloc] initWithString:self.viewActivateButton.title attributes:self.viewButtonLeftAlign]];
-    [[self.viewPdfButton cell] setBackgroundColor:[NSColor colorWithCalibratedHue:0 saturation:0 brightness:1 alpha:1]];
-    [self.viewPdfButton setAttributedTitle:[[NSAttributedString alloc] initWithString:self.viewPdfButton.title attributes:self.viewButtonLeftAlign]];
-    [[self.viewCustomizeButton cell] setBackgroundColor:[NSColor colorWithCalibratedHue:0 saturation:0 brightness:1 alpha:1]];
-    [self.viewCustomizeButton setAttributedTitle:[[NSAttributedString alloc] initWithString:self.viewCustomizeButton.title attributes:self.viewButtonLeftAlign]];
+    // Hide outdated buttons: DE-ACTIVATE, DOWNLOAD PDF LAYOUT, CUSTOMIZE ONLINE
+    [self.viewActivateButton setHidden:YES];
+    [self.viewPdfButton setHidden:YES];
+    [self.viewCustomizeButton setHidden:YES];
+
+    // Create prominent "EDIT LAYOUT" button in place of the outdated buttons
+    self.editLayoutButton = [[NSButton alloc] initWithFrame:NSMakeRect(0, 0, 275, 45)];
+    [self.editLayoutButton setTitle:@"EDIT LAYOUT"];
+    [self.editLayoutButton setButtonType:NSMomentaryLightButton];
+    [self.editLayoutButton setBordered:NO];
+
+    NSMutableParagraphStyle *editPara = [[NSMutableParagraphStyle defaultParagraphStyle] mutableCopy];
+    [editPara setHeadIndent:16];
+    [editPara setFirstLineHeadIndent:16];
+    [editPara setAlignment:NSLeftTextAlignment];
+    NSDictionary *editAttribs = @{
+        NSParagraphStyleAttributeName: editPara,
+        NSForegroundColorAttributeName: [NSColor blackColor],
+        NSFontAttributeName: [NSFont fontWithName:PROXIMA_FONT_NAME size:14]
+    };
+    [self.editLayoutButton setAttributedTitle:[[NSAttributedString alloc] initWithString:@"EDIT LAYOUT" attributes:editAttribs]];
+    [[self.editLayoutButton cell] setBackgroundColor:[NSColor colorWithCalibratedHue:0 saturation:0 brightness:1 alpha:1]];
+    [self.editLayoutButton setAutoresizingMask:NSViewMaxXMargin | NSViewMaxYMargin];
+    [self.editLayoutButton setTarget:self];
+    [self.editLayoutButton setAction:@selector(viewEditButtonClicked:)];
+
+    NSView *sidePanel = self.viewCustomizeButton.superview ?: [self.viewBackButton superview];
+    if (sidePanel) {
+        [sidePanel addSubview:self.editLayoutButton];
+    }
 
     // commands table view
     self.commandCell = [[RSVerticallyCenteredTextFieldCell alloc] init];
@@ -268,6 +295,8 @@
 
     [self.listDeleteCancel setFont:[NSFont fontWithName:PROXIMA_FONT_NAME size:13]];
     [self.listDeleteCancel setTitle:self.listDeleteCancel.title withColor:[NSColor whiteColor]];
+
+
 }
 
 - (void)keyfileListBoundsDidChange:(NSNotification *)notification
@@ -490,8 +519,18 @@
 
     [self resetDownload];
 
-    [self updatePDFButton];
-    [self updateActivateButton];
+    // Keep outdated buttons hidden
+    [self.viewActivateButton setHidden:YES];
+    [self.viewPdfButton setHidden:YES];
+    [self.viewCustomizeButton setHidden:YES];
+
+    if (!self.editLayoutButton.superview) {
+        NSView *sidePanel = self.viewCustomizeButton.superview ?: [self.viewBackButton superview];
+        if (sidePanel) {
+            [sidePanel addSubview:self.editLayoutButton];
+        }
+    }
+    [self.editLayoutButton setHidden:NO];
 
     [self prepareSelectedKeys];
 
@@ -531,7 +570,7 @@
 
 - (IBAction)createNewButtonClicked:(id)sender
 {
-    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:CREATE_NEW_ENDPOINT]];
+    [self openNewLayoutEditor];
 }
 
 - (IBAction)listItemClicked:(id)sender
@@ -639,4 +678,44 @@
 {
     [self.window close];
 }
+
+#pragma mark - Editor
+
+- (void)setupEditorController
+{
+    if (self.editorController) return;
+    self.editorController = [[KeysEditorWindowController alloc] initWithKeyControl:self.keyControl];
+    self.editorController.mainController = self;
+
+    // Size rootView to match the tab view's content area
+    NSRect tabFrame = [self.tabv_tabs bounds];
+    [self.editorController.rootView setFrame:tabFrame];
+    [self.editorController.rootView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+
+    // Add an "edit" tab to the tab view programmatically
+    NSTabViewItem *editItem = [[NSTabViewItem alloc] initWithIdentifier:@"edit"];
+    [editItem setLabel:@"Edit"];
+    [editItem setView:self.editorController.rootView];
+    [self.tabv_tabs addTabViewItem:editItem];
+}
+
+- (void)openEditorForKeyfile:(NSDictionary *)keyfile
+{
+    [self setupEditorController];
+    [self.editorController loadKeyfile:keyfile];
+    [self.tabv_tabs selectTabViewItemWithIdentifier:@"edit"];
+}
+
+- (void)openNewLayoutEditor
+{
+    [self setupEditorController];
+    [self.editorController startNewLayout];
+    [self.tabv_tabs selectTabViewItemWithIdentifier:@"edit"];
+}
+
+- (IBAction)viewEditButtonClicked:(id)sender
+{
+    [self openEditorForKeyfile:self.selectedKeyfile];
+}
+
 @end
