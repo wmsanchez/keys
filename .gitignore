@@ -1,4 +1,5 @@
 *.DS_Store
+Build/VSCOKeys.lrplugin/
 VSCOKeys/VSCOKeys.xcodeproj/project.xcworkspace
 VSCOKeys/VSCOKeys.xcodeproj/xcuserdata
 Tools/VSCOKeys.xml.backup
