@@ -35,6 +35,7 @@ static NSString * const kColKey    = @"edKey";
 static NSString * const kColMod    = @"edMod";
 static NSString * const kColAction = @"edAction";
 static NSString * const kColValue  = @"edValue";
+static NSString * const kColDup    = @"edDup";
 static NSString * const kColDel    = @"edDel";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -361,9 +362,9 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 
     // Column header labels
     CGFloat hY = 406;
-    NSArray *headers = @[@"KEY", @"MOD", @"ACTION", @"VALUE", @""];
-    NSArray *headerX = @[@10,   @90,    @190,      @435,      @525];
-    NSArray *headerW = @[@75,   @95,    @235,       @80,       @35];
+    NSArray *headers = @[@"KEY", @"MOD", @"ACTION", @"VALUE", @"", @""];
+    NSArray *headerX = @[@10,   @90,    @190,      @430,      @515, @545];
+    NSArray *headerW = @[@75,   @95,    @235,       @80,       @28,  @28];
     for (int i = 0; i < (int)headers.count; i++) {
         NSTextField *h = [self makeLabelWithText:headers[i]];
         [h setFrame:NSMakeRect([headerX[i] floatValue], hY, [headerW[i] floatValue], 16)];
@@ -397,9 +398,10 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         { kColMod,   100, NO },
         { kColAction,240, YES },
         { kColValue,  85, NO },
-        { kColDel,    35, NO },
+        { kColDup,    30, NO },
+        { kColDel,    30, NO },
     };
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
         NSTableColumn *col = [[NSTableColumn alloc] initWithIdentifier:coldefs[i].ident];
         [col setWidth:coldefs[i].w];
         [col setResizingMask:coldefs[i].resize ? NSTableColumnAutoresizingMask : NSTableColumnNoResizing];
@@ -702,6 +704,19 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         return cell;
     }
 
+    if ([colId isEqualToString:kColDup]) {
+        NSButtonCell *cell = [[NSButtonCell alloc] init];
+        [cell setButtonType:NSMomentaryLightButton];
+        [cell setBordered:NO];
+        [cell setBezelStyle:NSRoundRectBezelStyle];
+        NSColor *blueColor = [NSColor colorWithCalibratedRed:0.4 green:0.7 blue:1.0 alpha:1];
+        NSAttributedString *attTitle = [[NSAttributedString alloc] initWithString:@"⧉"
+            attributes:@{NSForegroundColorAttributeName: blueColor,
+                         NSFontAttributeName: [NSFont systemFontOfSize:13]}];
+        [cell setAttributedTitle:attTitle];
+        return cell;
+    }
+
     if ([colId isEqualToString:kColDel]) {
         NSButtonCell *cell = [[NSButtonCell alloc] init];
         [cell setButtonType:NSMomentaryLightButton];
@@ -746,6 +761,9 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     if ([colId isEqualToString:kColValue]) {
         return b[kBindValue] ?: @"";
     }
+    if ([colId isEqualToString:kColDup]) {
+        return @NO;  // button state
+    }
     if ([colId isEqualToString:kColDel]) {
         return @NO;  // button state
     }
@@ -783,6 +801,16 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     else if ([colId isEqualToString:kColValue]) {
         NSString *rawVal = [obj description] ?: @"";
         b[kBindValue] = [self clampValue:rawVal forAdjustment:b[kBindAdj]];
+    }
+    else if ([colId isEqualToString:kColDup]) {
+        // Duplicate this binding right after the current row
+        if (row >= 0 && row < (NSInteger)self.bindings.count) {
+            NSMutableDictionary *dup = [self.bindings[(NSUInteger)row] mutableCopy];
+            NSUInteger insertIdx = (NSUInteger)row + 1;
+            [self.bindings insertObject:dup atIndex:insertIdx];
+            [self.tableView reloadData];
+            [self.tableView scrollRowToVisible:(NSInteger)insertIdx];
+        }
     }
     else if ([colId isEqualToString:kColDel]) {
         // Delete this row
