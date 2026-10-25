@@ -4,6 +4,7 @@ Standalone, zero-dependency Action and Command Dispatch for VSCOKeys
 Directly controls Lightroom via Lightroom SDK without external MIDI2LR modules
 ------------------------------------------------------------------------------]]
 
+return function()
 local LrApplication       = import 'LrApplication'
 local LrApplicationView   = import 'LrApplicationView'
 local LrDevelopController = import 'LrDevelopController'
@@ -421,10 +422,10 @@ local ACTIONS = {
   PV5 = CU.wrapFOM(LrDevelopController.setProcessVersion, 'Version 5'),
   Pause = function() LrTasks.sleep( 0.02 ) end,
   Pick = LrSelection.flagAsPick,
-  PointCurveBlacksDown = CU.PointCurveUpDown(true, false),
-  PointCurveBlacksUp = CU.PointCurveUpDown(true, true),
-  PointCurveHighlightsDown = CU.PointCurveUpDown(false, false),
-  PointCurveHighlightsUp = CU.PointCurveUpDown(false, true),
+  PointCurveBlacksDown = CU.PointCurveUpDown and CU.PointCurveUpDown(true, false),
+  PointCurveBlacksUp = CU.PointCurveUpDown and CU.PointCurveUpDown(true, true),
+  PointCurveHighlightsDown = CU.PointCurveUpDown and CU.PointCurveUpDown(false, false),
+  PointCurveHighlightsUp = CU.PointCurveUpDown and CU.PointCurveUpDown(false, true),
   PointCurveLinear = CU.UpdatePointCurve({ToneCurveName="Linear",ToneCurveName2012="Linear",ToneCurvePV2012={0,0,255,255,}}),
   PointCurveMediumContrast = CU.UpdatePointCurve({ToneCurveName="Medium Contrast",ToneCurveName2012="Medium Contrast",ToneCurvePV2012={0,0,32,22,64,56,128,128,192,196,255,255,}}),
   PointCurveStrongContrast = CU.UpdatePointCurve({ToneCurveName="Strong Contrast",ToneCurveName2012="Strong Contrast",ToneCurvePV2012={0,0,32,16,64,50,128,128,192,202,255,255,}}),
@@ -553,7 +554,7 @@ local ACTIONS = {
   ShoVwpeople = function() LrApplicationView.showView('people') end,
   ShoVwsurvey = function() LrApplicationView.showView('survey') end,
   ShowClipping = CU.wrapFOM(LrDevelopController.showClipping),
-  ShowSlideShow = CU.ToggleSlideshow(),
+  ShowSlideShow = CU.ToggleSlideshow and CU.ToggleSlideshow(),
   SpotRemoval = CU.fToggleTool1('dust'),
   SwToMbook = CU.fChangeModule('book'),
   SwToMdevelop = CU.fChangeModule('develop'),
@@ -599,3 +600,4 @@ local ACTIONS = {
 }
 
 return ACTIONS
+end

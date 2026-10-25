@@ -41,11 +41,6 @@ local LrMD5 = import "LrMD5"
 local LrFileUtils = import "LrFileUtils"
 local prefs = import 'LrPrefs'.prefsForPlugin()
 
-local ACTIONS = nil
-pcall(function()
-  ACTIONS = require "ActionsTable"
-end)
-
 Client = {
   done = false,
   uuid = tostring(notUUID()),
@@ -54,6 +49,7 @@ Client = {
 }
 
 function Client:loop()
+  local ACTIONS = require "ActionsTable"()
   self.lastValidData = os.time()
   local counter = 0
   while (not self.done) do
@@ -161,19 +157,18 @@ function Client:loop()
         end
       end
 
-      -- apply batched image changes or actions
-      if (json and table.count(json) > 0) then
+      -- apply batched image changes using direct LrDevelopController (MIDI2LR method)
+      if json then
         for k, v in pairs(json) do
-          if ACTIONS and ACTIONS[k] then
-            -- 1) Comprehensive button/action command (e.g. Next, Prev, QuickDevCropAspect3x4, AutoTone, etc.)
-            local ok, err = pcall(ACTIONS[k])
+          local action = ACTIONS[k]
+          if action then
+            local ok, err = pcall(action)
             if ok then
               logging:log('Executed action ' .. k)
             else
               logging:log('Error executing action ' .. k .. ': ' .. tostring(err))
             end
-          elseif k:sub(1,5) == 'Reset' then
-            -- 2) Parameter reset command (e.g. ResetExposure, ResetTint, ResetContrast)
+          elseif k:sub(1, 5) == 'Reset' then
             local resetparam = k:sub(6)
             local ok, err = pcall(function()
               if LrApplicationView.getCurrentModuleName() ~= 'develop' then
@@ -188,7 +183,6 @@ function Client:loop()
               logging:log('Error resetting ' .. resetparam .. ': ' .. tostring(err))
             end
           else
-            -- 3) Variable development adjustments (e.g. Exposure2012, Contrast2012, etc.)
             if self.currentPhoto then
               if LrApplicationView.getCurrentModuleName() ~= 'develop' then
                 LrApplicationView.switchToModule('develop')
@@ -217,7 +211,7 @@ function Client:loop()
                 logging:log('Applied string ' .. k .. ' -> ' .. tostring(v))
               end
             else
-              LrDialogs.message( "Please select a photo before making edits." )
+              LrDialogs.message("Please select a photo before making edits.")
             end
           end
         end
@@ -427,4 +421,3 @@ function Client:init()
     self:loop()
   end, "Client Poll")
 end
-

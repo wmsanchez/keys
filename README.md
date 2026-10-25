@@ -15,9 +15,9 @@ Keys is released under the GNU General Public License v2 (or any later version).
 ## Installing & Prerequisites (macOS)
 
 1. **Lightroom Plugin**:
-   Copy or link `VSCOKeys.lrdevplugin` into your Lightroom Modules directory:
+   Build the Xcode `VSCOKeys` scheme first; it generates `Build/VSCOKeys.lrplugin` from `VSCOKeys.lrdevplugin`. Sync that generated plugin into Lightroom's Modules directory:
    ```bash
-   cp -R VSCOKeys.lrdevplugin "$HOME/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin"
+   rsync -a --delete --exclude='*.log' --exclude='skey.key' Build/VSCOKeys.lrplugin/ "$HOME/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/"
    ```
 
 2. **Accessibility Privileges**:
@@ -41,6 +41,8 @@ cd VSCOKeys
 xcodebuild -scheme VSCOKeys -configuration Debug build
 ```
 
+The Xcode target also refreshes `Build/VSCOKeys.lrplugin`, the plugin bundle used by the macOS installer. Plugin source changes therefore flow into the installer payload on each build.
+
 The built application bundle will be created at:
 ```
 ~/Library/Developer/Xcode/DerivedData/VSCOKeys-*/Build/Products/Debug/VSCOKeys.app
@@ -60,13 +62,13 @@ cp -R ~/Library/Developer/Xcode/DerivedData/VSCOKeys-*/Build/Products/Debug/VSCO
 
 ### 3. Deploy Lightroom Plugin Modifications
 
-If you modified files in `VSCOKeys.lrdevplugin` (such as `Client.lua` or `server.py`), sync them to your active Lightroom modules folder:
+After the Xcode build, sync the generated plugin bundle to your active Lightroom Modules folder:
 
 ```bash
-cp -R VSCOKeys.lrdevplugin/* "$HOME/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/"
+rsync -a --delete --exclude='*.log' --exclude='skey.key' Build/VSCOKeys.lrplugin/ "$HOME/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/"
 ```
 
-> **Note**: Whenever modifying plugin Lua files, **restart Adobe Lightroom Classic** so Lightroom reloads the plugin.
+> **Note**: Restart Adobe Lightroom Classic after syncing so it reloads the plugin modules.
 
 ### 4. Quick One-Line Rebuild & Run Script
 
@@ -77,6 +79,7 @@ cd VSCOKeys && \
 xcodebuild -scheme VSCOKeys -configuration Debug build && \
 killall VSCOKeys 2>/dev/null || true && \
 cp -R ~/Library/Developer/Xcode/DerivedData/VSCOKeys-*/Build/Products/Debug/VSCOKeys.app /Applications/VSCOKeys.app && \
+rsync -a --delete --exclude='*.log' --exclude='skey.key' ../Build/VSCOKeys.lrplugin/ "$HOME/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/" && \
 open -a /Applications/VSCOKeys.app
 ```
 

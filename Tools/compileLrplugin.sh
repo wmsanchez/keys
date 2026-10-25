@@ -18,9 +18,15 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-cp -r ../VSCOKeys.lrdevplugin/ ../Build/VSCOKeys.lrplugin/
-rm -f ../Build/VSCOKeys.lrplugin/*.log
-rm -f ../Build/VSCOKeys.lrplugin/**/*.log
-rm -f ../Build/VSCOKeys.lrplugin/skey.key
-for file in ../Build/VSCOKeys.lrplugin/*.lua; do ./luac_514_32bit -o $file $file; done;
-for file in ../Build/VSCOKeys.lrplugin/**/*.lua; do ./luac_514_32bit -o $file $file; done;
+set -eu
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+SOURCE_DIR="$PROJECT_DIR/VSCOKeys.lrdevplugin"
+PLUGIN_DIR="$PROJECT_DIR/Build/VSCOKeys.lrplugin"
+
+mkdir -p "$PLUGIN_DIR"
+rsync -a --delete --delete-excluded \
+	--exclude='*.log' \
+	--exclude='skey.key' \
+	"$SOURCE_DIR/" "$PLUGIN_DIR/"
