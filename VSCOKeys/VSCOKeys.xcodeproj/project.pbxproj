@@ -623,6 +623,7 @@
 				304A7B7115994DF700DB7327 /* Resources */,
 				3056AA1015DAE7DC00205B11 /* CopyFiles */,
 				A0B1C2D3E4F5061728394A5B /* Build Lightroom plugin */,
+				A0B1C2D3E4F5061728394A5C /* Install app for testing */,
 			);
 			buildRules = (
 			);
@@ -775,6 +776,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"${SRCROOT}/../Tools/compileLrplugin.sh\"\n";
+			alwaysOutOfDate = 1;
+		};
+		A0B1C2D3E4F5061728394A5C /* Install app for testing */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh \"${SRCROOT}/../Tools/InstallAppOnOSX.sh\"\n";
 			alwaysOutOfDate = 1;
 		};
 /* End PBXShellScriptBuildPhase section */

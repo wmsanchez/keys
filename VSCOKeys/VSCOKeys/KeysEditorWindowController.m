@@ -420,33 +420,12 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
                      NSFontAttributeName:[NSFont fontWithName:PROXIMA_FONT_NAME size:11]}]];
     [rightPanel addSubview:self.bulkDelBtn];
 
-    // Column header labels
-    CGFloat hY = 406;
-    NSArray *headers = @[@"KEY", @"MOD", @"ACTION", @"VALUE", @"", @""];
-    NSArray *headerX = @[@10,   @90,    @190,      @430,    @515, @545];
-    NSArray *headerW = @[@75,   @95,    @235,       @80,     @28,  @28];
-    for (int i = 0; i < (int)headers.count; i++) {
-        NSTextField *h = [self makeLabelWithText:headers[i]];
-        [h setFrame:NSMakeRect([headerX[i] floatValue], hY, [headerW[i] floatValue], 16)];
-        [h setAutoresizingMask:NSViewMinYMargin | (i == 3 ? NSViewWidthSizable : 0)];
-        [rightPanel addSubview:h];
-    }
-
-    // Divider under headers
-    NSBox *hSep = [[NSBox alloc] initWithFrame:NSMakeRect(0, 402, 825 - rightX, 1)];
-    [hSep setBoxType:NSBoxCustom];
-    [hSep setFillColor:[NSColor colorWithCalibratedWhite:0.28 alpha:1]];
-    [hSep setBorderWidth:0];
-    [hSep setAutoresizingMask:NSViewMinYMargin | NSViewWidthSizable];
-    [rightPanel addSubview:hSep];
-
     // ── NSTableView ───────────────────────────────────────────────────────────
     self.tableView = [[NSTableView alloc] initWithFrame:NSMakeRect(0, 0, 825 - rightX, 400)];
     [self.tableView setRowHeight:26];
     [self.tableView setGridStyleMask:NSTableViewSolidHorizontalGridLineMask];
     [self.tableView setGridColor:[NSColor colorWithCalibratedWhite:0.25 alpha:1]];
     [self.tableView setBackgroundColor:[NSColor colorWithCalibratedWhite:0.18 alpha:1]];
-    [self.tableView setHeaderView:nil];   // no built-in header (we drew our own)
     // Allow multi-select so users can select multiple rows with shift/cmd-click
     [self.tableView setAllowsMultipleSelection:YES];
     [self.tableView setSelectionHighlightStyle:NSTableViewSelectionHighlightStyleRegular];
@@ -454,25 +433,27 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     [self.tableView setDelegate:self];
 
     // ── Table columns ─────────────────────────────────────────────────────────
-    struct ColDef { NSString *ident; CGFloat w; BOOL resize; };
+    struct ColDef { NSString *ident; NSString *title; CGFloat w; };
     struct ColDef coldefs[] = {
-        { kColKey,    80, NO  },
-        { kColMod,   100, NO  },
-        { kColAction,240, YES },
-        { kColValue,  85, NO  },
-        { kColDup,    30, NO  },
-        { kColDel,    30, NO  },
+        { kColKey,    @"KEY",    60  },
+        { kColMod,    @"MOD",    70  },
+        { kColAction, @"ACTION", 165 },
+        { kColValue,  @"VALUE",  220 },
+        { kColDup,    @"",       28  },
+        { kColDel,    @"",       28  },
     };
     for (int i = 0; i < 6; i++) {
         NSTableColumn *col = [[NSTableColumn alloc] initWithIdentifier:coldefs[i].ident];
         [col setWidth:coldefs[i].w];
-        [col setResizingMask:coldefs[i].resize ? NSTableColumnAutoresizingMask : NSTableColumnNoResizing];
+        [[col headerCell] setStringValue:coldefs[i].title];
+        [col setResizingMask:NSTableColumnUserResizingMask];
         [self.tableView addTableColumn:col];
     }
 
     self.scrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 0, 825 - rightX, 400)];
     [self.scrollView setDocumentView:self.tableView];
     [self.scrollView setHasVerticalScroller:YES];
+    [self.scrollView setHasHorizontalScroller:YES];
     [self.scrollView setAutohidesScrollers:YES];
     [self.scrollView setBackgroundColor:[NSColor colorWithCalibratedWhite:0.18 alpha:1]];
     [self.scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
