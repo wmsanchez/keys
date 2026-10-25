@@ -102,5 +102,6 @@
 
 - (void)deleteKeyfile:(NSDictionary *)keyfile;
 - (void)loadAllKeyfiles;
+- (void)activateKeyfileWithUUID:(NSString *)uuid;
 
 @end

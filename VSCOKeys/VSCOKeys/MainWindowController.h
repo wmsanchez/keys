@@ -79,6 +79,8 @@
 - (IBAction)addButtonPressed:(id)sender;
 
 - (void)openDetailView;
+- (void)prepareSelectedKeys;
+- (void)prepareCommandTableForContent;
 
 // In-app layout editor
 - (void)setupEditorController;

@@ -249,15 +249,25 @@
 
 - (IBAction)selectedKeyFile:(id)sender
 {
-    self.activeKeyFile = [sender representedObject];
+    [self activateKeyfileWithUUID:[sender representedObject]];
+}
+
+- (void)activateKeyfileWithUUID:(NSString *)uuid
+{
+    if (!uuid || [uuid length] == 0) return;
+
+    self.activeKeyFile = uuid;
 
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-
     [defaults setValue:self.activeKeyFile forKey:DEFAULTS_ACTIVE_KEYFILE];
 
     [self setMenuForKeyFileActive];
 
-    [self performSelector:@selector(loadDictionaryFromActiveKeysFile) onThread:self.keyThread withObject:NULL waitUntilDone:NO];
+    if (self.keyThread) {
+        [self performSelector:@selector(loadDictionaryFromActiveKeysFile) onThread:self.keyThread withObject:NULL waitUntilDone:NO];
+    } else {
+        [self loadDictionaryFromActiveKeysFile];
+    }
 }
 
 - (void)resetStatusMenu
@@ -614,20 +624,13 @@
 {
     NSRunningApplication *lr = [self getLRRunningInstance];
 
-    if ([lr.bundleIdentifier caseInsensitiveCompare:LIGHTROOM_BUNDLE_LR3] == NSOrderedSame)
+    if (lr != nil && [lr.bundleIdentifier caseInsensitiveCompare:LIGHTROOM_BUNDLE_LR3] == NSOrderedSame)
     {
         return LRVERSION_LR3;
     }
 
-    if ([lr.bundleIdentifier caseInsensitiveCompare:LIGHTROOM_BUNDLE_LR4] == NSOrderedSame ||
-        [lr.bundleIdentifier caseInsensitiveCompare:LIGHTROOM_BUNDLE_LR5] == NSOrderedSame ||
-        [lr.bundleIdentifier caseInsensitiveCompare:LIGHTROOM_BUNDLE_LR6] == NSOrderedSame ||
-        [lr.bundleIdentifier caseInsensitiveCompare:LIGHTROOM_BUNDLE_LR7] == NSOrderedSame)
-    {
-        return LRVERSION_LR4;
-    }
-
-    return LRVERSION_UNKNOWN;
+    // Default to LRVERSION_LR4 ("4") for all modern Lightroom Classic versions
+    return LRVERSION_LR4;
 }
 
 void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef notification, void *refcon)

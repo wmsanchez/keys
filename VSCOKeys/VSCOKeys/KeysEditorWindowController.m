@@ -682,7 +682,18 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     [self.keyControl loadAllKeyfiles];
     [self.keyControl resetStatusMenu];
 
-    [self.statusLabel setStringValue:@"Saved!"];
+    // Immediately activate and hot-reload the updated layout
+    [self.keyControl activateKeyfileWithUUID:self.currentUUID];
+
+    // If main window controller is open, update its selection and view table
+    if (self.mainController) {
+        self.mainController.keyfileList = [self.keyControl getKeyfileList];
+        self.mainController.selectedKeyfile = [self.keyControl.keyfileList objectForKey:self.currentUUID];
+        [self.mainController prepareSelectedKeys];
+        [self.mainController prepareCommandTableForContent];
+    }
+
+    [self.statusLabel setStringValue:@"Saved & Activated!"];
     [self.statusLabel setTextColor:[NSColor colorWithCalibratedRed:0.3 green:0.9 blue:0.4 alpha:1]];
 
     // Fade status label after 2 seconds
