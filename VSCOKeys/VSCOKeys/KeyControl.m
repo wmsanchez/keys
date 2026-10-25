@@ -513,11 +513,27 @@
 - (void)copyBaseKeyfilesToDirectory
 {
     NSFileManager *fm = [NSFileManager defaultManager];
+
+    for (NSString *file in [fm contentsOfDirectoryAtPath:self.keyfileDirectory error:NULL])
+    {
+        if ([[file pathExtension] isEqualToString:KEYFILE_VKEYS_EXTENSION] &&
+            [[[file lastPathComponent] lowercaseString] hasPrefix:@"test_"])
+        {
+            [fm removeItemAtPath:[self.keyfileDirectory stringByAppendingPathComponent:file] error:NULL];
+        }
+    }
+
     NSDirectoryEnumerator *dirEnum = [fm enumeratorAtPath:[[NSBundle mainBundle] resourcePath]];
 
     NSString *file;
     while (file = [dirEnum nextObject])
     {
+        if ([[file pathExtension] isEqualToString:KEYFILE_VKEYS_EXTENSION] &&
+            [[[file lastPathComponent] lowercaseString] hasPrefix:@"test_"])
+        {
+            continue;
+        }
+
         if (([[file pathExtension] isEqualToString: KEYFILE_VKEYS_EXTENSION]) ||
             ([[file pathExtension] isEqualToString: KEYFILE_JSON_EXTENSION]) )
         {

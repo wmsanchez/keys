@@ -543,14 +543,10 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         if (!adjKey) adjKey = @"Exposure2012";
     }
 
-    NSString *defaultVal = @"";
+    NSString *defaultVal = @"1";
     NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:adjKey];
-    if (limits) {
-        if (limits[@"min"] && limits[@"min"] != [NSNull null]) {
-            defaultVal = [NSString stringWithFormat:@"%g", [limits[@"min"] doubleValue]];
-        } else {
-            defaultVal = @"1";
-        }
+    if (limits && limits[@"min"] && limits[@"min"] != [NSNull null]) {
+        defaultVal = [NSString stringWithFormat:@"%g", [limits[@"min"] doubleValue]];
     }
 
     NSMutableDictionary *newBinding = [@{
@@ -749,19 +745,7 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     NSMutableDictionary *b = self.bindings[(NSUInteger)row];
     b[kBindAdj] = newAdj;
     self.lastUsedAdjKey = newAdj;
-    
-    // If the new command is a variable slider (has limits), clamp or assign a default.
-    // If it is a button/action command (no limits), clear the value.
-    NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:newAdj];
-    if (limits) {
-        NSString *clamped = [self clampValue:b[kBindValue] forAdjustment:newAdj];
-        if ([clamped length] == 0) {
-            clamped = (limits[@"min"] && limits[@"min"] != [NSNull null]) ? [NSString stringWithFormat:@"%g", [limits[@"min"] doubleValue]] : @"1";
-        }
-        b[kBindValue] = clamped;
-    } else {
-        b[kBindValue] = @"";
-    }
+    b[kBindValue] = [self clampValue:b[kBindValue] forAdjustment:newAdj];
     [self.tableView reloadData];
 }
 
@@ -809,6 +793,7 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         NSPopUpButtonCell *cell = [[NSPopUpButtonCell alloc] initTextCell:@"" pullsDown:NO];
         [cell setFont:[NSFont systemFontOfSize:11]];
         [cell setBordered:NO];
+        [cell setPreferredEdge:NSMaxYEdge];
 
         NSString *currKey = b[kBindAdj];
         NSString *currName = [self.keyControl.adjustmentMapping objectForKey:currKey] ?: currKey;
@@ -821,6 +806,15 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         [dummy setHidden:YES];
         [rowMenu addItem:dummy];
 
+        NSString *currentTitle = [NSString stringWithFormat:@"Current: %@", currName ?: @""];
+        NSColor *currentColor = [NSColor colorWithCalibratedRed:1.0 green:0.3 blue:0.3 alpha:1.0];
+        NSMenuItem *currentItem = [[NSMenuItem alloc] initWithTitle:currentTitle action:nil keyEquivalent:@""];
+        [currentItem setAttributedTitle:[[NSAttributedString alloc] initWithString:currentTitle
+            attributes:@{NSForegroundColorAttributeName: currentColor,
+                         NSFontAttributeName: [NSFont boldSystemFontOfSize:13]}]];
+        [rowMenu addItem:currentItem];
+        [rowMenu addItem:[NSMenuItem separatorItem]];
+
         // Build categorized submenus from template
         for (NSMenuItem *tmplCat in [self.actionMenuTemplate itemArray]) {
             NSMenuItem *catItem = [[NSMenuItem alloc] initWithTitle:[tmplCat title] action:nil keyEquivalent:@""];
@@ -832,7 +826,14 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
                                            action:@selector(actionMenuItemSelected:) keyEquivalent:@""];
                     [cmdItem setTarget:self];
                     [cmdItem setTag:row];
-                    [cmdItem setRepresentedObject:[tmplCmd representedObject]];
+                    NSString *commandId = [tmplCmd representedObject];
+                    [cmdItem setRepresentedObject:commandId];
+                    if ([commandId isEqualToString:currKey]) {
+                        [cmdItem setState:NSOnState];
+                        [cmdItem setAttributedTitle:[[NSAttributedString alloc] initWithString:[tmplCmd title]
+                            attributes:@{NSForegroundColorAttributeName: currentColor,
+                                         NSFontAttributeName: [NSFont boldSystemFontOfSize:13]}]];
+                    }
                     [catSub addItem:cmdItem];
                 }
                 [catItem setSubmenu:catSub];
@@ -847,16 +848,14 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     }
 
     if ([colId isEqualToString:kColValue]) {
-        NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:b[kBindAdj]];
-        BOOL isVariable = (limits != nil);
-
         NSTextFieldCell *cell = [[NSTextFieldCell alloc] initTextCell:b[kBindValue] ?: @""];
-        [cell setEditable:isVariable];
+        [cell setEditable:YES];
         [cell setFont:[NSFont systemFontOfSize:11]];
-        [cell setTextColor:isVariable ? [NSColor colorWithCalibratedWhite:0.9 alpha:1] : [NSColor colorWithCalibratedWhite:0.45 alpha:1]];
+        [cell setTextColor:[NSColor colorWithCalibratedWhite:0.9 alpha:1]];
         [cell setBackgroundColor:[NSColor colorWithCalibratedWhite:0.22 alpha:1]];
         [cell setDrawsBackground:YES];
 
+        NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:b[kBindAdj]];
         if (limits) {
             id minObj = [limits objectForKey:@"min"];
             id maxObj = [limits objectForKey:@"max"];
@@ -865,8 +864,6 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
             } else if (maxObj != nil && maxObj != [NSNull null]) {
                 [cell setPlaceholderString:[NSString stringWithFormat:@"max %@", maxObj]];
             }
-        } else {
-            [cell setPlaceholderString:@"—"];
         }
         return cell;
     }

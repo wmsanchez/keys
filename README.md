@@ -56,8 +56,9 @@ Deploy the fresh binary so macOS launches the new version with your Accessibilit
 # 1. Quit running instances
 killall VSCOKeys 2>/dev/null || true
 
-# 2. Copy the newly compiled build to /Applications
-cp -R ~/Library/Developer/Xcode/DerivedData/VSCOKeys-*/Build/Products/Debug/VSCOKeys.app /Applications/VSCOKeys.app
+# 2. Replace the installed app bundle; copying into an existing .app nests the new app inside it
+rm -rf /Applications/VSCOKeys.app
+ditto ~/Library/Developer/Xcode/DerivedData/VSCOKeys-*/Build/Products/Debug/VSCOKeys.app /Applications/VSCOKeys.app
 ```
 
 ### 3. Deploy Lightroom Plugin Modifications
@@ -78,7 +79,8 @@ For rapid testing after code edits, run this command from the repository root:
 cd VSCOKeys && \
 xcodebuild -scheme VSCOKeys -configuration Debug build && \
 killall VSCOKeys 2>/dev/null || true && \
-cp -R ~/Library/Developer/Xcode/DerivedData/VSCOKeys-*/Build/Products/Debug/VSCOKeys.app /Applications/VSCOKeys.app && \
+rm -rf /Applications/VSCOKeys.app && \
+ditto ~/Library/Developer/Xcode/DerivedData/VSCOKeys-*/Build/Products/Debug/VSCOKeys.app /Applications/VSCOKeys.app && \
 rsync -a --delete --exclude='*.log' --exclude='skey.key' ../Build/VSCOKeys.lrplugin/ "$HOME/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/" && \
 open -a /Applications/VSCOKeys.app
 ```
