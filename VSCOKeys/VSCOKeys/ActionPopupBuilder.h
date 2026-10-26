@@ -1,3 +1,3 @@
 #import <AppKit/AppKit.h>
 
-NSPopUpButton *VSCOCreateActionPopup(NSArray *actionKeys, NSDictionary *actionNames, NSString *selectedAction, NSRect frame);
+NSPopUpButton *VSCOCreateActionPopup(NSArray *actionKeys, NSDictionary *actionNames, NSArray *commandCategories, NSString *selectedAction, NSRect frame);

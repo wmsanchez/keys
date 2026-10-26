@@ -595,7 +595,7 @@
     }
 
     CGFloat removeWidth = fmin(74, fmax(56, rowWidth * 0.13));
-    CGFloat valueWidth = fmin(130, fmax(90, rowWidth * 0.22));
+    CGFloat valueWidth = fmin(480, fmax(90, rowWidth * 0.36));
     CGFloat modifierWidth = fmin(150, fmax(100, rowWidth * 0.24));
     CGFloat actionX = modifierWidth + 8;
     CGFloat valueX = rowWidth - removeWidth - 19 - valueWidth - 18;
@@ -755,7 +755,7 @@
     CGFloat contentHeight = fmax(108, visibleBindings.count * (rowHeight + rowGap));
     CGFloat rowWidth = fmax(420, NSWidth(self.bindingRowsView.frame));
     CGFloat removeWidth = fmin(74, fmax(56, rowWidth * 0.13));
-    CGFloat valueWidth = fmin(130, fmax(90, rowWidth * 0.22));
+    CGFloat valueWidth = fmin(480, fmax(90, rowWidth * 0.36));
     CGFloat modifierWidth = fmin(150, fmax(100, rowWidth * 0.24));
     CGFloat actionX = modifierWidth + 8;
     CGFloat valueX = rowWidth - removeWidth - 19 - valueWidth - 18;
@@ -795,7 +795,7 @@
             [actionPopup addItemWithTitle:@"Remap (edit in Table Editor)"];
             [actionPopup setEnabled:NO];
         } else {
-            actionPopup = VSCOCreateActionPopup(self.actionKeys, self.keyControl.adjustmentMapping, action, NSMakeRect(actionX, 1, actionWidth, 26));
+            actionPopup = VSCOCreateActionPopup(self.actionKeys, self.keyControl.adjustmentMapping, self.keyControl.commandCategories, action, NSMakeRect(actionX, 1, actionWidth, 26));
             [actionPopup setTag:(NSInteger)bindingIndex];
             [actionPopup setTarget:self];
             [actionPopup setAction:@selector(bindingActionChanged:)];
