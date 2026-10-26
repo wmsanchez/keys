@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A10000000000000000000011 /* KeyboardLayoutEditorController.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* KeyboardLayoutEditorController.m */; };
+		A10000000000000000000012 /* MacBookISOKeyboard.json in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* MacBookISOKeyboard.json */; };
 		2C8EE356B3EAF54B86A3B9A9 /* KeysEditorWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 2E68913A8EF9D27B81A08F67 /* KeysEditorWindowController.m */; };
 		301A0DC616260A4A00878103 /* ExceptionHandling.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 301A0DC516260A4A00878103 /* ExceptionHandling.framework */; };
 		302D5E5E161B6A8D009FB177 /* NSString+MD5.m in Sources */ = {isa = PBXBuildFile; fileRef = 302D5E5D161B6A8C009FB177 /* NSString+MD5.m */; };
@@ -137,6 +139,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A10000000000000000000001 /* KeyboardLayoutEditorController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyboardLayoutEditorController.h; sourceTree = "<group>"; };
+		A10000000000000000000002 /* KeyboardLayoutEditorController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KeyboardLayoutEditorController.m; sourceTree = "<group>"; };
+		A10000000000000000000003 /* MacBookISOKeyboard.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MacBookISOKeyboard.json; sourceTree = "<group>"; };
 		400F69DE212ED64AD13963A2 /* KeysEditorWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KeysEditorWindowController.h; sourceTree = "<group>"; };
 		2E68913A8EF9D27B81A08F67 /* KeysEditorWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = KeysEditorWindowController.m; sourceTree = "<group>"; };
 		301A0DC516260A4A00878103 /* ExceptionHandling.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ExceptionHandling.framework; path = System/Library/Frameworks/ExceptionHandling.framework; sourceTree = SDKROOT; };
@@ -466,6 +471,7 @@
 		307BFF5A15BF95B9005F514E /* Mapping */ = {
 			isa = PBXGroup;
 			children = (
+				A10000000000000000000003 /* MacBookISOKeyboard.json */,
 				307BFF5B15BF95DB005F514E /* KeyMapping.json */,
 				307BFF5D15BF962A005F514E /* AdjustmentMapping.json */,
 				307BFF5D15BF962A005F514F /* AdjustmentLimits.json */,
@@ -568,6 +574,8 @@
 		3081C29515B4F888001BE904 /* Controller */ = {
 			isa = PBXGroup;
 			children = (
+				A10000000000000000000001 /* KeyboardLayoutEditorController.h */,
+				A10000000000000000000002 /* KeyboardLayoutEditorController.m */,
 				400F69DE212ED64AD13963A2 /* KeysEditorWindowController.h */,
 				2E68913A8EF9D27B81A08F67 /* KeysEditorWindowController.m */,
 				307EE03615BDFE4400EC0284 /* MainWindowController.h */,
@@ -715,6 +723,7 @@
 				30F99FE115F7EA700093FB62 /* VSCOStandard_LR3.vkeys in Resources */,
 				30F99FE315F7EA700093FB62 /* VSCOStandard.vkeys in Resources */,
 				307BFF5C15BF95DB005F514E /* KeyMapping.json in Resources */,
+				A10000000000000000000012 /* MacBookISOKeyboard.json in Resources */,
 				307BFF5E15BF962A005F514E /* AdjustmentMapping.json in Resources */,
 				307BFF5E15BF962A005F514F /* AdjustmentLimits.json in Resources */,
 				307BFF5E15BF962A005F5150 /* CommandCategories.json in Resources */,
@@ -822,6 +831,7 @@
 				3081C2A515B502CC001BE904 /* NSDictionary+UrlEncoding.m in Sources */,
 				307EE03115BDF3AB00EC0284 /* AboutWindowController.m in Sources */,
 				2C8EE356B3EAF54B86A3B9A9 /* KeysEditorWindowController.m in Sources */,
+				A10000000000000000000011 /* KeyboardLayoutEditorController.m in Sources */,
 				307EE03815BDFE4400EC0284 /* MainWindowController.m in Sources */,
 				307BFF5715BF8224005F514E /* KeyfileDescriptionTextTransformer.m in Sources */,
 				307B4D0615C1FB8E009F79AA /* RSVerticallyCenteredTextFieldCell.m in Sources */,

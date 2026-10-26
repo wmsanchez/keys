@@ -102,6 +102,7 @@
 - (void)updateDefaults;
 - (void)resetStatusMenu;
 
+- (BOOL)saveKeyfile:(NSDictionary *)keyfile error:(NSError **)error;
 - (void)deleteKeyfile:(NSDictionary *)keyfile;
 - (void)loadAllKeyfiles;
 - (void)loadAvailableDevelopPresetsWithCompletion:(void (^)(NSArray *presets))completion;

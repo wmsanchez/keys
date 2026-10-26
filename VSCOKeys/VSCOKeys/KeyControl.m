@@ -286,6 +286,33 @@
     }
 }
 
+- (BOOL)saveKeyfile:(NSDictionary *)keyfile error:(NSError **)error
+{
+    NSString *uuid = [keyfile objectForKey:KEYFILE_UUID_NODENAME];
+    NSString *json = [keyfile JSONRepresentation];
+    if (!uuid || [uuid length] == 0 || !json) {
+        if (error) {
+            *error = [NSError errorWithDomain:@"VSCOKeys.Keyfile"
+                                         code:1
+                                     userInfo:@{NSLocalizedDescriptionKey: @"The layout could not be serialized."}];
+        }
+        return NO;
+    }
+
+    NSString *path = [[self.keyfileDirectory stringByAppendingPathComponent:uuid]
+                      stringByAppendingPathExtension:KEYFILE_JSON_EXTENSION];
+    NSError *writeError = nil;
+    if (![json writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:&writeError]) {
+        if (error) *error = writeError;
+        return NO;
+    }
+
+    [self loadAllKeyfiles];
+    [self resetStatusMenu];
+    [self activateKeyfileWithUUID:uuid];
+    return YES;
+}
+
 - (void)resetStatusMenu
 {
     NSMenu *theMenu = [[NSMenu alloc] initWithTitle:@"main"];

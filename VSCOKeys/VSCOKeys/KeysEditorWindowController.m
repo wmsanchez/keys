@@ -22,6 +22,7 @@
 //
 
 #import "KeysEditorWindowController.h"
+#import "KeyboardLayoutEditorController.h"
 #import "MainWindowController.h"
 #import "KeyControl.h"
 #import "Constants.h"
@@ -420,6 +421,13 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
                      NSFontAttributeName:[NSFont fontWithName:PROXIMA_FONT_NAME size:11]}]];
     [rightPanel addSubview:self.bulkDelBtn];
 
+    NSButton *keyboardEditorBtn = [self makeButtonWithTitle:@"KEYBOARD MAP" darkStyle:YES];
+    [keyboardEditorBtn setFrame:NSMakeRect(390, toolY, 175, 26)];
+    [keyboardEditorBtn setAutoresizingMask:NSViewMinYMargin];
+    [keyboardEditorBtn setTarget:self];
+    [keyboardEditorBtn setAction:@selector(keyboardEditorClicked:)];
+    [rightPanel addSubview:keyboardEditorBtn];
+
     // ── NSTableView ───────────────────────────────────────────────────────────
     self.tableView = [[NSTableView alloc] initWithFrame:NSMakeRect(0, 0, 825 - rightX, 400)];
     [self.tableView setRowHeight:26];
@@ -548,6 +556,11 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     [self.tableView scrollRowToVisible:(NSInteger)self.bindings.count - 1];
 }
 
+- (IBAction)keyboardEditorClicked:(id)sender
+{
+    [self.mainController showKeyboardEditor];
+}
+
 // ── Bulk duplicate: duplicate all selected rows (in reverse order to preserve indices) ──
 - (IBAction)bulkDuplicateClicked:(id)sender
 {
@@ -672,34 +685,12 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         KEYFILE_KEYS_NODENAME:        keysArray
     };
 
-    // Serialize to JSON
-    NSString *json = [layout JSONRepresentation];
-    if (!json) {
-        [self.statusLabel setStringValue:@"JSON error"];
-        [self.statusLabel setTextColor:[NSColor colorWithCalibratedRed:1 green:0.3 blue:0.3 alpha:1]];
-        return;
-    }
-
-    // Determine file path
-    NSString *dir  = self.keyControl.keyfileDirectory;
-    NSString *path = [[dir stringByAppendingPathComponent:self.currentUUID]
-                          stringByAppendingPathExtension:KEYFILE_JSON_EXTENSION];
-
     NSError *err = nil;
-    BOOL ok = [json writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:&err];
-
-    if (!ok) {
+    if (![self.keyControl saveKeyfile:layout error:&err]) {
         [self.statusLabel setStringValue:[NSString stringWithFormat:@"Error: %@", err.localizedDescription]];
         [self.statusLabel setTextColor:[NSColor colorWithCalibratedRed:1 green:0.3 blue:0.3 alpha:1]];
         return;
     }
-
-    // Reload the keyfile list in KeyControl
-    [self.keyControl loadAllKeyfiles];
-    [self.keyControl resetStatusMenu];
-
-    // Immediately activate and hot-reload the updated layout
-    [self.keyControl activateKeyfileWithUUID:self.currentUUID];
 
     // If main window controller is open, update its selection and view table
     if (self.mainController) {
@@ -707,6 +698,7 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         self.mainController.selectedKeyfile = [self.keyControl.keyfileList objectForKey:self.currentUUID];
         [self.mainController prepareSelectedKeys];
         [self.mainController prepareCommandTableForContent];
+        [self.mainController.keyboardEditorController loadKeyfile:self.mainController.selectedKeyfile];
     }
 
     [self.statusLabel setStringValue:@"Saved & Activated!"];

@@ -28,6 +28,7 @@
 
 #import "KeyControl.h"
 #import "KeysEditorWindowController.h"
+#import "KeyboardLayoutEditorController.h"
 
 #import "RSVerticallyCenteredTextFieldCell.h"
 #import "BackgroundedImageCell.h"
@@ -39,6 +40,8 @@
 #import "NSString+StringHeight.h"
 
 @interface MainWindowController ()
+@property (assign) NSRect keyboardEditorPreviousFrame;
+@property (assign) BOOL keyboardEditorWindowExpanded;
 
 @end
 
@@ -46,6 +49,9 @@
 
 @synthesize keyControl;
 @synthesize editorController;
+@synthesize keyboardEditorController;
+@synthesize keyboardEditorPreviousFrame;
+@synthesize keyboardEditorWindowExpanded;
 
 @synthesize initialLocation;
 @synthesize tabv_tabs;
@@ -683,34 +689,82 @@
 
 - (void)setupEditorController
 {
-    if (self.editorController) return;
-    self.editorController = [[KeysEditorWindowController alloc] initWithKeyControl:self.keyControl];
-    self.editorController.mainController = self;
-
-    // Size rootView to match the tab view's content area
     NSRect tabFrame = [self.tabv_tabs bounds];
-    [self.editorController.rootView setFrame:tabFrame];
-    [self.editorController.rootView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+    if (!self.editorController) {
+        self.editorController = [[KeysEditorWindowController alloc] initWithKeyControl:self.keyControl];
+        self.editorController.mainController = self;
+        [self.editorController.rootView setFrame:tabFrame];
+        [self.editorController.rootView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
 
-    // Add an "edit" tab to the tab view programmatically
-    NSTabViewItem *editItem = [[NSTabViewItem alloc] initWithIdentifier:@"edit"];
-    [editItem setLabel:@"Edit"];
-    [editItem setView:self.editorController.rootView];
-    [self.tabv_tabs addTabViewItem:editItem];
+        NSTabViewItem *editItem = [[NSTabViewItem alloc] initWithIdentifier:@"edit"];
+        [editItem setLabel:@"Edit"];
+        [editItem setView:self.editorController.rootView];
+        [self.tabv_tabs addTabViewItem:editItem];
+    }
+
+    if (!self.keyboardEditorController) {
+        self.keyboardEditorController = [[KeyboardLayoutEditorController alloc] initWithKeyControl:self.keyControl];
+        self.keyboardEditorController.mainController = self;
+        [self.keyboardEditorController.rootView setFrame:tabFrame];
+        [self.keyboardEditorController.rootView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+
+        NSTabViewItem *keyboardItem = [[NSTabViewItem alloc] initWithIdentifier:@"keyboard-edit"];
+        [keyboardItem setLabel:@"Keyboard (Experimental)"];
+        [keyboardItem setView:self.keyboardEditorController.rootView];
+        [self.tabv_tabs addTabViewItem:keyboardItem];
+    }
 }
 
 - (void)openEditorForKeyfile:(NSDictionary *)keyfile
 {
+    [self restoreEditorWindowSize];
     [self setupEditorController];
     [self.editorController loadKeyfile:keyfile];
+    [self.keyboardEditorController loadKeyfile:keyfile];
     [self.tabv_tabs selectTabViewItemWithIdentifier:@"edit"];
 }
 
 - (void)openNewLayoutEditor
 {
+    [self restoreEditorWindowSize];
     [self setupEditorController];
     [self.editorController startNewLayout];
+    [self.keyboardEditorController startNewLayout];
     [self.tabv_tabs selectTabViewItemWithIdentifier:@"edit"];
+}
+
+- (void)showKeyboardEditor
+{
+    [self setupEditorController];
+    if (!self.keyboardEditorWindowExpanded) {
+        self.keyboardEditorPreviousFrame = [self.window frame];
+        NSScreen *screen = [self.window screen] ?: [NSScreen mainScreen];
+        NSRect visibleFrame = [screen visibleFrame];
+        NSRect expandedFrame = self.keyboardEditorPreviousFrame;
+        expandedFrame.size.width = fmin(1360, visibleFrame.size.width - 40);
+        expandedFrame.size.height = fmin(900, visibleFrame.size.height - 40);
+        expandedFrame.origin.x = fmin(expandedFrame.origin.x, NSMaxX(visibleFrame) - expandedFrame.size.width);
+        expandedFrame.origin.x = fmax(expandedFrame.origin.x, visibleFrame.origin.x);
+        expandedFrame.origin.y = NSMaxY(self.keyboardEditorPreviousFrame) - expandedFrame.size.height;
+        expandedFrame.origin.y = fmax(expandedFrame.origin.y, visibleFrame.origin.y);
+        [self.window setFrame:expandedFrame display:YES animate:YES];
+        self.keyboardEditorWindowExpanded = YES;
+    }
+    [self.tabv_tabs selectTabViewItemWithIdentifier:@"keyboard-edit"];
+}
+
+- (void)showTableEditor
+{
+    [self setupEditorController];
+    [self restoreEditorWindowSize];
+    [self.tabv_tabs selectTabViewItemWithIdentifier:@"edit"];
+}
+
+- (void)restoreEditorWindowSize
+{
+    if (!self.keyboardEditorWindowExpanded) return;
+    [self.window setFrame:self.keyboardEditorPreviousFrame display:YES animate:YES];
+    self.keyboardEditorWindowExpanded = NO;
 }
 
 - (IBAction)viewEditButtonClicked:(id)sender
