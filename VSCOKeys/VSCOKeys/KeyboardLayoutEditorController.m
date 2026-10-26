@@ -72,7 +72,7 @@
 - (id)initWithFrame:(NSRect)frame
 {
     self = [super initWithFrame:frame];
-    if (self) [self registerForDraggedTypes:@[@"com.vsco.keys.binding-key-code"]];
+    if (self) [self registerForDraggedTypes:@[@"com.vsco.keys.binding-key-codes"]];
     return self;
 }
 
@@ -476,13 +476,14 @@
         NSString *code = [item objectForKey:@"code"];
         if (code && NSPointInRect(point, [self frameForKeyItem:item])) {
             self.mouseDownPoint = point;
-            NSMutableSet *selection = ([event modifierFlags] & NSEventModifierFlagShift)
+            BOOL extendsSelection = ([event modifierFlags] & NSEventModifierFlagShift) != 0;
+            NSMutableSet *selection = (extendsSelection || [self.selectedKeyCodes containsObject:code])
                 ? [self.selectedKeyCodes mutableCopy] : [NSMutableSet set];
             if (!selection) selection = [NSMutableSet set];
-            if ([event modifierFlags] & NSEventModifierFlagShift) {
+            if (extendsSelection) {
                 if ([selection containsObject:code]) [selection removeObject:code];
                 else [selection addObject:code];
-            } else {
+            } else if (![selection containsObject:code]) {
                 [selection addObject:code];
             }
             self.selectedKeyCodes = selection;
@@ -1356,7 +1357,8 @@
     NSArray *visibleBindings = [self bindingsForKeyCode:self.selectedKeyCode];
     CGFloat rowHeight = 30;
     CGFloat rowGap = 4;
-    CGFloat contentHeight = fmax(108, visibleBindings.count * (rowHeight + rowGap));
+    CGFloat viewportHeight = NSHeight(self.bindingRowsScrollView.contentView.bounds);
+    CGFloat contentHeight = fmax(viewportHeight, visibleBindings.count * (rowHeight + rowGap));
     CGFloat rowWidth = fmax(420, NSWidth(self.bindingRowsView.frame));
     CGFloat removeWidth = fmin(74, fmax(56, rowWidth * 0.13));
     CGFloat valueWidth = fmin(480, fmax(90, rowWidth * 0.36));
