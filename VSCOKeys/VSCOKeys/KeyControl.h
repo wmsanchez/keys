@@ -29,6 +29,7 @@
 @class QuickWindowController;
 @class LicenseWindowController;
 @class MainWindowController;
+@class KeyboardHUDWindowController;
 
 @interface KeyControl : NSObject
 
@@ -45,6 +46,11 @@
 @property (retain) NSImage *statusBarIconError;
 
 @property (retain) NSMenuItem *toggleMenuItem;
+@property (retain) NSMenuItem *keyboardHUDMenuItem;
+@property (retain) NSMenuItem *keyboardHUDShortLabelsMenuItem;
+@property (retain) KeyboardHUDWindowController *keyboardHUDWindowController;
+@property (assign) BOOL keyboardHUDEnabled;
+@property (assign) BOOL keyboardHUDUsesShortLabels;
 
 @property (retain) NSString *activeKeyFile;
 

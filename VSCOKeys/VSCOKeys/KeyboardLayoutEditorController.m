@@ -2,32 +2,14 @@
 #import "KeyControl.h"
 #import "ActionPopupBuilder.h"
 #import "KeysEditorWindowController.h"
+#import "MacBookKeyboardView.h"
 #import "MainWindowController.h"
 #import "NSObject+SBJson.h"
 
-@protocol MacBookKeyboardViewDelegate <NSObject>
-- (void)keyboardViewDidSelectKeyCode:(NSString *)keyCode;
-@end
-
-@interface MacBookKeyboardView : NSView
-@property (retain) NSArray *keyItems;
-@property (retain) NSDictionary *keyMapping;
-@property (retain) NSDictionary *assignmentTypes;
-@property (retain) NSString *selectedKeyCode;
-@property (retain) NSString *capturedKeyCode;
-@property (assign) BOOL capturedKeyHasBinding;
-@property (assign) id<MacBookKeyboardViewDelegate> delegate;
-@property (assign) BOOL listeningForKeys;
-@property (assign) CGFloat glowPhase;
-@property (assign) CGFloat glowRemaining;
-@property (retain) NSTimer *glowTimer;
-- (void)showCapturedKeyCode:(NSString *)keyCode hasBinding:(BOOL)hasBinding;
-- (void)advanceGlowAnimation:(NSTimer *)timer;
-@end
-
 @implementation MacBookKeyboardView
 
-@synthesize keyItems, keyMapping, assignmentTypes, selectedKeyCode, capturedKeyCode, capturedKeyHasBinding, delegate;
+@synthesize keyItems, keyMapping, assignmentTypes, assignmentLabels;
+@synthesize selectedKeyCode, capturedKeyCode, capturedKeyHasBinding, delegate;
 @synthesize listeningForKeys, glowPhase, glowRemaining, glowTimer;
 
 - (void)setListeningForKeys:(BOOL)enabled
@@ -47,6 +29,11 @@
 }
 
 - (void)showCapturedKeyCode:(NSString *)keyCode hasBinding:(BOOL)hasBinding
+{
+    [self showCapturedKeyCode:keyCode hasBinding:hasBinding actionTitle:nil];
+}
+
+- (void)showCapturedKeyCode:(NSString *)keyCode hasBinding:(BOOL)hasBinding actionTitle:(NSString *)actionTitle
 {
     self.capturedKeyCode = keyCode;
     self.capturedKeyHasBinding = hasBinding;
@@ -91,11 +78,24 @@
 - (void)drawString:(NSString *)string inRect:(NSRect)rect fontSize:(CGFloat)size color:(NSColor *)color
 {
     if ([string length] == 0) return;
+    CGFloat fontSize = size;
+    NSFont *font = [NSFont systemFontOfSize:fontSize weight:NSFontWeightMedium];
+    NSSize textSize = [string sizeWithAttributes:@{NSFontAttributeName: font}];
+    while (textSize.width > NSWidth(rect) - 4 && fontSize > 6) {
+        fontSize -= 0.5;
+        font = [NSFont systemFontOfSize:fontSize weight:NSFontWeightMedium];
+        textSize = [string sizeWithAttributes:@{NSFontAttributeName: font}];
+    }
+    NSString *displayString = string;
+    if (textSize.width > NSWidth(rect) - 4 && [string length] > 4) {
+        NSUInteger keepCount = MAX(1, (NSUInteger)((NSWidth(rect) - 4) / (fontSize * 0.58)) - 3);
+        displayString = [[string substringToIndex:MIN(keepCount, string.length)] stringByAppendingString:@"..."];
+        textSize = [displayString sizeWithAttributes:@{NSFontAttributeName: font}];
+    }
     NSDictionary *attributes = @{
-        NSFontAttributeName: [NSFont systemFontOfSize:size weight:NSFontWeightMedium],
+        NSFontAttributeName: font,
         NSForegroundColorAttributeName: color
     };
-    NSSize textSize = [string sizeWithAttributes:attributes];
     NSRect textRect = NSMakeRect(NSMidX(rect) - textSize.width / 2,
                                  NSMidY(rect) - textSize.height / 2,
                                  textSize.width,
@@ -182,10 +182,25 @@
         NSString *label = [item objectForKey:@"label"];
         if (!label && code) label = [self.keyMapping objectForKey:code];
         NSString *secondaryLabel = [item objectForKey:@"secondary"];
+        NSString *assignmentLabel = code ? [self.assignmentLabels objectForKey:code] : nil;
         NSColor *textColor = (assigned || selected)
             ? [NSColor colorWithCalibratedWhite:0.14 alpha:1]
             : [NSColor colorWithCalibratedWhite:0.84 alpha:0.52];
-        if ([item[@"shape"] isEqualToString:@"vertical-enter"]) {
+        if (assignmentLabel.length > 0) {
+            NSRect actionRect = NSMakeRect(NSMinX(keyRect) + 2, NSMaxY(keyRect) - 15, NSWidth(keyRect) - 4, 13);
+            [self drawString:assignmentLabel inRect:actionRect fontSize:8 color:textColor];
+            if (secondaryLabel) {
+                NSRect secondaryRect = NSMakeRect(NSMinX(keyRect) + 3, NSMinY(keyRect) + NSHeight(keyRect) * 0.42,
+                                                  NSWidth(keyRect) - 6, NSHeight(keyRect) * 0.25);
+                NSRect primaryRect = NSMakeRect(NSMinX(keyRect) + 3, NSMinY(keyRect) + 1,
+                                                NSWidth(keyRect) - 6, NSHeight(keyRect) * 0.35);
+                [self drawString:secondaryLabel inRect:secondaryRect fontSize:8 color:textColor];
+                [self drawString:label ?: @"" inRect:primaryRect fontSize:9 color:textColor];
+            } else {
+                NSRect keyLabelRect = NSMakeRect(NSMinX(keyRect) + 3, NSMinY(keyRect) + 2, NSWidth(keyRect) - 6, NSHeight(keyRect) - 18);
+                [self drawString:label ?: @"" inRect:keyLabelRect fontSize:(NSWidth(keyRect) < 38 ? 9 : 11) color:textColor];
+            }
+        } else if ([item[@"shape"] isEqualToString:@"vertical-enter"]) {
             [self drawString:label ?: @"return" inRect:keyRect fontSize:12 color:textColor];
         } else if (secondaryLabel) {
             NSRect secondaryRect = NSMakeRect(NSMinX(keyRect) + 4, NSMinY(keyRect) + keyRect.size.height * 0.53,

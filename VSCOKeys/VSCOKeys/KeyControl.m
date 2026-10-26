@@ -32,6 +32,7 @@
 
 #import "AboutWindowController.h"
 #import "QuickWindowController.h"
+#import "KeyboardHUDWindowController.h"
 #import "MainWindowController.h"
 
 #import "NSData+Cryption.h"
@@ -40,6 +41,16 @@
 #import "NSColor+FromHex.h"
 #import "NSFileManager+DirectoryLocations.h"
 #import "NSString+MD5.h"
+
+@interface KeyControl ()
+- (void)toggleKeyboardHUD:(id)sender;
+- (void)toggleKeyboardHUDShortLabels:(id)sender;
+- (void)updateKeyboardHUDForEvent:(NSDictionary *)eventInfo;
+- (void)refreshKeyboardHUDBindings;
+- (NSDictionary *)commandForKeyCode:(int)keyCode modifierFlags:(CGEventFlags)modifiers;
+- (NSString *)actionTitleForCommand:(NSDictionary *)command;
+- (NSUInteger)modifierMaskForEventFlags:(CGEventFlags)flags;
+@end
 
 @implementation KeyControl
 
@@ -56,6 +67,8 @@
 @synthesize statusBarIconError;
 
 @synthesize toggleMenuItem;
+@synthesize keyboardHUDMenuItem, keyboardHUDShortLabelsMenuItem, keyboardHUDWindowController;
+@synthesize keyboardHUDEnabled, keyboardHUDUsesShortLabels;
 
 @synthesize activeKeyFile;
 
@@ -100,6 +113,11 @@
     if (self)
     {
         self.authContinueTrial = NO;
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        if ([defaults objectForKey:DEFAULTS_KEYBOARD_HUD_SHORT_LABELS] == nil) {
+            [defaults setBool:YES forKey:DEFAULTS_KEYBOARD_HUD_SHORT_LABELS];
+        }
+        self.keyboardHUDUsesShortLabels = [defaults boolForKey:DEFAULTS_KEYBOARD_HUD_SHORT_LABELS];
 
         self.keyfileDirectory = [[NSFileManager defaultManager] applicationSupportDirectory];
 
@@ -226,6 +244,7 @@
 
 - (void)quitApplication
 {
+    [self.keyboardHUDWindowController hideHUD];
     [[NSApplication sharedApplication] terminate:nil];
 }
 
@@ -274,6 +293,7 @@
     if (!uuid || [uuid length] == 0) return;
 
     self.activeKeyFile = uuid;
+    [self refreshKeyboardHUDBindings];
 
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults setValue:self.activeKeyFile forKey:DEFAULTS_ACTIVE_KEYFILE];
@@ -342,6 +362,11 @@
     self.toggleMenuItem = [self addItem:STATUSMENUITEM_INACTIVE toMenu:theMenu target:self selector:@selector(toggleKeyControlActive) object:NULL];
 
     [self addItem:STATUSMENUITEM_PREFERENCES toMenu:theMenu target:self selector:@selector(showWindow) object:NULL];
+    self.keyboardHUDMenuItem = [self addItem:@"Show Keyboard Overlay" toMenu:theMenu target:self selector:@selector(toggleKeyboardHUD:) object:NULL];
+    self.keyboardHUDEnabled = self.keyboardHUDWindowController.window.isVisible;
+    [self.keyboardHUDMenuItem setState:self.keyboardHUDEnabled ? NSOnState : NSOffState];
+    self.keyboardHUDShortLabelsMenuItem = [self addItem:@"Use Short Action Labels" toMenu:theMenu target:self selector:@selector(toggleKeyboardHUDShortLabels:) object:NULL];
+    [self.keyboardHUDShortLabelsMenuItem setState:self.keyboardHUDUsesShortLabels ? NSOnState : NSOffState];
 
     [theMenu addItem:[NSMenuItem separatorItem]];
 
@@ -372,6 +397,97 @@
     [self.statusBar setMenu:theMenu];
 
     [self setMenuForKeyFileActive];
+    [self refreshKeyboardHUDBindings];
+}
+
+- (void)toggleKeyboardHUD:(id)sender
+{
+    if (!self.keyboardHUDWindowController) {
+        self.keyboardHUDWindowController = [[KeyboardHUDWindowController alloc] initWithKeyMapping:self.keyMapping];
+    }
+    [self refreshKeyboardHUDBindings];
+    if (self.keyboardHUDWindowController.window.isVisible) {
+        [self.keyboardHUDWindowController hideHUD];
+    } else {
+        [self.keyboardHUDWindowController showHUD];
+    }
+    self.keyboardHUDEnabled = self.keyboardHUDWindowController.window.isVisible;
+    [self.keyboardHUDMenuItem setState:self.keyboardHUDEnabled ? NSOnState : NSOffState];
+}
+
+- (void)toggleKeyboardHUDShortLabels:(id)sender
+{
+    self.keyboardHUDUsesShortLabels = !self.keyboardHUDUsesShortLabels;
+    [[NSUserDefaults standardUserDefaults] setBool:self.keyboardHUDUsesShortLabels forKey:DEFAULTS_KEYBOARD_HUD_SHORT_LABELS];
+    [self.keyboardHUDShortLabelsMenuItem setState:self.keyboardHUDUsesShortLabels ? NSOnState : NSOffState];
+    [self refreshKeyboardHUDBindings];
+}
+
+- (void)refreshKeyboardHUDBindings
+{
+    if (!self.keyboardHUDWindowController) return;
+    NSDictionary *keyfile = [self.keyfileList objectForKey:self.activeKeyFile];
+    NSArray *bindings = [keyfile objectForKey:KEYFILE_KEYS_NODENAME];
+    [self.keyboardHUDWindowController setBindings:bindings ?: @[]
+                               adjustmentMapping:self.adjustmentMapping ?: @{}
+                                   usesShortLabels:self.keyboardHUDUsesShortLabels];
+}
+
+- (NSDictionary *)commandForKeyCode:(int)keyCode modifierFlags:(CGEventFlags)modifiers
+{
+    CGEventFlags relevantModifiers = modifiers & (kCGEventFlagMaskShift | kCGEventFlagMaskControl | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand);
+    for (NSDictionary *command in self.keysDict) {
+        if (keyCode == [[command objectForKey:KEYFILE_KEY_NODENAME] intValue] &&
+            relevantModifiers == [[command objectForKey:KEYFILE_MODIFIERS_NODENAME] unsignedLongLongValue]) {
+            return command;
+        }
+    }
+    return nil;
+}
+
+- (NSString *)actionTitleForCommand:(NSDictionary *)command
+{
+    NSDictionary *adjustments = [command objectForKey:KEYFILE_ADJUSTMENTS_NODENAME];
+    NSArray *actions = [[adjustments allKeys] sortedArrayUsingSelector:@selector(compare:)];
+    NSMutableArray *titles = [NSMutableArray array];
+    for (NSString *action in actions) {
+        id value = [adjustments objectForKey:action];
+        NSString *title = nil;
+        if ([action isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME]) {
+            id target = [value isKindOfClass:[NSDictionary class]] ? [value objectForKey:KEYFILE_KEY_NODENAME] : value;
+            NSString *targetName = [self getKeynameForVirtual:[target description]] ?: [target description];
+            title = [NSString stringWithFormat:@"Remap to %@", targetName];
+        } else if ([action isEqualToString:@"_SetPreset"]) {
+            title = [NSString stringWithFormat:@"Apply %@", value];
+        } else {
+            title = [self getNormalNameForAdjustment:action] ?: action;
+        }
+        if (title) [titles addObject:title];
+    }
+    return [titles componentsJoinedByString:@" · "];
+}
+
+- (NSUInteger)modifierMaskForEventFlags:(CGEventFlags)flags
+{
+    NSUInteger mask = 0;
+    if (flags & kCGEventFlagMaskShift) mask |= 1;
+    if (flags & kCGEventFlagMaskControl) mask |= 2;
+    if (flags & kCGEventFlagMaskAlternate) mask |= 4;
+    if (flags & kCGEventFlagMaskCommand) mask |= 8;
+    return mask;
+}
+
+- (void)updateKeyboardHUDForEvent:(NSDictionary *)eventInfo
+{
+    if (!self.keyboardHUDWindowController.window.isVisible) return;
+    NSUInteger modifierMask = [[eventInfo objectForKey:@"modifierMask"] unsignedIntegerValue];
+    [self.keyboardHUDWindowController updateModifierMask:modifierMask];
+    NSString *keyCode = [eventInfo objectForKey:@"keyCode"];
+    if (keyCode) {
+        [self.keyboardHUDWindowController showKeyCode:keyCode
+                                          actionTitle:[eventInfo objectForKey:@"actionTitle"]
+                                         modifierMask:modifierMask];
+    }
 }
 
 - (void)statusBarUpdateLoop
@@ -1237,6 +1353,16 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 
     int keyCode = (int)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
     CGEventFlags modifiers = CGEventGetFlags(event);
+    NSDictionary *matchedCommand = [appSelf commandForKeyCode:keyCode modifierFlags:modifiers];
+    if ((type == kCGEventKeyDown || type == kCGEventKeyUp) && appSelf.keyboardHUDEnabled) {
+        NSMutableDictionary *eventInfo = [@{@"modifierMask": @([appSelf modifierMaskForEventFlags:modifiers])} mutableCopy];
+        if (type == kCGEventKeyDown) {
+            [eventInfo setObject:[NSString stringWithFormat:@"%d", keyCode] forKey:@"keyCode"];
+            NSString *actionTitle = matchedCommand ? [appSelf actionTitleForCommand:matchedCommand] : @"";
+            [eventInfo setObject:actionTitle ?: @"" forKey:@"actionTitle"];
+        }
+        [appSelf performSelectorOnMainThread:@selector(updateKeyboardHUDForEvent:) withObject:eventInfo waitUntilDone:NO];
+    }
 
     // Mode switch for app
     if ( !(modifiers & (kCGEventFlagMaskShift | kCGEventFlagMaskControl | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand)) && keyCode == appSelf.controlToggleKey && [appSelf checkIsLRInForeground])
@@ -1267,53 +1393,31 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
         return NULL;
     }
 
-    if ([appSelf checkIsKeySystemEngaged])
+    if ([appSelf checkIsKeySystemEngaged] && matchedCommand)
     {
-        if (appSelf.keysDict)
+        NSMutableDictionary *adjustments = [[matchedCommand objectForKey:KEYFILE_ADJUSTMENTS_NODENAME] mutableCopy];
+        NSDictionary *remap = [adjustments objectForKey:KEYFILE_ADJUSTMENT_REMAP_NODENAME];
+        CGEventRef newEvent = NULL;
+
+        if (remap)
         {
-            // check if any key combos match
-            for (int i = 0; i < [appSelf.keysDict count]; ++i)
-            {
-                NSDictionary *command = [appSelf.keysDict objectAtIndex:i];
+            int newKey = [[remap objectForKey:KEYFILE_KEY_NODENAME] intValue];
+            CGEventFlags newMod = [[remap objectForKey:KEYFILE_MODIFIERS_NODENAME] unsignedLongLongValue];
 
-                if (
-                    keyCode == [[command objectForKey:KEYFILE_KEY_NODENAME] intValue] &&
-                    (modifiers & (kCGEventFlagMaskShift | kCGEventFlagMaskControl | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand)) ==  [[command objectForKey:KEYFILE_MODIFIERS_NODENAME] unsignedLongLongValue]
-                    )
-                {
-                    NSMutableDictionary *adjustments = [[command objectForKey:KEYFILE_ADJUSTMENTS_NODENAME] mutableCopy];
+            newEvent = CGEventCreateKeyboardEvent(NULL, newKey, type == kCGEventKeyDown);
+            CGEventSetFlags(newEvent, newMod);
+            [adjustments removeObjectForKey:KEYFILE_ADJUSTMENT_REMAP_NODENAME];
 
-                    NSDictionary *remap = [adjustments objectForKey:KEYFILE_ADJUSTMENT_REMAP_NODENAME];
-
-                    CGEventRef newEvent = NULL;
-
-                    if (remap)
-                    {
-                        int newKey = [[remap objectForKey:KEYFILE_KEY_NODENAME] intValue];
-                        CGEventFlags newMod = [[remap objectForKey:KEYFILE_MODIFIERS_NODENAME] unsignedLongLongValue];
-
-                        newEvent = CGEventCreateKeyboardEvent(NULL, newKey, type == kCGEventKeyDown);
-                        CGEventSetFlags(newEvent, newMod);
-
-                        [adjustments removeObjectForKey:KEYFILE_ADJUSTMENT_REMAP_NODENAME];
-
-                        NSString *modString = GetModString(newMod);
-                        DualLog(@"Remapping key to %@%d", modString, newKey);
-                    }
-
-                    if (type == kCGEventKeyDown)
-                    {
-                        if (adjustments && [adjustments count] > 0)
-                        {
-                            [appSelf sendUpdate:adjustments];
-                            DualLog(@"Key Command Executed");
-                        }
-                    }
-
-                    return newEvent;
-                }
-            }
+            NSString *modString = GetModString(newMod);
+            DualLog(@"Remapping key to %@%d", modString, newKey);
         }
+
+        if (type == kCGEventKeyDown && adjustments.count > 0)
+        {
+            [appSelf sendUpdate:adjustments];
+            DualLog(@"Key Command Executed");
+        }
+        return newEvent;
     }
 
     return event;

@@ -13,6 +13,7 @@
 		A10000000000000000000021 /* KeyfileValidator.m in Test Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* KeyfileValidator.m */; };
 		A10000000000000000000024 /* ActionPopupBuilder.m in App Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000026 /* ActionPopupBuilder.m */; };
 		A10000000000000000000025 /* ActionPopupBuilder.m in Test Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000026 /* ActionPopupBuilder.m */; };
+		A10000000000000000000028 /* KeyboardHUDWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002A /* KeyboardHUDWindowController.m */; };
 		2C8EE356B3EAF54B86A3B9A9 /* KeysEditorWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 2E68913A8EF9D27B81A08F67 /* KeysEditorWindowController.m */; };
 		301A0DC616260A4A00878103 /* ExceptionHandling.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 301A0DC516260A4A00878103 /* ExceptionHandling.framework */; };
 		302D5E5E161B6A8D009FB177 /* NSString+MD5.m in Sources */ = {isa = PBXBuildFile; fileRef = 302D5E5D161B6A8C009FB177 /* NSString+MD5.m */; };
@@ -150,6 +151,9 @@
 		A10000000000000000000023 /* KeyfileValidator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyfileValidator.h; sourceTree = "<group>"; };
 		A10000000000000000000026 /* ActionPopupBuilder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ActionPopupBuilder.m; sourceTree = "<group>"; };
 		A10000000000000000000027 /* ActionPopupBuilder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ActionPopupBuilder.h; sourceTree = "<group>"; };
+		A10000000000000000000029 /* KeyboardHUDWindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyboardHUDWindowController.h; sourceTree = "<group>"; };
+		A1000000000000000000002A /* KeyboardHUDWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KeyboardHUDWindowController.m; sourceTree = "<group>"; };
+		A1000000000000000000002B /* MacBookKeyboardView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MacBookKeyboardView.h; sourceTree = "<group>"; };
 		400F69DE212ED64AD13963A2 /* KeysEditorWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KeysEditorWindowController.h; sourceTree = "<group>"; };
 		2E68913A8EF9D27B81A08F67 /* KeysEditorWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = KeysEditorWindowController.m; sourceTree = "<group>"; };
 		301A0DC516260A4A00878103 /* ExceptionHandling.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ExceptionHandling.framework; path = System/Library/Frameworks/ExceptionHandling.framework; sourceTree = SDKROOT; };
@@ -392,6 +396,9 @@
 				A10000000000000000000023 /* KeyfileValidator.h */,
 				A10000000000000000000026 /* ActionPopupBuilder.m */,
 				A10000000000000000000027 /* ActionPopupBuilder.h */,
+				A10000000000000000000029 /* KeyboardHUDWindowController.h */,
+				A1000000000000000000002A /* KeyboardHUDWindowController.m */,
+				A1000000000000000000002B /* MacBookKeyboardView.h */,
 				304A7B8915994DF700DB7327 /* AppDelegate.h */,
 				304A7B8A15994DF700DB7327 /* AppDelegate.m */,
 				304A7B7E15994DF700DB7327 /* Supporting Files */,
@@ -862,6 +869,7 @@
 				302D5E5E161B6A8D009FB177 /* NSString+MD5.m in Sources */,
 				A10000000000000000000020 /* KeyfileValidator.m in App Sources */,
 				A10000000000000000000024 /* ActionPopupBuilder.m in App Sources */,
+				A10000000000000000000028 /* KeyboardHUDWindowController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

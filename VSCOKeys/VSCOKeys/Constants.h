@@ -47,6 +47,7 @@
 #define KEYFILE_ADJUSTMENT_REMAP_NODENAME @"_RemapKey"
 
 #define DEFAULTS_ACTIVE_KEYFILE @"active_keyfile"
+#define DEFAULTS_KEYBOARD_HUD_SHORT_LABELS @"keyboard_hud_short_labels"
 #define DEFAULTS_KEYFILE_ISACTIVE @"isActive"
 #define DEFAULTS_KEYFILE_FORMAT @"keyfile_%@"
 
