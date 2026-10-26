@@ -297,8 +297,9 @@
 
 - (NSView *)hitTest:(NSPoint)point
 {
+    NSPoint localPoint = [self convertPoint:point fromView:self.superview];
     for (NSDictionary *item in self.keyItems) {
-        if ([item objectForKey:@"code"] && NSPointInRect(point, [self frameForKeyItem:item])) {
+        if ([item objectForKey:@"code"] && NSPointInRect(localPoint, [self frameForKeyItem:item])) {
             return self;
         }
     }
