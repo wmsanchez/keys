@@ -24,26 +24,141 @@
 //
 
 #import "VSCOKeysTests.h"
+#import "ActionPopupBuilder.h"
+#import "KeyfileValidator.h"
 
 @implementation VSCOKeysTests
 
 - (void)setUp
 {
     [super setUp];
-
-    // Set-up code here.
 }
 
 - (void)tearDown
 {
-    // Tear-down code here.
-
     [super tearDown];
 }
 
-- (void)testExample
+- (void)testKeyfileRejectsDuplicateKeyAndModifier
 {
-    STFail(@"Unit tests are not implemented yet in VSCOKeysTests");
+    NSDictionary *keyfile = @{
+        @"modeKey": @"53",
+        @"keys": @[
+            @{@"key": @"38", @"mod": @"0", @"adj": @{@"Exposure2012": @"-0.1"}},
+            @{@"key": @"38", @"mod": @"0", @"adj": @{@"_SetPreset": @"1 star"}}
+        ]
+    };
+    NSError *error = nil;
+
+    XCTAssertFalse(VSCOValidateKeyfile(keyfile, &error), @"Duplicate key/modifier pairs must be rejected");
+    XCTAssertEqual(error.code, (NSInteger)3, @"The error should identify the duplicate pair");
+}
+
+- (void)testKeyfileAllowsDifferentModifiersAndRejectsModeKeyBinding
+{
+    NSDictionary *keyfile = @{
+        @"modeKey": @"53",
+        @"keys": @[
+            @{@"key": @"38", @"mod": @"0", @"adj": @{@"Exposure2012": @"-0.1"}},
+            @{@"key": @"38", @"mod": @"15", @"adj": @{@"_SetPreset": @"1 star"}}
+        ]
+    };
+    NSError *error = nil;
+    XCTAssertTrue(VSCOValidateKeyfile(keyfile, &error), @"Different modifier masks should be distinct bindings");
+    XCTAssertNil(error, @"A valid keyfile should not produce an error");
+
+    NSDictionary *modeConflict = @{
+        @"modeKey": @"38",
+        @"keys": @[@{@"key": @"38", @"mod": @"0", @"adj": @{@"Exposure2012": @"-0.1"}}]
+    };
+    XCTAssertFalse(VSCOValidateKeyfile(modeConflict, &error), @"The unmodified mode key binding must be rejected");
+    XCTAssertEqual(error.code, (NSInteger)4, @"The error should identify the mode-key conflict");
+}
+
+- (void)testKeyfileAcceptsAllModifierMasks
+{
+    NSMutableArray *bindings = [NSMutableArray array];
+    for (NSInteger modifier = 0; modifier < 16; modifier++) {
+        [bindings addObject:@{
+            @"key": @"38",
+            @"mod": [NSString stringWithFormat:@"%ld", (long)modifier],
+            @"adj": @{@"Exposure2012": @"-0.1"}
+        }];
+    }
+    NSError *error = nil;
+
+    XCTAssertTrue(VSCOValidateKeyfile(@{@"modeKey": @"53", @"keys": bindings}, &error));
+    XCTAssertNil(error);
+}
+
+- (void)testKeyfilePreservesMultiActionRemapAndPresetPayloads
+{
+    NSDictionary *keyfile = @{
+        @"modeKey": @"53",
+        @"keys": @[
+            @{@"key": @"38", @"mod": @"0", @"adj": @{
+                @"Exposure2012": @"-0.1",
+                @"Saturation": @"1",
+                @"_RemapKey": @{@"key": @"40", @"mod": @"15"}
+            }},
+            @{@"key": @"40", @"mod": @"1", @"adj": @{@"_SetPreset": @"Folder/Preset"}}
+        ]
+    };
+    NSDictionary *original = [keyfile copy];
+    NSError *error = nil;
+
+    XCTAssertTrue(VSCOValidateKeyfile(keyfile, &error));
+    XCTAssertNil(error);
+    XCTAssertEqualObjects(keyfile, original);
+}
+
+- (void)testKeyfileRejectsEmptyPresetAndMalformedBinding
+{
+    NSError *error = nil;
+    NSDictionary *emptyPreset = @{
+        @"modeKey": @"53",
+        @"keys": @[@{@"key": @"38", @"mod": @"0", @"adj": @{@"_SetPreset": @"  "}}]
+    };
+    XCTAssertFalse(VSCOValidateKeyfile(emptyPreset, &error));
+    XCTAssertNotNil(error);
+
+    NSDictionary *invalidMask = @{
+        @"modeKey": @"53",
+        @"keys": @[@{@"key": @"38", @"mod": @"16", @"adj": @{@"Exposure2012": @"-0.1"}}]
+    };
+    XCTAssertFalse(VSCOValidateKeyfile(invalidMask, &error));
+    XCTAssertNotNil(error);
+}
+
+- (void)testActionPopupKeepsDuplicateTitlesAlignedWithActionIDs
+{
+    NSArray *actionKeys = @[
+        @"PrimaryDisplayLoupe",
+        @"PrimaryDisplayLoupeAlias",
+        @"straightenAngle",
+        @"MaskSubBack",
+        @"Tint",
+        @"Texture",
+        @"ResetCrop",
+        @"ResetParametricDarks"
+    ];
+    NSDictionary *actionNames = @{
+        @"PrimaryDisplayLoupe": @"Primary Display Loupe",
+        @"PrimaryDisplayLoupeAlias": @"Primary Display Loupe",
+        @"straightenAngle": @"Straighten Angle",
+        @"MaskSubBack": @"Subtract from mask... background",
+        @"Tint": @"Tint",
+        @"Texture": @"Texture (PV 3+)",
+        @"ResetCrop": @"Reset Crop",
+        @"ResetParametricDarks": @"Reset Dark Tones"
+    };
+
+    for (NSString *actionKey in [actionKeys subarrayWithRange:NSMakeRange(2, 6)]) {
+        NSPopUpButton *popup = VSCOCreateActionPopup(actionKeys, actionNames, actionKey, NSZeroRect);
+        XCTAssertEqual(popup.numberOfItems, (NSInteger)actionKeys.count);
+        XCTAssertEqualObjects(popup.titleOfSelectedItem, actionNames[actionKey]);
+        XCTAssertEqualObjects(popup.selectedItem.representedObject, actionKey);
+    }
 }
 
 @end

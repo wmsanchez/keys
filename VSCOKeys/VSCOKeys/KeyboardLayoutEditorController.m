@@ -1,5 +1,6 @@
 #import "KeyboardLayoutEditorController.h"
 #import "KeyControl.h"
+#import "ActionPopupBuilder.h"
 #import "KeysEditorWindowController.h"
 #import "MainWindowController.h"
 #import "NSObject+SBJson.h"
@@ -202,6 +203,7 @@
 @property (retain) NSView *bindingRowsView;
 @property (retain) NSArray *sortedKeyCodes;
 @property (retain) NSString *selectedKeyCode;
+@property (assign) BOOL hasUnrepairableLoadedData;
 @end
 
 @implementation KeyboardLayoutEditorController
@@ -210,6 +212,7 @@
 @synthesize keyfile, bindings, keyboardView, modifierValues, modifierTitles, actionKeys;
 @synthesize selectedKeyLabel, nameField, authorField, descriptionField, statusLabel;
 @synthesize modeKeyPopup, bindingRowsScrollView, bindingRowsView, sortedKeyCodes, selectedKeyCode;
+@synthesize hasUnrepairableLoadedData;
 
 - (NSString *)displayLabelForKeyCode:(NSString *)keyCode
 {
@@ -228,8 +231,8 @@
         self.keyControl = kc;
         self.keyfile = [@{KEYFILE_KEYS_NODENAME: @[]} mutableCopy];
         self.bindings = [NSMutableArray array];
-        self.modifierValues = @[@"0", @"1", @"2", @"4", @"8", @"3", @"5", @"9", @"6", @"10", @"12"];
-        self.modifierTitles = @[@"None", @"Shift", @"Control", @"Option", @"Command", @"Shift + Control", @"Shift + Option", @"Shift + Command", @"Control + Option", @"Control + Command", @"Option + Command"];
+        self.modifierValues = @[@"0", @"1", @"2", @"4", @"8", @"3", @"5", @"9", @"6", @"10", @"12", @"7", @"11", @"13", @"14", @"15"];
+        self.modifierTitles = @[@"None", @"Shift", @"Control", @"Option", @"Command", @"Shift + Control", @"Shift + Option", @"Shift + Command", @"Control + Option", @"Control + Command", @"Option + Command", @"Shift + Control + Option", @"Shift + Control + Command", @"Shift + Option + Command", @"Control + Option + Command", @"Shift + Control + Option + Command"];
         self.sortedKeyCodes = [[self.keyControl.keyMapping allKeys] sortedArrayUsingComparator:^NSComparisonResult(NSString *left, NSString *right) {
             return [[self.keyControl.keyMapping objectForKey:left] compare:[self.keyControl.keyMapping objectForKey:right]];
         }];
@@ -351,10 +354,16 @@
 
 - (void)loadKeyfile:(NSDictionary *)keyfile
 {
+    NSError *validationError = nil;
+    BOOL validKeyfile = [self.keyControl validateKeyfile:keyfile error:&validationError];
+    self.hasUnrepairableLoadedData = !validKeyfile && validationError.code == 2;
     self.keyfile = [keyfile mutableCopy];
     self.bindings = [NSMutableArray array];
-    for (NSDictionary *binding in [keyfile objectForKey:KEYFILE_KEYS_NODENAME]) {
-        [self.bindings addObject:[binding mutableCopy]];
+    id rawBindings = [keyfile objectForKey:KEYFILE_KEYS_NODENAME];
+    NSArray *keyBindings = [rawBindings isKindOfClass:[NSArray class]] ? rawBindings : @[];
+    for (id rawBinding in keyBindings) {
+        if (![rawBinding isKindOfClass:[NSDictionary class]]) continue;
+        [self.bindings addObject:[rawBinding mutableCopy]];
     }
     [self.nameField setStringValue:[keyfile objectForKey:KEYFILE_NAME_NODENAME] ?: @""];
     [self.authorField setStringValue:[keyfile objectForKey:KEYFILE_AUTHOR_NODENAME] ?: @""];
@@ -366,7 +375,14 @@
     [self refreshKeyStates];
     [self.selectedKeyLabel setStringValue:@"Select a key"];
     [self rebuildBindingRows];
-    [self.statusLabel setStringValue:@""];
+    if (!validKeyfile) {
+        [self.statusLabel setStringValue:[NSString stringWithFormat:@"Layout needs attention: %@", validationError.localizedDescription]];
+    } else {
+        [self.statusLabel setStringValue:@""];
+    }
+    [self.keyControl loadAvailableDevelopPresetsWithCompletion:^(NSArray *presets) {
+        [self rebuildBindingRows];
+    }];
 }
 
 - (void)startNewLayout
@@ -381,6 +397,7 @@
         KEYFILE_KEYS_NODENAME: @[]
     } mutableCopy];
     self.bindings = [NSMutableArray array];
+    self.hasUnrepairableLoadedData = NO;
     [self.nameField setStringValue:@""];
     [self.authorField setStringValue:@""];
     [self.descriptionField setStringValue:@""];
@@ -391,6 +408,9 @@
     [self.selectedKeyLabel setStringValue:@"Select a key"];
     [self rebuildBindingRows];
     [self.statusLabel setStringValue:@"New layout"];
+    [self.keyControl loadAvailableDevelopPresetsWithCompletion:^(NSArray *presets) {
+        [self rebuildBindingRows];
+    }];
 }
 
 - (NSArray *)bindingsForKeyCode:(NSString *)keyCode
@@ -402,6 +422,15 @@
         }
     }
     return matches;
+}
+
+- (NSString *)primaryActionForAdjustments:(NSDictionary *)adjustments
+{
+    NSArray *actions = [[adjustments allKeys] sortedArrayUsingSelector:@selector(compare:)];
+    for (NSString *action in actions) {
+        if (![action isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME]) return action;
+    }
+    return [actions firstObject];
 }
 
 - (void)rebuildBindingRows
@@ -436,18 +465,15 @@
         [row addSubview:modifier];
 
         NSDictionary *adjustments = [binding objectForKey:KEYFILE_ADJUSTMENTS_NODENAME] ?: @{};
-        NSString *action = [[adjustments allKeys] firstObject];
+        NSString *action = [self primaryActionForAdjustments:adjustments];
         NSUInteger actionIndex = [self.actionKeys indexOfObject:action];
-        NSPopUpButton *actionPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(180, 1, 430, 26) pullsDown:NO];
+        NSPopUpButton *actionPopup;
         if (actionIndex == NSNotFound) {
+            actionPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(180, 1, 430, 26) pullsDown:NO];
             [actionPopup addItemWithTitle:@"Remap (edit in Table Editor)"];
             [actionPopup setEnabled:NO];
         } else {
-            for (NSString *actionKey in self.actionKeys) {
-                NSString *title = [self.keyControl.adjustmentMapping objectForKey:actionKey] ?: actionKey;
-                [actionPopup addItemWithTitle:title];
-            }
-            [actionPopup selectItemAtIndex:(NSInteger)actionIndex];
+            actionPopup = VSCOCreateActionPopup(self.actionKeys, self.keyControl.adjustmentMapping, action, NSMakeRect(180, 1, 430, 26));
             [actionPopup setTag:(NSInteger)bindingIndex];
             [actionPopup setTarget:self];
             [actionPopup setAction:@selector(bindingActionChanged:)];
@@ -455,7 +481,15 @@
         [row addSubview:actionPopup];
 
         id value = [adjustments objectForKey:action];
-        NSTextField *valueField = [self fieldWithFrame:NSMakeRect(620, 1, 120, 26) placeholder:@"Value"];
+        NSTextField *valueField;
+        if ([action isEqualToString:@"_SetPreset"]) {
+            NSComboBox *presetField = [[NSComboBox alloc] initWithFrame:NSMakeRect(620, 1, 120, 26)];
+            [presetField setCompletes:YES];
+            [presetField addItemsWithObjectValues:self.keyControl.availableDevelopPresets ?: @[]];
+            valueField = presetField;
+        } else {
+            valueField = [self fieldWithFrame:NSMakeRect(620, 1, 120, 26) placeholder:@"Value"];
+        }
         [valueField setStringValue:[value description] ?: @""];
         [valueField setTag:(NSInteger)bindingIndex + 10000];
         [valueField setDelegate:self];
@@ -564,13 +598,12 @@
 - (void)bindingActionChanged:(NSPopUpButton *)sender
 {
     NSInteger index = [sender tag];
-    NSInteger actionIndex = [sender indexOfSelectedItem];
-    if (index < 0 || index >= (NSInteger)self.bindings.count || actionIndex < 0 || actionIndex >= (NSInteger)self.actionKeys.count) return;
+    NSString *newAction = [[sender selectedItem] representedObject];
+    if (index < 0 || index >= (NSInteger)self.bindings.count || ![self.actionKeys containsObject:newAction]) return;
 
-    NSString *newAction = [self.actionKeys objectAtIndex:(NSUInteger)actionIndex];
     NSMutableDictionary *binding = [self.bindings objectAtIndex:(NSUInteger)index];
     NSDictionary *oldAdjustments = [binding objectForKey:KEYFILE_ADJUSTMENTS_NODENAME];
-    NSString *oldAction = [[oldAdjustments allKeys] firstObject];
+    NSString *oldAction = [self primaryActionForAdjustments:oldAdjustments];
     id oldValue = [oldAdjustments objectForKey:oldAction];
     id value = oldValue;
     NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:newAction];
@@ -586,7 +619,10 @@
         id minimum = [limits objectForKey:@"min"];
         value = minimum && minimum != [NSNull null] ? [minimum description] : @"1";
     }
-    [binding setObject:@{newAction: value} forKey:KEYFILE_ADJUSTMENTS_NODENAME];
+    NSMutableDictionary *newAdjustments = [oldAdjustments mutableCopy] ?: [NSMutableDictionary dictionary];
+    if (oldAction && ![oldAction isEqualToString:newAction]) [newAdjustments removeObjectForKey:oldAction];
+    newAdjustments[newAction] = value;
+    [binding setObject:newAdjustments forKey:KEYFILE_ADJUSTMENTS_NODENAME];
     [self rebuildBindingRows];
     [self refreshKeyStates];
     [self.statusLabel setStringValue:@"Action changed. Save to apply."];
@@ -599,9 +635,11 @@
     if (index < 0 || index >= (NSInteger)self.bindings.count) return;
     NSMutableDictionary *binding = [self.bindings objectAtIndex:(NSUInteger)index];
     NSDictionary *adjustments = [binding objectForKey:KEYFILE_ADJUSTMENTS_NODENAME];
-    NSString *action = [[adjustments allKeys] firstObject];
+    NSString *action = [self primaryActionForAdjustments:adjustments];
     if (!action) return;
-    [binding setObject:@{action: [field stringValue]} forKey:KEYFILE_ADJUSTMENTS_NODENAME];
+    NSMutableDictionary *updatedAdjustments = [adjustments mutableCopy] ?: [NSMutableDictionary dictionary];
+    updatedAdjustments[action] = [field stringValue];
+    [binding setObject:updatedAdjustments forKey:KEYFILE_ADJUSTMENTS_NODENAME];
     [self refreshKeyStates];
     [self.statusLabel setStringValue:@"Value changed. Save to apply."];
 }
@@ -622,9 +660,11 @@
     [field setDoubleValue:[sender doubleValue]];
     NSMutableDictionary *binding = [self.bindings objectAtIndex:(NSUInteger)index];
     NSDictionary *adjustments = [binding objectForKey:KEYFILE_ADJUSTMENTS_NODENAME];
-    NSString *action = [[adjustments allKeys] firstObject];
+    NSString *action = [self primaryActionForAdjustments:adjustments];
     if (!action) return;
-    [binding setObject:@{action: [field stringValue]} forKey:KEYFILE_ADJUSTMENTS_NODENAME];
+    NSMutableDictionary *updatedAdjustments = [adjustments mutableCopy] ?: [NSMutableDictionary dictionary];
+    updatedAdjustments[action] = [field stringValue];
+    [binding setObject:updatedAdjustments forKey:KEYFILE_ADJUSTMENTS_NODENAME];
     [self refreshKeyStates];
     [self.statusLabel setStringValue:@"Value changed. Save to apply."];
 }
@@ -674,6 +714,11 @@
 
 - (void)saveClicked:(id)sender
 {
+    if (self.hasUnrepairableLoadedData) {
+        [self.statusLabel setStringValue:@"Save blocked: this layout contains malformed binding data that cannot be edited safely."];
+        return;
+    }
+
     NSString *name = [self.nameField stringValue];
     if ([name length] == 0) {
         [self.statusLabel setStringValue:@"Name required."];
@@ -690,6 +735,10 @@
     [layout setObject:self.bindings forKey:KEYFILE_KEYS_NODENAME];
 
     NSError *error = nil;
+    if (![self.keyControl validateKeyfile:layout error:&error]) {
+        [self.statusLabel setStringValue:[NSString stringWithFormat:@"Save failed: %@", error.localizedDescription]];
+        return;
+    }
     if (![self.keyControl saveKeyfile:layout error:&error]) {
         [self.statusLabel setStringValue:[NSString stringWithFormat:@"Save failed: %@", error.localizedDescription]];
         return;

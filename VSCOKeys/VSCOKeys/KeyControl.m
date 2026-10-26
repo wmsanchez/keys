@@ -24,6 +24,7 @@
 //
 
 #import "KeyControl.h"
+#import "KeyfileValidator.h"
 #import "AppDelegate.h"
 
 #import "SBJson.h"
@@ -288,6 +289,8 @@
 
 - (BOOL)saveKeyfile:(NSDictionary *)keyfile error:(NSError **)error
 {
+    if (![self validateKeyfile:keyfile error:error]) return NO;
+
     NSString *uuid = [keyfile objectForKey:KEYFILE_UUID_NODENAME];
     NSString *json = [keyfile JSONRepresentation];
     if (!uuid || [uuid length] == 0 || !json) {
@@ -310,6 +313,25 @@
     [self loadAllKeyfiles];
     [self resetStatusMenu];
     [self activateKeyfileWithUUID:uuid];
+    return YES;
+}
+
+- (BOOL)validateKeyfile:(NSDictionary *)keyfile error:(NSError **)error
+{
+    if (!VSCOValidateKeyfile(keyfile, error)) return NO;
+    for (NSDictionary *binding in [keyfile objectForKey:KEYFILE_KEYS_NODENAME]) {
+        NSDictionary *adjustments = [binding objectForKey:KEYFILE_ADJUSTMENTS_NODENAME];
+        for (NSString *action in adjustments) {
+            if ([action isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME] || [action isEqualToString:@"_SetPreset"] ||
+                [self.adjustmentMapping objectForKey:action]) continue;
+            if (error) {
+                *error = [NSError errorWithDomain:@"VSCOKeys.Keyfile"
+                                             code:5
+                                         userInfo:@{NSLocalizedDescriptionKey: [NSString stringWithFormat:@"Action %@ is not supported by this version of VSCO Keys.", action]}];
+            }
+            return NO;
+        }
+    }
     return YES;
 }
 

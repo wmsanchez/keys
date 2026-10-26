@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000011 /* KeyboardLayoutEditorController.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* KeyboardLayoutEditorController.m */; };
 		A10000000000000000000012 /* MacBookISOKeyboard.json in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* MacBookISOKeyboard.json */; };
+		A10000000000000000000020 /* KeyfileValidator.m in App Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* KeyfileValidator.m */; };
+		A10000000000000000000021 /* KeyfileValidator.m in Test Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* KeyfileValidator.m */; };
+		A10000000000000000000024 /* ActionPopupBuilder.m in App Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000026 /* ActionPopupBuilder.m */; };
+		A10000000000000000000025 /* ActionPopupBuilder.m in Test Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000026 /* ActionPopupBuilder.m */; };
 		2C8EE356B3EAF54B86A3B9A9 /* KeysEditorWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 2E68913A8EF9D27B81A08F67 /* KeysEditorWindowController.m */; };
 		301A0DC616260A4A00878103 /* ExceptionHandling.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 301A0DC516260A4A00878103 /* ExceptionHandling.framework */; };
 		302D5E5E161B6A8D009FB177 /* NSString+MD5.m in Sources */ = {isa = PBXBuildFile; fileRef = 302D5E5D161B6A8C009FB177 /* NSString+MD5.m */; };
@@ -18,7 +22,7 @@
 		304A7B8815994DF700DB7327 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 304A7B8615994DF700DB7327 /* Credits.rtf */; };
 		304A7B8B15994DF700DB7327 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 304A7B8A15994DF700DB7327 /* AppDelegate.m */; };
 		304A7B8E15994DF800DB7327 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 304A7B8C15994DF800DB7327 /* MainMenu.xib */; };
-		304A7B9615994DF800DB7327 /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 304A7B9515994DF800DB7327 /* SenTestingKit.framework */; };
+		304A7B9615994DF800DB7327 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 304A7B9515994DF800DB7327 /* XCTest.framework */; };
 		304A7B9715994DF800DB7327 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 304A7B7715994DF700DB7327 /* Cocoa.framework */; };
 		304A7B9F15994DF800DB7327 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 304A7B9D15994DF800DB7327 /* InfoPlist.strings */; };
 		304A7BA215994DF800DB7327 /* VSCOKeysTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 304A7BA115994DF800DB7327 /* VSCOKeysTests.m */; };
@@ -142,6 +146,10 @@
 		A10000000000000000000001 /* KeyboardLayoutEditorController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyboardLayoutEditorController.h; sourceTree = "<group>"; };
 		A10000000000000000000002 /* KeyboardLayoutEditorController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KeyboardLayoutEditorController.m; sourceTree = "<group>"; };
 		A10000000000000000000003 /* MacBookISOKeyboard.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MacBookISOKeyboard.json; sourceTree = "<group>"; };
+		A10000000000000000000022 /* KeyfileValidator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KeyfileValidator.m; sourceTree = "<group>"; };
+		A10000000000000000000023 /* KeyfileValidator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyfileValidator.h; sourceTree = "<group>"; };
+		A10000000000000000000026 /* ActionPopupBuilder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ActionPopupBuilder.m; sourceTree = "<group>"; };
+		A10000000000000000000027 /* ActionPopupBuilder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ActionPopupBuilder.h; sourceTree = "<group>"; };
 		400F69DE212ED64AD13963A2 /* KeysEditorWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KeysEditorWindowController.h; sourceTree = "<group>"; };
 		2E68913A8EF9D27B81A08F67 /* KeysEditorWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = KeysEditorWindowController.m; sourceTree = "<group>"; };
 		301A0DC516260A4A00878103 /* ExceptionHandling.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ExceptionHandling.framework; path = System/Library/Frameworks/ExceptionHandling.framework; sourceTree = SDKROOT; };
@@ -160,8 +168,8 @@
 		304A7B8915994DF700DB7327 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		304A7B8A15994DF700DB7327 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = AppDelegate.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		304A7B8D15994DF800DB7327 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
-		304A7B9415994DF800DB7327 /* VSCOKeysTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VSCOKeysTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
-		304A7B9515994DF800DB7327 /* SenTestingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SenTestingKit.framework; path = Library/Frameworks/SenTestingKit.framework; sourceTree = DEVELOPER_DIR; };
+		304A7B9415994DF800DB7327 /* VSCOKeysTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VSCOKeysTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		304A7B9515994DF800DB7327 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		304A7B9C15994DF800DB7327 /* VSCOKeysTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "VSCOKeysTests-Info.plist"; sourceTree = "<group>"; };
 		304A7B9E15994DF800DB7327 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		304A7BA015994DF800DB7327 /* VSCOKeysTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VSCOKeysTests.h; sourceTree = "<group>"; };
@@ -305,7 +313,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				304A7B9615994DF800DB7327 /* SenTestingKit.framework in Frameworks */,
+				304A7B9615994DF800DB7327 /* XCTest.framework in Frameworks */,
 				304A7B9715994DF800DB7327 /* Cocoa.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -338,7 +346,7 @@
 			isa = PBXGroup;
 			children = (
 				304A7B7315994DF700DB7327 /* VSCOKeys.app */,
-				304A7B9415994DF800DB7327 /* VSCOKeysTests.octest */,
+				304A7B9415994DF800DB7327 /* VSCOKeysTests.xctest */,
 				308283FA159ED126008A2997 /* VSCOKeysActivator */,
 			);
 			name = Products;
@@ -353,7 +361,7 @@
 				30828408159ED5F6008A2997 /* Security.framework */,
 				304A7BAB15994E8400DB7327 /* CoreServices.framework */,
 				304A7B7715994DF700DB7327 /* Cocoa.framework */,
-				304A7B9515994DF800DB7327 /* SenTestingKit.framework */,
+				304A7B9515994DF800DB7327 /* XCTest.framework */,
 				308283FC159ED126008A2997 /* CoreFoundation.framework */,
 				304A7B7915994DF700DB7327 /* Other Frameworks */,
 			);
@@ -380,6 +388,10 @@
 				3081C28815B4EAF1001BE904 /* View */,
 				30BC5785159D36360085376B /* Keysets */,
 				307DCDC315B6218300CED242 /* Constants.h */,
+				A10000000000000000000022 /* KeyfileValidator.m */,
+				A10000000000000000000023 /* KeyfileValidator.h */,
+				A10000000000000000000026 /* ActionPopupBuilder.m */,
+				A10000000000000000000027 /* ActionPopupBuilder.h */,
 				304A7B8915994DF700DB7327 /* AppDelegate.h */,
 				304A7B8A15994DF700DB7327 /* AppDelegate.m */,
 				304A7B7E15994DF700DB7327 /* Supporting Files */,
@@ -655,12 +667,11 @@
 			buildRules = (
 			);
 			dependencies = (
-				304A7B9915994DF800DB7327 /* PBXTargetDependency */,
 			);
 			name = VSCOKeysTests;
 			productName = VSCOKeysTests;
-			productReference = 304A7B9415994DF800DB7327 /* VSCOKeysTests.octest */;
-			productType = "com.apple.product-type.bundle.ocunit-test";
+			productReference = 304A7B9415994DF800DB7327 /* VSCOKeysTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		308283F9159ED126008A2997 /* VSCOKeysActivator */ = {
 			isa = PBXNativeTarget;
@@ -771,7 +782,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Run the unit tests in this test bundle.\n\"${SYSTEM_DEVELOPER_DIR}/Tools/RunUnitTests\"\n";
+			shellScript = ":";
 		};
 		A0B1C2D3E4F5061728394A5B /* Build Lightroom plugin */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -849,6 +860,8 @@
 				308B5D4D15D4745C00A0DA88 /* NSString+StringHeight.m in Sources */,
 				30F99FE615F7F33A0093FB62 /* NSFileManager+DirectoryLocations.m in Sources */,
 				302D5E5E161B6A8D009FB177 /* NSString+MD5.m in Sources */,
+				A10000000000000000000020 /* KeyfileValidator.m in App Sources */,
+				A10000000000000000000024 /* ActionPopupBuilder.m in App Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -857,6 +870,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				304A7BA215994DF800DB7327 /* VSCOKeysTests.m in Sources */,
+				A10000000000000000000021 /* KeyfileValidator.m in Test Sources */,
+				A10000000000000000000025 /* ActionPopupBuilder.m in Test Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -999,7 +1014,6 @@
 		304A7BA915994DF800DB7327 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/VSCOKeys.app/Contents/MacOS/VSCOKeys";
 				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_LIBRARY_DIR)/Frameworks";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "VSCOKeys/VSCOKeys-Prefix.pch";
@@ -1007,15 +1021,14 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
-				TEST_HOST = "$(BUNDLE_LOADER)";
-				WRAPPER_EXTENSION = octest;
+				PRODUCT_BUNDLE_IDENTIFIER = "VSCO.VSCOKeysTests";
+				WRAPPER_EXTENSION = xctest;
 			};
 			name = Debug;
 		};
 		304A7BAA15994DF800DB7327 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/VSCOKeys.app/Contents/MacOS/VSCOKeys";
 				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_LIBRARY_DIR)/Frameworks";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "VSCOKeys/VSCOKeys-Prefix.pch";
@@ -1023,8 +1036,8 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
-				TEST_HOST = "$(BUNDLE_LOADER)";
-				WRAPPER_EXTENSION = octest;
+				PRODUCT_BUNDLE_IDENTIFIER = "VSCO.VSCOKeysTests";
+				WRAPPER_EXTENSION = xctest;
 			};
 			name = Release;
 		};
