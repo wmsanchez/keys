@@ -29,6 +29,7 @@
 		304A7B9F15994DF800DB7327 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 304A7B9D15994DF800DB7327 /* InfoPlist.strings */; };
 		304A7BA215994DF800DB7327 /* VSCOKeysTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 304A7BA115994DF800DB7327 /* VSCOKeysTests.m */; };
 		304A7BAC15994E8400DB7327 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 304A7BAB15994E8400DB7327 /* CoreServices.framework */; };
+		A10000000000000000000031 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000032 /* Carbon.framework */; };
 		305F240F15996F31002D2AE5 /* NSObject+SBJson.m in Sources */ = {isa = PBXBuildFile; fileRef = 305F23F715996F31002D2AE5 /* NSObject+SBJson.m */; };
 		305F241015996F31002D2AE5 /* SBJsonParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 305F23FA15996F31002D2AE5 /* SBJsonParser.m */; };
 		305F241115996F31002D2AE5 /* SBJsonStreamParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 305F23FC15996F31002D2AE5 /* SBJsonStreamParser.m */; };
@@ -181,6 +182,7 @@
 		304A7BA015994DF800DB7327 /* VSCOKeysTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VSCOKeysTests.h; sourceTree = "<group>"; };
 		304A7BA115994DF800DB7327 /* VSCOKeysTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VSCOKeysTests.m; sourceTree = "<group>"; };
 		304A7BAB15994E8400DB7327 /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
+		A10000000000000000000032 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
 		305F23F615996F31002D2AE5 /* NSObject+SBJson.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSObject+SBJson.h"; sourceTree = "<group>"; };
 		305F23F715996F31002D2AE5 /* NSObject+SBJson.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = "NSObject+SBJson.m"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		305F23F815996F31002D2AE5 /* SBJson.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SBJson.h; sourceTree = "<group>"; };
@@ -311,6 +313,7 @@
 				3081C2AB15B506C1001BE904 /* IOKit.framework in Frameworks */,
 				30828409159ED5F6008A2997 /* Security.framework in Frameworks */,
 				304A7BAC15994E8400DB7327 /* CoreServices.framework in Frameworks */,
+				A10000000000000000000031 /* Carbon.framework in Frameworks */,
 				304A7B7815994DF700DB7327 /* Cocoa.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -366,6 +369,7 @@
 				3082840A159ED7DB008A2997 /* ApplicationServices.framework */,
 				30828408159ED5F6008A2997 /* Security.framework */,
 				304A7BAB15994E8400DB7327 /* CoreServices.framework */,
+				A10000000000000000000032 /* Carbon.framework */,
 				304A7B7715994DF700DB7327 /* Cocoa.framework */,
 				304A7B9515994DF800DB7327 /* XCTest.framework */,
 				308283FC159ED126008A2997 /* CoreFoundation.framework */,

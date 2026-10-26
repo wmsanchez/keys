@@ -43,9 +43,68 @@
 #import "NSColor+FromHex.h"
 #import "NSFileManager+DirectoryLocations.h"
 #import "NSString+MD5.h"
+#import <Carbon/Carbon.h>
+#import <math.h>
+
+static const int64_t kVSCOInjectedKeyEventMarker = 0x5653434f;
+
+static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGEventFlags *eventFlags)
+{
+    if (character.length != 1 || !keyCode || !eventFlags) return NO;
+
+    TISInputSourceRef source = TISCopyCurrentKeyboardInputSource();
+    CFDataRef layoutData = source ? TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) : NULL;
+    if (!layoutData) {
+        if (source) CFRelease(source);
+        source = TISCopyCurrentKeyboardLayoutInputSource();
+        layoutData = source ? TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) : NULL;
+    }
+    if (!layoutData || !source) {
+        if (source) CFRelease(source);
+        return NO;
+    }
+
+    const UCKeyboardLayout *layout = (const UCKeyboardLayout *)CFDataGetBytePtr(layoutData);
+    UniChar target = [character characterAtIndex:0];
+    const UInt32 modifierStates[] = {0, 2, 8, 10};
+    BOOL found = NO;
+    if (layout) {
+        for (UInt16 code = 0; code <= 0xFF && !found; code++) {
+            for (NSUInteger index = 0; index < sizeof(modifierStates) / sizeof(modifierStates[0]); index++) {
+                UInt32 deadKeyState = 0;
+                UniChar translatedCharacter = 0;
+                UniCharCount characterCount = 0;
+                OSStatus result = UCKeyTranslate(layout, code, kUCKeyActionDown, modifierStates[index],
+                                                 LMGetKbdLast(), kUCKeyTranslateNoDeadKeysBit,
+                                                 &deadKeyState, 1, &characterCount, &translatedCharacter);
+                if (result == noErr && characterCount == 1 && translatedCharacter == target) {
+                    *keyCode = code;
+                    *eventFlags = 0;
+                    if (modifierStates[index] & 2) *eventFlags |= kCGEventFlagMaskShift;
+                    if (modifierStates[index] & 8) *eventFlags |= kCGEventFlagMaskAlternate;
+                    found = YES;
+                    break;
+                }
+            }
+        }
+    }
+    CFRelease(source);
+    return found;
+}
 
 @interface KeyControl ()
 @property (retain) NSString *physicalKeyboardLayoutIdentifier;
+@property (retain) NSString *brushIncreaseKey;
+@property (retain) NSString *brushDecreaseKey;
+@property (assign) CGKeyCode brushIncreaseKeyCode;
+@property (assign) CGEventFlags brushIncreaseEventFlags;
+@property (assign) BOOL brushIncreaseKeyCodeValid;
+@property (assign) CGKeyCode brushDecreaseKeyCode;
+@property (assign) CGEventFlags brushDecreaseEventFlags;
+@property (assign) BOOL brushDecreaseKeyCodeValid;
+@property (assign) CGKeyCode pastePreviousKeyCode;
+@property (assign) CGEventFlags pastePreviousEventFlags;
+@property (assign) BOOL pastePreviousKeyCodeValid;
 - (void)toggleKeyboardHUD:(id)sender;
 - (void)toggleKeyboardHUDShortLabels:(id)sender;
 - (void)selectPhysicalKeyboardLayoutFromMenu:(id)sender;
@@ -56,6 +115,10 @@
 - (NSDictionary *)commandForKeyCode:(int)keyCode modifierFlags:(CGEventFlags)modifiers;
 - (NSString *)actionTitleForCommand:(NSDictionary *)command;
 - (NSUInteger)modifierMaskForEventFlags:(CGEventFlags)flags;
+- (void)updateShortcutKeyCodes:(NSDictionary *)shortcuts;
+- (void)postShortcutWithKeyCode:(CGKeyCode)keyCode flags:(CGEventFlags)eventFlags;
+- (void)sendBrushSizeChange:(double)delta;
+- (void)sendPasteSettingsFromPrevious;
 @end
 
 @implementation KeyControl
@@ -79,6 +142,7 @@
 
 @synthesize activeKeyFile;
 @synthesize physicalKeyboardLayoutIdentifier;
+@synthesize brushIncreaseKey, brushDecreaseKey;
 
 @synthesize keyThread;
 @synthesize statusThread;
@@ -133,6 +197,7 @@
             return [[option objectForKey:@"id"] isEqualToString:savedLayout];
         }] != NSNotFound;
         self.physicalKeyboardLayoutIdentifier = supportedLayout ? savedLayout : KEYBOARD_LAYOUT_MACBOOK_ISO;
+        [self updateShortcutKeyCodes:@{@"increase": @"]", @"decrease": @"[", @"pastePrevious": @"v"}];
 
         self.keyfileDirectory = [[NSFileManager defaultManager] applicationSupportDirectory];
 
@@ -924,6 +989,71 @@
 
 #pragma mark Lightroom Integration
 
+- (void)updateShortcutKeyCodes:(NSDictionary *)shortcuts
+{
+    NSString *increaseKey = shortcuts[@"increase"];
+    NSString *decreaseKey = shortcuts[@"decrease"];
+    if ([increaseKey isKindOfClass:[NSString class]] && increaseKey.length == 1) {
+        self.brushIncreaseKey = increaseKey;
+        self.brushIncreaseKeyCodeValid = VSCOKeyCodeForCharacter(increaseKey, &_brushIncreaseKeyCode, &_brushIncreaseEventFlags);
+    }
+    if ([decreaseKey isKindOfClass:[NSString class]] && decreaseKey.length == 1) {
+        self.brushDecreaseKey = decreaseKey;
+        self.brushDecreaseKeyCodeValid = VSCOKeyCodeForCharacter(decreaseKey, &_brushDecreaseKeyCode, &_brushDecreaseEventFlags);
+    }
+    NSString *pastePreviousKey = shortcuts[@"pastePrevious"];
+    self.pastePreviousKeyCodeValid = VSCOKeyCodeForCharacter(pastePreviousKey, &_pastePreviousKeyCode, &_pastePreviousEventFlags);
+}
+
+- (void)sendBrushSizeChange:(double)delta
+{
+    if (!isfinite(delta) || delta == 0) return;
+
+    CGKeyCode keyCode = delta > 0 ? self.brushIncreaseKeyCode : self.brushDecreaseKeyCode;
+    CGEventFlags eventFlags = delta > 0 ? self.brushIncreaseEventFlags : self.brushDecreaseEventFlags;
+    BOOL keyCodeValid = delta > 0 ? self.brushIncreaseKeyCodeValid : self.brushDecreaseKeyCodeValid;
+    NSString *character = delta > 0 ? self.brushIncreaseKey : self.brushDecreaseKey;
+    if (!keyCodeValid) {
+        DualLog(@"Could not resolve Lightroom brush shortcut: %@", character);
+        return;
+    }
+
+    [self postShortcutWithKeyCode:keyCode flags:eventFlags];
+}
+
+- (void)sendPasteSettingsFromPrevious
+{
+    if (!self.pastePreviousKeyCodeValid) {
+        DualLog(@"Could not resolve Lightroom Paste Settings from Previous shortcut.");
+        return;
+    }
+    CGEventFlags flags = self.pastePreviousEventFlags | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand;
+    [self postShortcutWithKeyCode:self.pastePreviousKeyCode flags:flags];
+}
+
+- (void)postShortcutWithKeyCode:(CGKeyCode)keyCode flags:(CGEventFlags)eventFlags
+{
+    NSRunningApplication *lightroom = [self getLRRunningInstance];
+    if (!lightroom) return;
+
+    CGEventRef keyDown = CGEventCreateKeyboardEvent(NULL, keyCode, true);
+    CGEventRef keyUp = CGEventCreateKeyboardEvent(NULL, keyCode, false);
+    if (!keyDown || !keyUp) {
+        if (keyDown) CFRelease(keyDown);
+        if (keyUp) CFRelease(keyUp);
+        return;
+    }
+
+    CGEventSetFlags(keyDown, eventFlags);
+    CGEventSetFlags(keyUp, eventFlags);
+    CGEventSetIntegerValueField(keyDown, kCGEventSourceUserData, kVSCOInjectedKeyEventMarker);
+    CGEventSetIntegerValueField(keyUp, kCGEventSourceUserData, kVSCOInjectedKeyEventMarker);
+    CGEventPostToPid((pid_t)lightroom.processIdentifier, keyDown);
+    CGEventPostToPid((pid_t)lightroom.processIdentifier, keyUp);
+    CFRelease(keyDown);
+    CFRelease(keyUp);
+}
+
 - (void)initAppList
 {
     self.appIdList = [NSArray arrayWithObjects:LIGHTROOM_BUNDLE_LR3,LIGHTROOM_BUNDLE_LR4,LIGHTROOM_BUNDLE_LR5,LIGHTROOM_BUNDLE_LR6,LIGHTROOM_BUNDLE_LR7, nil];
@@ -1348,7 +1478,18 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
         self.pluginSettingsRequestInProgress = NO;
         NSString *body = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
         id settings = [body JSONValue];
-        NSDictionary *hiddenActions = [settings isKindOfClass:[NSDictionary class]] ? settings[@"hiddenActions"] : nil;
+        if (![settings isKindOfClass:[NSDictionary class]]) return;
+        NSString *brushIncreaseKey = settings[@"brushIncreaseKey"];
+        NSString *brushDecreaseKey = settings[@"brushDecreaseKey"];
+        NSString *increaseShortcut = [brushIncreaseKey isKindOfClass:[NSString class]] ? brushIncreaseKey : @"]";
+        NSString *decreaseShortcut = [brushDecreaseKey isKindOfClass:[NSString class]] ? brushDecreaseKey : @"[";
+        NSDictionary *shortcuts = @{@"increase": increaseShortcut, @"decrease": decreaseShortcut};
+        [self performSelectorOnMainThread:@selector(updateShortcutKeyCodes:)
+                       withObject:@{@"increase": increaseShortcut,
+                            @"decrease": decreaseShortcut,
+                            @"pastePrevious": @"v"}
+                            waitUntilDone:YES];
+        NSDictionary *hiddenActions = settings[@"hiddenActions"];
         if (![hiddenActions isKindOfClass:[NSDictionary class]]) return;
 
         NSMutableSet *hiddenIdentifiers = [NSMutableSet set];
@@ -1553,6 +1694,8 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
         return NULL;
     }
 
+    if (CGEventGetIntegerValueField(event, kCGEventSourceUserData) == kVSCOInjectedKeyEventMarker) return event;
+
     int keyCode = (int)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
     CGEventFlags modifiers = CGEventGetFlags(event);
     NSDictionary *matchedCommand = [appSelf commandForKeyCode:keyCode modifierFlags:modifiers];
@@ -1603,6 +1746,16 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
         NSMutableDictionary *adjustments = [[matchedCommand objectForKey:KEYFILE_ADJUSTMENTS_NODENAME] mutableCopy];
         NSDictionary *remap = [adjustments objectForKey:KEYFILE_ADJUSTMENT_REMAP_NODENAME];
         CGEventRef newEvent = NULL;
+
+        id brushSizeChange = [adjustments objectForKey:@"ChangeBrushSize"];
+        if (type == kCGEventKeyDown && brushSizeChange) {
+            [appSelf sendBrushSizeChange:[[brushSizeChange description] doubleValue]];
+            [adjustments removeObjectForKey:@"ChangeBrushSize"];
+        }
+        if (type == kCGEventKeyDown && [adjustments objectForKey:@"PasteSettingsFromPrevious"]) {
+            [appSelf sendPasteSettingsFromPrevious];
+            [adjustments removeObjectForKey:@"PasteSettingsFromPrevious"];
+        }
 
         if (remap)
         {
