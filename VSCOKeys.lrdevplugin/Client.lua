@@ -50,6 +50,20 @@ Client = {
 
 function Client:loop()
   local ACTIONS = require "ActionsTable"()
+  local settingsPayload = {
+    denoiseAmount = tonumber(prefs.denoiseAmount) or 50,
+    hiddenActions = prefs.hiddenActions or {},
+  }
+  local settingsResponse, settingsHeaders = LrHttp.post(
+    CLIENT_SETTINGS_ENDPOINT,
+    JSON:encode(settingsPayload),
+    {{field="Content-Type", value="application/json"}},
+    "POST",
+    1
+  )
+  if settingsResponse == nil then
+    logging:log("Could not publish VSCO Keys settings: " .. to_string(settingsHeaders.error))
+  end
   local availablePresets = {}
   for _, folder in ipairs(LrApplication.developPresetFolders()) do
     local folderName = folder:getName()
@@ -174,7 +188,12 @@ function Client:loop()
         for k, v in pairs(json) do
           local action = ACTIONS[k]
           if action then
-            local ok, err = pcall(action)
+            local ok, err
+            if k == 'DenoiseAmount' then
+              ok, err = pcall(action, v)
+            else
+              ok, err = pcall(action)
+            end
             if ok then
               logging:log('Executed action ' .. k)
             else

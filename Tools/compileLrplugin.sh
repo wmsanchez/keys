@@ -25,8 +25,18 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SOURCE_DIR="$PROJECT_DIR/VSCOKeys.lrdevplugin"
 PLUGIN_DIR="$PROJECT_DIR/Build/VSCOKeys.lrplugin"
 
+cp "$PROJECT_DIR/VSCOKeys/VSCOKeys/CommandCategories.json" "$SOURCE_DIR/CommandCategories.json"
 mkdir -p "$PLUGIN_DIR"
 rsync -a --delete --delete-excluded \
 	--exclude='*.log' \
 	--exclude='skey.key' \
 	"$SOURCE_DIR/" "$PLUGIN_DIR/"
+
+INSTALLED_PLUGIN_DIR="$HOME/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin"
+if [ -d "$INSTALLED_PLUGIN_DIR" ]; then
+	rsync -a \
+		--exclude='*.log' \
+		--exclude='skey.key' \
+		"$SOURCE_DIR/" "$INSTALLED_PLUGIN_DIR/"
+	echo "Updated installed Lightroom plugin: $INSTALLED_PLUGIN_DIR"
+fi

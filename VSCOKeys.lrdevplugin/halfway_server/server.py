@@ -12,6 +12,7 @@ currentUUID = ""
 clientUpdates = {}
 hasUpdates = False
 available_presets = []
+plugin_settings = {"denoiseAmount": 50, "hiddenActions": {}}
 
 class HalfwayHandler(http.server.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
@@ -43,6 +44,14 @@ class HalfwayHandler(http.server.BaseHTTPRequestHandler):
                 self.send_header("Connection", "close")
                 self.end_headers()
                 self.wfile.write(response_body)
+            elif "/Settings/" in self.path:
+                response_body = json.dumps(plugin_settings).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(response_body)))
+                self.send_header("Connection", "close")
+                self.end_headers()
+                self.wfile.write(response_body)
             else:
                 self.send_response(404)
                 self.send_header("Content-Length", "0")
@@ -50,7 +59,7 @@ class HalfwayHandler(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
 
     def do_POST(self):
-        global currentUUID, clientUpdates, hasUpdates, available_presets
+        global currentUUID, clientUpdates, hasUpdates, available_presets, plugin_settings
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length) if content_length > 0 else b""
 
@@ -61,6 +70,37 @@ class HalfwayHandler(http.server.BaseHTTPRequestHandler):
                     with state_lock:
                         available_presets = [item for item in data if isinstance(item, str)]
             except Exception:
+                pass
+
+            response_body = b'{"ok":true}'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(response_body)))
+            self.send_header("Connection", "close")
+            self.end_headers()
+            self.wfile.write(response_body)
+
+        elif "/Settings/" in self.path:
+            try:
+                data = json.loads(post_data.decode("utf-8"))
+                if isinstance(data, dict):
+                    try:
+                        denoise_amount = int(data.get("denoiseAmount", 50))
+                    except (TypeError, ValueError):
+                        denoise_amount = 50
+                    hidden_actions = data.get("hiddenActions", {})
+                    if not isinstance(hidden_actions, dict):
+                        hidden_actions = {}
+                    with state_lock:
+                        plugin_settings = {
+                            "denoiseAmount": max(1, min(100, denoise_amount)),
+                            "hiddenActions": {
+                                str(action_id): True
+                                for action_id, hidden in hidden_actions.items()
+                                if hidden is True
+                            },
+                        }
+            except (UnicodeDecodeError, json.JSONDecodeError):
                 pass
 
             response_body = b'{"ok":true}'

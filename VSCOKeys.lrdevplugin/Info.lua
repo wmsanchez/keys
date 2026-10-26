@@ -39,8 +39,14 @@ return {
   -- Add the menu item to the File menu.
 
   LrExportMenuItems = {
-    title = "Activate Keys LR3",
-    file = "ActivateKeys.lua",
+    {
+      title = "Activate Keys LR3",
+      file = "ActivateKeys.lua",
+    },
+    {
+      title = "VSCO Keys Settings...",
+      file = "Options.lua",
+    },
   },
 
   VERSION = { major=1, minor=0, revision=7, build=0, },
