@@ -931,6 +931,10 @@
         "name": "Lightroom Paste Settings"
       },
       {
+        "id": "PasteSettingsFromPrevious",
+        "name": "Paste Settings from Previous"
+      },
+      {
         "id": "VirtualCopy",
         "name": "Create Virtual Copy"
       },

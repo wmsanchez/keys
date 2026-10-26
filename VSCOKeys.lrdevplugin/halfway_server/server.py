@@ -12,7 +12,12 @@ currentUUID = ""
 clientUpdates = {}
 hasUpdates = False
 available_presets = []
-plugin_settings = {"denoiseAmount": 50, "hiddenActions": {}}
+plugin_settings = {
+    "denoiseAmount": 50,
+    "hiddenActions": {},
+    "brushIncreaseKey": "]",
+    "brushDecreaseKey": "[",
+}
 
 class HalfwayHandler(http.server.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
@@ -91,6 +96,12 @@ class HalfwayHandler(http.server.BaseHTTPRequestHandler):
                     hidden_actions = data.get("hiddenActions", {})
                     if not isinstance(hidden_actions, dict):
                         hidden_actions = {}
+                    brush_increase_key = data.get("brushIncreaseKey", "]")
+                    if not isinstance(brush_increase_key, str) or len(brush_increase_key) != 1:
+                        brush_increase_key = "]"
+                    brush_decrease_key = data.get("brushDecreaseKey", "[")
+                    if not isinstance(brush_decrease_key, str) or len(brush_decrease_key) != 1:
+                        brush_decrease_key = "["
                     with state_lock:
                         plugin_settings = {
                             "denoiseAmount": max(1, min(100, denoise_amount)),
@@ -99,6 +110,8 @@ class HalfwayHandler(http.server.BaseHTTPRequestHandler):
                                 for action_id, hidden in hidden_actions.items()
                                 if hidden is True
                             },
+                            "brushIncreaseKey": brush_increase_key,
+                            "brushDecreaseKey": brush_decrease_key,
                         }
             except (UnicodeDecodeError, json.JSONDecodeError):
                 pass

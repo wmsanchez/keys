@@ -7,6 +7,7 @@ local LrTasks = import 'LrTasks'
 local LrView = import 'LrView'
 local LrFileUtils = import 'LrFileUtils'
 local JSON = require 'json'
+local PluginSettings = require 'PluginSettings'
 local prefs = LrPrefs.prefsForPlugin()
 local settingsEndpoint = 'http://127.0.0.1:49657/Settings/'
 
@@ -28,9 +29,12 @@ end
 LrFunctionContext.callWithContext('vscoKeysOptions', function(context)
   local f = LrView.osFactory()
   local properties = LrBinding.makePropertyTable(context)
-  local hiddenActions = prefs.hiddenActions or {}
-  properties.denoiseAmount = tostring(prefs.denoiseAmount or 50)
+  local savedSettings = PluginSettings.load() or {}
+  local savedHiddenActions = savedSettings.hiddenActions
+  local hiddenActions = type(savedHiddenActions) == 'table' and savedHiddenActions or prefs.hiddenActions or {}
+  properties.denoiseAmount = tostring(savedSettings.denoiseAmount or prefs.denoiseAmount or 50)
   properties.actionSearch = ''
+  properties.groupsExpanded = true
 
   for _, command in ipairs(commands) do
     properties['show_' .. command.id] = hiddenActions[command.id] ~= true
@@ -61,32 +65,39 @@ LrFunctionContext.callWithContext('vscoKeysOptions', function(context)
         },
       })
     end
-    table.insert(actionViews, f:group_box {
+    local categoryView = f:group_box {
       title = currentCategory,
       f:column {
         spacing = f:control_spacing(),
-        f:row {
-          f:push_button {
-            title = 'Show category',
-            action = function()
-              for _, command in ipairs(scopedCommands) do
-                properties['show_' .. command.id] = true
-              end
-            end,
-          },
-          f:push_button {
-            title = 'Hide category',
-            action = function()
-              for _, command in ipairs(scopedCommands) do
-                properties['show_' .. command.id] = false
-              end
-            end,
+        f:view {
+          visible = LrView.bind('groupsExpanded'),
+          f:column {
+            spacing = f:control_spacing(),
+            f:row {
+              f:push_button {
+                title = 'Show category',
+                action = function()
+                  for _, command in ipairs(scopedCommands) do
+                    properties['show_' .. command.id] = true
+                  end
+                end,
+              },
+              f:push_button {
+                title = 'Hide category',
+                action = function()
+                  for _, command in ipairs(scopedCommands) do
+                    properties['show_' .. command.id] = false
+                  end
+                end,
+              },
+            },
+            f:column(checkboxes),
           },
         },
-        f:column(checkboxes),
       },
-    })
-  end
+    }
+    table.insert(actionViews, categoryView)
+end
 
   for _, command in ipairs(commands) do
     if command.category ~= currentCategory then
@@ -153,6 +164,14 @@ LrFunctionContext.callWithContext('vscoKeysOptions', function(context)
                 end
               end,
             },
+            f:push_button {
+              title = 'Fold all groups',
+              action = function() properties.groupsExpanded = false end,
+            },
+            f:push_button {
+              title = 'Unfold all groups',
+              action = function() properties.groupsExpanded = true end,
+            },
           },
           f:scrolled_view {
             width = 940,
@@ -188,6 +207,14 @@ LrFunctionContext.callWithContext('vscoKeysOptions', function(context)
 
   prefs.denoiseAmount = denoiseAmount
   prefs.hiddenActions = nextHiddenActions
+  local settings = {
+    denoiseAmount = denoiseAmount,
+    hiddenActions = nextHiddenActions,
+  }
+  local settingsSaved, settingsError = PluginSettings.save(settings)
+  if not settingsSaved then
+    LrDialogs.message('Settings were saved in Lightroom, but not to the shared VSCO Keys settings file: ' .. tostring(settingsError), 'Settings file warning', 'warning')
+  end
   local payload = JSON:encode {
     denoiseAmount = denoiseAmount,
     hiddenActions = nextHiddenActions,

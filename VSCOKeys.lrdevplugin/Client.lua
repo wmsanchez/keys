@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 require "Utils"
 require "Constants"
 require "json"
+local PluginSettings = require 'PluginSettings'
 local logging = require "Logging.lua"
 local JSON = require "json"
 local DevelopSettings = require "DevelopSettings"
@@ -50,10 +51,20 @@ Client = {
 
 function Client:loop()
   local ACTIONS = require "ActionsTable"()
+  local storedSettings = PluginSettings.load() or {}
+  local storedHiddenActions = storedSettings.hiddenActions
   local settingsPayload = {
-    denoiseAmount = tonumber(prefs.denoiseAmount) or 50,
-    hiddenActions = prefs.hiddenActions or {},
+    denoiseAmount = tonumber(storedSettings.denoiseAmount) or tonumber(prefs.denoiseAmount) or 50,
+    hiddenActions = type(storedHiddenActions) == 'table' and storedHiddenActions or prefs.hiddenActions or {},
+    brushIncreaseKey = LOC("$$$/AgDevelop/Localized/BrushIncreaseKey=]"),
+    brushDecreaseKey = LOC("$$$/AgDevelop/Localized/BrushDecreaseKey=["),
   }
+  if not next(storedSettings) then
+    PluginSettings.save {
+      denoiseAmount = settingsPayload.denoiseAmount,
+      hiddenActions = settingsPayload.hiddenActions,
+    }
+  end
   local settingsResponse, settingsHeaders = LrHttp.post(
     CLIENT_SETTINGS_ENDPOINT,
     JSON:encode(settingsPayload),
