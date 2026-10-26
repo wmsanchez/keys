@@ -14,12 +14,65 @@
 @property (retain) NSDictionary *keyMapping;
 @property (retain) NSDictionary *assignmentTypes;
 @property (retain) NSString *selectedKeyCode;
+@property (retain) NSString *capturedKeyCode;
+@property (assign) BOOL capturedKeyHasBinding;
 @property (assign) id<MacBookKeyboardViewDelegate> delegate;
+@property (assign) BOOL listeningForKeys;
+@property (assign) CGFloat glowPhase;
+@property (assign) CGFloat glowRemaining;
+@property (retain) NSTimer *glowTimer;
+- (void)showCapturedKeyCode:(NSString *)keyCode hasBinding:(BOOL)hasBinding;
+- (void)advanceGlowAnimation:(NSTimer *)timer;
 @end
 
 @implementation MacBookKeyboardView
 
-@synthesize keyItems, keyMapping, assignmentTypes, selectedKeyCode, delegate;
+@synthesize keyItems, keyMapping, assignmentTypes, selectedKeyCode, capturedKeyCode, capturedKeyHasBinding, delegate;
+@synthesize listeningForKeys, glowPhase, glowRemaining, glowTimer;
+
+- (void)setListeningForKeys:(BOOL)enabled
+{
+    listeningForKeys = enabled;
+    if (enabled && !self.glowTimer) {
+        self.glowTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 / 30.0
+                                                          target:self
+                                                        selector:@selector(advanceGlowAnimation:)
+                                                        userInfo:nil
+                                                         repeats:YES];
+    } else if (!enabled && self.glowRemaining <= 0) {
+        [self.glowTimer invalidate];
+        self.glowTimer = nil;
+    }
+    [self setNeedsDisplay:YES];
+}
+
+- (void)showCapturedKeyCode:(NSString *)keyCode hasBinding:(BOOL)hasBinding
+{
+    self.capturedKeyCode = keyCode;
+    self.capturedKeyHasBinding = hasBinding;
+    self.glowRemaining = 1.0;
+    if (!self.glowTimer) {
+        self.glowTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 / 30.0
+                                                          target:self
+                                                        selector:@selector(advanceGlowAnimation:)
+                                                        userInfo:nil
+                                                         repeats:YES];
+    }
+    [self setNeedsDisplay:YES];
+}
+
+- (void)advanceGlowAnimation:(NSTimer *)timer
+{
+    self.glowPhase += 0.18;
+    if (!self.listeningForKeys) {
+        self.glowRemaining = fmax(0, self.glowRemaining - 1.0 / 30.0);
+        if (self.glowRemaining == 0) {
+            [self.glowTimer invalidate];
+            self.glowTimer = nil;
+        }
+    }
+    [self setNeedsDisplay:YES];
+}
 
 - (NSRect)frameForKeyItem:(NSDictionary *)item
 {
@@ -80,6 +133,8 @@
         NSUInteger totalCount = [[types objectForKey:@"total"] unsignedIntegerValue];
         BOOL assigned = totalCount > 0;
         BOOL selected = code && [code isEqualToString:self.selectedKeyCode];
+        BOOL captured = code && [code isEqualToString:self.capturedKeyCode];
+        BOOL glowing = captured && (self.listeningForKeys || self.glowRemaining > 0);
         BOOL selectable = code != nil;
 
         NSRect shadowRect = keyRect;
@@ -92,17 +147,37 @@
             : (assigned
                 ? [NSColor colorWithCalibratedRed:0.77 green:0.91 blue:0.83 alpha:1]
                 : [NSColor colorWithCalibratedWhite:0.31 alpha:1]);
+        if (glowing && !self.capturedKeyHasBinding) {
+            keyColor = [NSColor colorWithCalibratedRed:0.38 green:0.88 blue:0.66 alpha:0.95];
+        }
         if (!selectable) keyColor = [NSColor colorWithCalibratedWhite:0.25 alpha:1];
         [keyColor setFill];
         [[self pathForKeyItem:item frame:keyRect] fill];
 
-        NSColor *borderColor = selected
-            ? [NSColor colorWithCalibratedRed:0.95 green:0.66 blue:0.33 alpha:1]
-            : [NSColor colorWithCalibratedWhite:assigned ? 0.96 : 0.42 alpha:1];
+        NSColor *borderColor = glowing
+            ? [NSColor colorWithCalibratedRed:0.25 green:1 blue:0.66 alpha:1]
+            : (selected
+                ? [NSColor colorWithCalibratedRed:0.95 green:0.66 blue:0.33 alpha:1]
+                : [NSColor colorWithCalibratedWhite:assigned ? 0.96 : 0.42 alpha:1]);
         [borderColor setStroke];
         NSBezierPath *border = [self pathForKeyItem:item frame:NSInsetRect(keyRect, 0.75, 0.75)];
-        [border setLineWidth:selected ? 2.5 : 1];
+        [border setLineWidth:glowing ? 3.5 : (selected ? 2.5 : 1)];
         [border stroke];
+
+        if (glowing) {
+            CGFloat pulse = (sin(self.glowPhase) + 1) / 2;
+            CGFloat alpha = self.listeningForKeys ? 0.25 + pulse * 0.45 : self.glowRemaining * 0.7;
+            NSBezierPath *glow = [self pathForKeyItem:item frame:NSInsetRect(keyRect, -1, -1)];
+            [glow setLineWidth:3];
+            [NSGraphicsContext saveGraphicsState];
+            NSShadow *shadow = [[NSShadow alloc] init];
+            [shadow setShadowColor:[NSColor colorWithCalibratedRed:0.24 green:1 blue:0.68 alpha:alpha]];
+            [shadow setShadowBlurRadius:12 + pulse * 8];
+            [shadow set];
+            [[NSColor colorWithCalibratedRed:0.24 green:1 blue:0.68 alpha:alpha] setStroke];
+            [glow stroke];
+            [NSGraphicsContext restoreGraphicsState];
+        }
 
         NSString *label = [item objectForKey:@"label"];
         if (!label && code) label = [self.keyMapping objectForKey:code];
@@ -204,6 +279,14 @@
 @property (retain) NSArray *sortedKeyCodes;
 @property (retain) NSString *selectedKeyCode;
 @property (assign) BOOL hasUnrepairableLoadedData;
+@property (retain) NSButton *listenForKeysSwitch;
+@property (retain) id keyEventMonitor;
+@property (retain) NSString *selectedModifierValue;
+@property (assign) BOOL isOneShotCapture;
+@property (assign) NSInteger pendingActionBindingIndex;
+- (void)selectKeyCode:(NSString *)keyCode modifierValue:(NSString *)modifierValue;
+- (NSEvent *)handleListeningKeyDown:(NSEvent *)event;
+- (NSInteger)addBindingForKeyCode:(NSString *)keyCode preferredModifier:(NSString *)modifier;
 @end
 
 @implementation KeyboardLayoutEditorController
@@ -213,6 +296,8 @@
 @synthesize selectedKeyLabel, nameField, authorField, descriptionField, statusLabel;
 @synthesize modeKeyPopup, bindingRowsScrollView, bindingRowsView, sortedKeyCodes, selectedKeyCode;
 @synthesize hasUnrepairableLoadedData;
+@synthesize listenForKeysSwitch, keyEventMonitor, selectedModifierValue;
+@synthesize isOneShotCapture, pendingActionBindingIndex;
 
 - (NSString *)displayLabelForKeyCode:(NSString *)keyCode
 {
@@ -231,6 +316,7 @@
         self.keyControl = kc;
         self.keyfile = [@{KEYFILE_KEYS_NODENAME: @[]} mutableCopy];
         self.bindings = [NSMutableArray array];
+        self.pendingActionBindingIndex = NSNotFound;
         self.modifierValues = @[@"0", @"1", @"2", @"4", @"8", @"3", @"5", @"9", @"6", @"10", @"12", @"7", @"11", @"13", @"14", @"15"];
         self.modifierTitles = @[@"None", @"Shift", @"Control", @"Option", @"Command", @"Shift + Control", @"Shift + Option", @"Shift + Command", @"Control + Option", @"Control + Command", @"Option + Command", @"Shift + Control + Option", @"Shift + Control + Command", @"Shift + Option + Command", @"Control + Option + Command", @"Shift + Control + Option + Command"];
         self.sortedKeyCodes = [[self.keyControl.keyMapping allKeys] sortedArrayUsingComparator:^NSComparisonResult(NSString *left, NSString *right) {
@@ -294,6 +380,14 @@
                                         text:@"French ISO key positions with U.S. input labels. Select a key to edit its bindings." size:11];
     [self.rootView addSubview:hint];
     [self.rootView addSubview:[self buttonWithFrame:NSMakeRect(1155, 790, 185, 30) title:@"Table Editor" action:@selector(tableEditorClicked:)]];
+    self.listenForKeysSwitch = [[NSButton alloc] initWithFrame:NSMakeRect(930, 760, 190, 24)];
+    [self.listenForKeysSwitch setButtonType:NSSwitchButton];
+    [self.listenForKeysSwitch setTitle:@"Listen for Key"];
+    [self.listenForKeysSwitch setToolTip:@"Press a key while this window is focused to select it."];
+    [self.listenForKeysSwitch setTarget:self];
+    [self.listenForKeysSwitch setAction:@selector(listenForKeysChanged:)];
+    [self.rootView addSubview:self.listenForKeysSwitch];
+    [self.rootView addSubview:[self buttonWithFrame:NSMakeRect(1125, 758, 130, 26) title:@"Capture Binding" action:@selector(captureOneBindingClicked:)]];
 
     self.nameField = [self fieldWithFrame:NSMakeRect(20, 718, 220, 28) placeholder:@"Layout name"];
     self.authorField = [self fieldWithFrame:NSMakeRect(250, 718, 170, 28) placeholder:@"Author"];
@@ -450,13 +544,18 @@
         NSUInteger bindingIndex = [self.bindings indexOfObjectIdenticalTo:binding];
         CGFloat y = contentHeight - (visibleIndex + 1) * (rowHeight + rowGap);
         NSView *row = [[NSView alloc] initWithFrame:NSMakeRect(0, y, 1300, rowHeight)];
+        NSString *rowModifier = [binding objectForKey:KEYFILE_MODIFIERS_NODENAME] ?: @"0";
+        if (self.selectedModifierValue && [rowModifier isEqualToString:self.selectedModifierValue]) {
+            [row setWantsLayer:YES];
+            [row layer].backgroundColor = [NSColor colorWithCalibratedRed:0.25 green:0.34 blue:0.30 alpha:0.8].CGColor;
+        }
 
         NSPopUpButton *modifier = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0, 1, 170, 26) pullsDown:NO];
         for (NSUInteger index = 0; index < self.modifierTitles.count; index++) {
             [modifier addItemWithTitle:[self.modifierTitles objectAtIndex:index]];
             [[modifier lastItem] setRepresentedObject:[self.modifierValues objectAtIndex:index]];
         }
-        NSString *modifierValue = [binding objectForKey:KEYFILE_MODIFIERS_NODENAME] ?: @"0";
+        NSString *modifierValue = rowModifier;
         NSUInteger modifierIndex = [self.modifierValues indexOfObject:modifierValue];
         if (modifierIndex != NSNotFound) [modifier selectItemAtIndex:(NSInteger)modifierIndex];
         [modifier setTag:(NSInteger)bindingIndex];
@@ -517,6 +616,10 @@
         [remove setTag:(NSInteger)bindingIndex];
         [row addSubview:remove];
         [self.bindingRowsView addSubview:row];
+        if ((NSInteger)bindingIndex == self.pendingActionBindingIndex) {
+            self.pendingActionBindingIndex = NSNotFound;
+            [self.rootView.window makeFirstResponder:actionPopup];
+        }
     }
 
     if (visibleBindings.count == 0) {
@@ -553,11 +656,116 @@
 
 - (void)keyboardViewDidSelectKeyCode:(NSString *)keyCode
 {
+    [self selectKeyCode:keyCode modifierValue:nil];
+}
+
+- (void)selectKeyCode:(NSString *)keyCode modifierValue:(NSString *)modifierValue
+{
     self.selectedKeyCode = keyCode;
+    self.selectedModifierValue = modifierValue;
+    [self.keyboardView setSelectedKeyCode:keyCode];
+    [self.keyboardView setNeedsDisplay:YES];
     NSString *keyName = [self displayLabelForKeyCode:self.selectedKeyCode];
     [self.selectedKeyLabel setStringValue:[NSString stringWithFormat:@"%@ - keycode %@", keyName, self.selectedKeyCode]];
     [self rebuildBindingRows];
     [self.statusLabel setStringValue:@""];
+}
+
+- (IBAction)listenForKeysChanged:(NSButton *)sender
+{
+    if ([sender state] == NSOnState) {
+        if (!self.keyEventMonitor) {
+            __weak KeyboardLayoutEditorController *weakSelf = self;
+            self.keyEventMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^NSEvent *(NSEvent *event) {
+                if (!weakSelf) return event;
+                return [weakSelf handleListeningKeyDown:event];
+            }];
+        }
+        [self.keyboardView setListeningForKeys:YES];
+        [self.statusLabel setStringValue:@"Listening while this window is focused. Press a key to select it."];
+    } else {
+        [self stopListeningForKeys];
+        [self.statusLabel setStringValue:@"Key listening stopped."];
+    }
+}
+
+- (IBAction)captureOneBindingClicked:(id)sender
+{
+    self.isOneShotCapture = YES;
+    if (self.listenForKeysSwitch.state != NSOnState) {
+        [self.listenForKeysSwitch setState:NSOnState];
+        [self listenForKeysChanged:self.listenForKeysSwitch];
+    }
+    [self.statusLabel setStringValue:@"Press one key with its modifiers. It will be selected or added as a draft binding."];
+}
+
+- (void)stopListeningForKeys
+{
+    if (self.keyEventMonitor) {
+        [NSEvent removeMonitor:self.keyEventMonitor];
+        self.keyEventMonitor = nil;
+    }
+    [self.listenForKeysSwitch setState:NSOffState];
+    self.isOneShotCapture = NO;
+    [self.keyboardView setListeningForKeys:NO];
+}
+
+- (NSEvent *)handleListeningKeyDown:(NSEvent *)event
+{
+    if (!self.listenForKeysSwitch.state || !self.rootView.window.isKeyWindow) return event;
+
+    NSString *keyCode = [NSString stringWithFormat:@"%hu", event.keyCode];
+    BOOL isDisplayedKey = NO;
+    for (NSDictionary *item in self.keyboardView.keyItems) {
+        if ([[item objectForKey:@"code"] isEqualToString:keyCode]) {
+            isDisplayedKey = YES;
+            break;
+        }
+    }
+    if (!isDisplayedKey) {
+        [self.statusLabel setStringValue:[NSString stringWithFormat:@"Keycode %@ is not shown on this keyboard.", keyCode]];
+        return nil;
+    }
+
+    NSEventModifierFlags flags = event.modifierFlags;
+    NSUInteger modifierMask = 0;
+    if (flags & NSEventModifierFlagShift) modifierMask |= 1;
+    if (flags & NSEventModifierFlagControl) modifierMask |= 2;
+    if (flags & NSEventModifierFlagOption) modifierMask |= 4;
+    if (flags & NSEventModifierFlagCommand) modifierMask |= 8;
+    NSString *modifierValue = [NSString stringWithFormat:@"%lu", (unsigned long)modifierMask];
+    NSInteger matchingIndex = NSNotFound;
+    for (NSUInteger index = 0; index < self.bindings.count; index++) {
+        NSDictionary *binding = [self.bindings objectAtIndex:index];
+        if ([[binding objectForKey:KEYFILE_KEY_NODENAME] isEqualToString:keyCode] &&
+            [[binding objectForKey:KEYFILE_MODIFIERS_NODENAME] isEqualToString:modifierValue]) {
+            matchingIndex = (NSInteger)index;
+            break;
+        }
+    }
+    self.pendingActionBindingIndex = self.isOneShotCapture ? matchingIndex : NSNotFound;
+    [self selectKeyCode:keyCode modifierValue:modifierValue];
+    [self.keyboardView showCapturedKeyCode:keyCode hasBinding:(matchingIndex != NSNotFound)];
+
+    NSString *keyName = [self displayLabelForKeyCode:keyCode];
+    BOOL hasMatchingBinding = matchingIndex != NSNotFound;
+    NSUInteger modifierIndex = [self.modifierValues indexOfObject:modifierValue];
+    NSString *modifierTitle = [self.modifierTitles objectAtIndex:modifierIndex];
+    if (self.isOneShotCapture && !hasMatchingBinding) {
+        NSInteger addedIndex = [self addBindingForKeyCode:keyCode preferredModifier:modifierValue];
+        if (addedIndex == NSNotFound) return nil;
+    }
+    NSString *message = self.isOneShotCapture
+        ? (hasMatchingBinding
+            ? [NSString stringWithFormat:@"%@ with %@ is already bound. Choose its action or value below.", keyName, modifierTitle]
+            : [NSString stringWithFormat:@"Binding added for %@ with %@. Choose its action or value, then save.", keyName, modifierTitle])
+        : (hasMatchingBinding
+            ? [NSString stringWithFormat:@"%@ with %@ is already bound. Its binding is highlighted below.", keyName, modifierTitle]
+            : [NSString stringWithFormat:@"%@ with %@ has no binding. Add Binding will use this modifier.", keyName, modifierTitle]);
+    BOOL wasOneShot = self.isOneShotCapture;
+    if (wasOneShot) [self stopListeningForKeys];
+    [self.statusLabel setStringValue:message];
+    return nil;
 }
 
 - (BOOL)modifier:(NSString *)modifier isUsedForBindingAtIndex:(NSInteger)excludedIndex
@@ -669,26 +877,24 @@
     [self.statusLabel setStringValue:@"Value changed. Save to apply."];
 }
 
-- (void)addBindingClicked:(id)sender
+- (NSInteger)addBindingForKeyCode:(NSString *)keyCode preferredModifier:(NSString *)preferredModifier
 {
-    if (!self.selectedKeyCode) {
-        [self.statusLabel setStringValue:@"Select a key first."];
-        return;
-    }
-    NSString *mod = nil;
+    self.selectedKeyCode = keyCode;
+    self.selectedModifierValue = preferredModifier;
+    NSString *mod = preferredModifier;
+    if (mod && [self modifier:mod isUsedForBindingAtIndex:NSNotFound]) mod = nil;
     for (NSString *candidate in self.modifierValues) {
-        if (![self modifier:candidate isUsedForBindingAtIndex:NSNotFound]) {
+        if (!mod && ![self modifier:candidate isUsedForBindingAtIndex:NSNotFound]) {
             mod = candidate;
             break;
         }
     }
     if (!mod) {
         [self.statusLabel setStringValue:@"All modifier combinations are already assigned for this key."];
-        return;
+        return NSNotFound;
     }
-
     NSString *action = [self.actionKeys containsObject:@"Exposure2012"] ? @"Exposure2012" : [self.actionKeys firstObject];
-    if (!action) return;
+    if (!action) return NSNotFound;
     NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:action];
     id minimum = [limits objectForKey:@"min"];
     NSString *value = minimum && minimum != [NSNull null] ? [minimum description] : @"1";
@@ -697,9 +903,21 @@
         KEYFILE_MODIFIERS_NODENAME: mod,
         KEYFILE_ADJUSTMENTS_NODENAME: @{action: value}
     } mutableCopy]];
+    NSInteger index = (NSInteger)self.bindings.count - 1;
+    self.pendingActionBindingIndex = index;
     [self refreshKeyStates];
     [self rebuildBindingRows];
-    [self.statusLabel setStringValue:@"Binding added. Save to apply."];
+    return index;
+}
+
+- (void)addBindingClicked:(id)sender
+{
+    if (!self.selectedKeyCode) {
+        [self.statusLabel setStringValue:@"Select a key first."];
+        return;
+    }
+    NSInteger index = [self addBindingForKeyCode:self.selectedKeyCode preferredModifier:self.selectedModifierValue];
+    if (index != NSNotFound) [self.statusLabel setStringValue:@"Binding added. Save to apply."];
 }
 
 - (void)removeBindingClicked:(id)sender
@@ -766,6 +984,11 @@
 - (void)tableEditorClicked:(id)sender
 {
     [self.mainController showTableEditor];
+}
+
+- (void)dealloc
+{
+    [self stopListeningForKeys];
 }
 
 @end

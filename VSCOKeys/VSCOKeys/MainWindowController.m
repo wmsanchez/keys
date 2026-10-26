@@ -717,6 +717,7 @@
 
 - (void)openEditorForKeyfile:(NSDictionary *)keyfile
 {
+    [self.keyboardEditorController stopListeningForKeys];
     [self restoreEditorWindowSize];
     [self setupEditorController];
     [self.editorController loadKeyfile:keyfile];
@@ -726,6 +727,7 @@
 
 - (void)openNewLayoutEditor
 {
+    [self.keyboardEditorController stopListeningForKeys];
     [self restoreEditorWindowSize];
     [self setupEditorController];
     [self.editorController startNewLayout];
@@ -756,6 +758,7 @@
 - (void)showTableEditor
 {
     [self setupEditorController];
+    [self.keyboardEditorController stopListeningForKeys];
     [self restoreEditorWindowSize];
     [self.tabv_tabs selectTabViewItemWithIdentifier:@"edit"];
 }

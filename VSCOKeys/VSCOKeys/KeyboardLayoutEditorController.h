@@ -12,5 +12,6 @@
 - (id)initWithKeyControl:(KeyControl *)keyControl;
 - (void)loadKeyfile:(NSDictionary *)keyfile;
 - (void)startNewLayout;
+- (void)stopListeningForKeys;
 
 @end
