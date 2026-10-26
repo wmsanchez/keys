@@ -45,6 +45,7 @@
 @interface KeyControl ()
 - (void)toggleKeyboardHUD:(id)sender;
 - (void)toggleKeyboardHUDShortLabels:(id)sender;
+- (void)editCurrentLayout;
 - (void)updateKeyboardHUDForEvent:(NSDictionary *)eventInfo;
 - (void)refreshKeyboardHUDBindings;
 - (NSDictionary *)commandForKeyCode:(int)keyCode modifierFlags:(CGEventFlags)modifiers;
@@ -241,6 +242,15 @@
     [self.aboutWindow.window makeKeyAndOrderFront:nil];
 }
 
+- (void)editCurrentLayout
+{
+    NSDictionary *keyfile = [self.keyfileList objectForKey:self.activeKeyFile];
+    if (!keyfile || !self.mainController) return;
+
+    [self.mainController openEditorForKeyfile:keyfile];
+    [NSApp activateIgnoringOtherApps:YES];
+    [self.mainController.window makeKeyAndOrderFront:nil];
+}
 
 - (void)quitApplication
 {
@@ -388,6 +398,8 @@
         [menuItem setOnStateImage:onImage];
     }
 
+    [theMenu addItem:[NSMenuItem separatorItem]];
+    [self addItem:@"Edit Current Layout" toMenu:theMenu target:self selector:@selector(editCurrentLayout) object:NULL];
     [theMenu addItem:[NSMenuItem separatorItem]];
 
     [self addItem:STATUSMENUITEM_ABOUT toMenu:theMenu target:self selector:@selector(showAbout) object:NULL];
