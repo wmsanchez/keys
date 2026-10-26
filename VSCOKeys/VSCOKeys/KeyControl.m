@@ -33,6 +33,7 @@
 #import "AboutWindowController.h"
 #import "QuickWindowController.h"
 #import "KeyboardHUDWindowController.h"
+#import "KeyboardLayoutEditorController.h"
 #import "MainWindowController.h"
 
 #import "NSData+Cryption.h"
@@ -43,8 +44,11 @@
 #import "NSString+MD5.h"
 
 @interface KeyControl ()
+@property (retain) NSString *physicalKeyboardLayoutIdentifier;
 - (void)toggleKeyboardHUD:(id)sender;
 - (void)toggleKeyboardHUDShortLabels:(id)sender;
+- (void)selectPhysicalKeyboardLayoutFromMenu:(id)sender;
+- (void)selectPhysicalKeyboardLayout:(NSString *)layoutIdentifier;
 - (void)editCurrentLayout;
 - (void)updateKeyboardHUDForEvent:(NSDictionary *)eventInfo;
 - (void)refreshKeyboardHUDBindings;
@@ -72,6 +76,7 @@
 @synthesize keyboardHUDEnabled, keyboardHUDUsesShortLabels;
 
 @synthesize activeKeyFile;
+@synthesize physicalKeyboardLayoutIdentifier;
 
 @synthesize keyThread;
 @synthesize statusThread;
@@ -119,6 +124,12 @@
             [defaults setBool:YES forKey:DEFAULTS_KEYBOARD_HUD_SHORT_LABELS];
         }
         self.keyboardHUDUsesShortLabels = [defaults boolForKey:DEFAULTS_KEYBOARD_HUD_SHORT_LABELS];
+        NSString *savedLayout = [defaults stringForKey:DEFAULTS_PHYSICAL_KEYBOARD_LAYOUT];
+        NSArray *layoutOptions = [self physicalKeyboardLayoutOptions];
+        BOOL supportedLayout = [layoutOptions indexOfObjectPassingTest:^BOOL(NSDictionary *option, NSUInteger index, BOOL *stop) {
+            return [[option objectForKey:@"id"] isEqualToString:savedLayout];
+        }] != NSNotFound;
+        self.physicalKeyboardLayoutIdentifier = supportedLayout ? savedLayout : KEYBOARD_LAYOUT_MACBOOK_ISO;
 
         self.keyfileDirectory = [[NSFileManager defaultManager] applicationSupportDirectory];
 
@@ -378,6 +389,18 @@
     self.keyboardHUDShortLabelsMenuItem = [self addItem:@"Use Short Action Labels" toMenu:theMenu target:self selector:@selector(toggleKeyboardHUDShortLabels:) object:NULL];
     [self.keyboardHUDShortLabelsMenuItem setState:self.keyboardHUDUsesShortLabels ? NSOnState : NSOffState];
 
+    NSMenuItem *layoutItem = [[NSMenuItem alloc] initWithTitle:@"Physical Keyboard" action:nil keyEquivalent:@""];
+    NSMenu *layoutMenu = [[NSMenu alloc] initWithTitle:@"Physical Keyboard"];
+    for (NSDictionary *option in [self physicalKeyboardLayoutOptions]) {
+        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:[option objectForKey:@"name"] action:@selector(selectPhysicalKeyboardLayoutFromMenu:) keyEquivalent:@""];
+        [item setTarget:self];
+        [item setRepresentedObject:[option objectForKey:@"id"]];
+        [item setState:[[option objectForKey:@"id"] isEqualToString:self.physicalKeyboardLayoutIdentifier] ? NSOnState : NSOffState];
+        [layoutMenu addItem:item];
+    }
+    [layoutItem setSubmenu:layoutMenu];
+    [theMenu addItem:layoutItem];
+
     [theMenu addItem:[NSMenuItem separatorItem]];
 
     NSImage *onImage = [NSImage imageNamed:@"SelectedMenu.png"];
@@ -417,6 +440,7 @@
     if (!self.keyboardHUDWindowController) {
         self.keyboardHUDWindowController = [[KeyboardHUDWindowController alloc] initWithKeyMapping:self.keyMapping];
     }
+    [self.keyboardHUDWindowController setKeyboardLayoutDefinition:[self physicalKeyboardLayoutDefinition]];
     [self refreshKeyboardHUDBindings];
     if (self.keyboardHUDWindowController.window.isVisible) {
         [self.keyboardHUDWindowController hideHUD];
@@ -433,6 +457,47 @@
     [[NSUserDefaults standardUserDefaults] setBool:self.keyboardHUDUsesShortLabels forKey:DEFAULTS_KEYBOARD_HUD_SHORT_LABELS];
     [self.keyboardHUDShortLabelsMenuItem setState:self.keyboardHUDUsesShortLabels ? NSOnState : NSOffState];
     [self refreshKeyboardHUDBindings];
+}
+
+- (NSArray *)physicalKeyboardLayoutOptions
+{
+    return @[
+        @{@"id": KEYBOARD_LAYOUT_MACBOOK_ISO, @"name": @"MacBook Pro ISO (AZERTY, QWERTY caps)"},
+        @{@"id": KEYBOARD_LAYOUT_APPLE_MAGIC_ANSI, @"name": @"Apple Magic Keyboard (QWERTY ANSI)"}
+    ];
+}
+
+- (NSDictionary *)physicalKeyboardLayoutDefinition
+{
+    NSString *resourceName = [self.physicalKeyboardLayoutIdentifier isEqualToString:KEYBOARD_LAYOUT_APPLE_MAGIC_ANSI]
+        ? @"AppleMagicANSIKeyboard"
+        : @"MacBookISOKeyboard";
+    NSString *path = [[NSBundle mainBundle] pathForResource:resourceName ofType:@"json"];
+    NSData *data = path ? [NSData dataWithContentsOfFile:path] : nil;
+    return data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+}
+
+- (void)selectPhysicalKeyboardLayoutFromMenu:(NSMenuItem *)sender
+{
+    [self selectPhysicalKeyboardLayout:[sender representedObject]];
+}
+
+- (void)selectPhysicalKeyboardLayout:(NSString *)layoutIdentifier
+{
+    BOOL supported = NO;
+    for (NSDictionary *option in [self physicalKeyboardLayoutOptions]) {
+        if ([[option objectForKey:@"id"] isEqualToString:layoutIdentifier]) {
+            supported = YES;
+            break;
+        }
+    }
+    if (!supported || [layoutIdentifier isEqualToString:self.physicalKeyboardLayoutIdentifier]) return;
+
+    self.physicalKeyboardLayoutIdentifier = layoutIdentifier;
+    [[NSUserDefaults standardUserDefaults] setObject:layoutIdentifier forKey:DEFAULTS_PHYSICAL_KEYBOARD_LAYOUT];
+    [self.mainController.keyboardEditorController reloadPhysicalKeyboardLayout];
+    [self.keyboardHUDWindowController setKeyboardLayoutDefinition:[self physicalKeyboardLayoutDefinition]];
+    [self resetStatusMenu];
 }
 
 - (void)refreshKeyboardHUDBindings
@@ -1366,7 +1431,10 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
     int keyCode = (int)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
     CGEventFlags modifiers = CGEventGetFlags(event);
     NSDictionary *matchedCommand = [appSelf commandForKeyCode:keyCode modifierFlags:modifiers];
-    if ((type == kCGEventKeyDown || type == kCGEventKeyUp) && appSelf.keyboardHUDEnabled) {
+    if (type == kCGEventFlagsChanged && appSelf.keyboardHUDEnabled) {
+        NSDictionary *eventInfo = @{@"modifierMask": @([appSelf modifierMaskForEventFlags:modifiers])};
+        [appSelf performSelectorOnMainThread:@selector(updateKeyboardHUDForEvent:) withObject:eventInfo waitUntilDone:NO];
+    } else if ((type == kCGEventKeyDown || type == kCGEventKeyUp) && appSelf.keyboardHUDEnabled) {
         NSMutableDictionary *eventInfo = [@{@"modifierMask": @([appSelf modifierMaskForEventFlags:modifiers])} mutableCopy];
         if (type == kCGEventKeyDown) {
             [eventInfo setObject:[NSString stringWithFormat:@"%d", keyCode] forKey:@"keyCode"];
@@ -1405,7 +1473,7 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
         return NULL;
     }
 
-    if ([appSelf checkIsKeySystemEngaged] && matchedCommand)
+    if ((type == kCGEventKeyDown || type == kCGEventKeyUp) && [appSelf checkIsKeySystemEngaged] && matchedCommand)
     {
         NSMutableDictionary *adjustments = [[matchedCommand objectForKey:KEYFILE_ADJUSTMENTS_NODENAME] mutableCopy];
         NSDictionary *remap = [adjustments objectForKey:KEYFILE_ADJUSTMENT_REMAP_NODENAME];
@@ -1447,7 +1515,9 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 
     CFRunLoopSourceRef runLoopSource;
 
-    self.eventTap = CGEventTapCreate(kCGHIDEventTap, kCGHeadInsertEventTap, kCGEventTapOptionDefault, CGEventMaskBit(kCGEventKeyUp) | CGEventMaskBit(kCGEventKeyDown), myCGCreateEventCallback, (__bridge void *)self);
+    self.eventTap = CGEventTapCreate(kCGHIDEventTap, kCGHeadInsertEventTap, kCGEventTapOptionDefault,
+                                     CGEventMaskBit(kCGEventKeyUp) | CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventFlagsChanged),
+                                     myCGCreateEventCallback, (__bridge void *)self);
 
     if (!self.eventTap) {
         DualLog(@"Couldn't create event tap!");

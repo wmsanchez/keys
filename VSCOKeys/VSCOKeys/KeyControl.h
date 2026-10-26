@@ -53,6 +53,7 @@
 @property (assign) BOOL keyboardHUDUsesShortLabels;
 
 @property (retain) NSString *activeKeyFile;
+@property (readonly, retain) NSString *physicalKeyboardLayoutIdentifier;
 
 @property (retain) NSThread *keyThread;
 @property (retain) NSThread *statusThread;
@@ -97,6 +98,9 @@
 - (BOOL)isLRRunning;
 
 - (NSArray *)getKeyfileList;
+- (NSArray *)physicalKeyboardLayoutOptions;
+- (NSDictionary *)physicalKeyboardLayoutDefinition;
+- (void)selectPhysicalKeyboardLayout:(NSString *)layoutIdentifier;
 
 - (NSString *)getKeynameForVirtual:(NSString *)virtKey;
 - (NSString *)getNormalNameForAdjustment:(NSString*)adjustment;

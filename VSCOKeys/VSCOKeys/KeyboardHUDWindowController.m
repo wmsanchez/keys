@@ -1,6 +1,45 @@
 #import "KeyboardHUDWindowController.h"
 #import "MacBookKeyboardView.h"
 
+@interface KeyboardHUDDragHandleView : NSView
+@end
+
+@implementation KeyboardHUDDragHandleView
+
+- (BOOL)mouseDownCanMoveWindow
+{
+    return YES;
+}
+
+- (BOOL)acceptsFirstMouse:(NSEvent *)event
+{
+    return YES;
+}
+
+- (void)drawRect:(NSRect)dirtyRect
+{
+    [[NSColor colorWithCalibratedWhite:0.9 alpha:0.5] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:NSInsetRect(self.bounds, 18, 2) xRadius:2 yRadius:2] fill];
+}
+
+@end
+
+@interface KeyboardHUDContentView : NSView
+@property (retain) NSView *keyboardView;
+@property (retain) NSView *dragHandle;
+@end
+
+@implementation KeyboardHUDContentView
+
+- (NSView *)hitTest:(NSPoint)point
+{
+    if (NSPointInRect(point, self.dragHandle.frame)) return self.dragHandle;
+    NSPoint keyboardPoint = [self.keyboardView convertPoint:point fromView:self];
+    return [self.keyboardView hitTest:keyboardPoint];
+}
+
+@end
+
 @interface KeyboardHUDWindowController ()
 @property (retain) MacBookKeyboardView *keyboardView;
 @property (retain) NSTextField *actionLabel;
@@ -37,13 +76,13 @@
         [panel setOpaque:NO];
         [panel setBackgroundColor:[NSColor clearColor]];
         [panel setHasShadow:NO];
-        [panel setIgnoresMouseEvents:YES];
+        [panel setIgnoresMouseEvents:NO];
         [panel setHidesOnDeactivate:NO];
         [panel setLevel:NSStatusWindowLevel];
         [panel setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces | NSWindowCollectionBehaviorFullScreenAuxiliary | NSWindowCollectionBehaviorStationary];
         [panel setReleasedWhenClosed:NO];
 
-        NSView *contentView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, width, height)];
+        KeyboardHUDContentView *contentView = [[KeyboardHUDContentView alloc] initWithFrame:NSMakeRect(0, 0, width, height)];
         [contentView setWantsLayer:YES];
         [contentView layer].backgroundColor = [NSColor colorWithCalibratedWhite:0.08 alpha:0.82].CGColor;
         [contentView layer].cornerRadius = 18;
@@ -62,6 +101,7 @@
         }
 
         self.keyboardView = [[MacBookKeyboardView alloc] initWithFrame:NSMakeRect(0, 0, width, 600)];
+        contentView.keyboardView = self.keyboardView;
         [self.keyboardView setAutoresizingMask:NSViewWidthSizable | NSViewMinYMargin];
         [self.keyboardView setKeyItems:keyItems];
         [self.keyboardView setKeyMapping:self.keyMapping];
@@ -91,6 +131,10 @@
         [self.modifierLayerLabel setFont:[NSFont systemFontOfSize:11 weight:NSFontWeightSemibold]];
         [self.modifierLayerLabel setAutoresizingMask:NSViewWidthSizable | NSViewMinYMargin];
         [contentView addSubview:self.modifierLayerLabel];
+
+        NSView *dragHandle = [[KeyboardHUDDragHandleView alloc] initWithFrame:NSMakeRect(width - 64, height - 16, 48, 10)];
+        contentView.dragHandle = dragHandle;
+        [contentView addSubview:dragHandle];
         [panel setContentView:contentView];
     }
     return self;
@@ -115,6 +159,12 @@
     [self.actionLabel setAlphaValue:0];
     [self.keyboardView setListeningForKeys:NO];
     [self.window orderOut:nil];
+}
+
+- (void)setKeyboardLayoutDefinition:(NSDictionary *)layout
+{
+    [self.keyboardView setKeyboardLayoutDefinition:layout];
+    [self.keyboardView setKeyMapping:self.keyMapping];
 }
 
 - (NSString *)labelForAction:(NSString *)action value:(id)value adjustmentMapping:(NSDictionary *)mapping

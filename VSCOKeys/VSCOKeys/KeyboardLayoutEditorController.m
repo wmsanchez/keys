@@ -6,11 +6,50 @@
 #import "MainWindowController.h"
 #import "NSObject+SBJson.h"
 
+@protocol KeyboardEditorRootViewDelegate <NSObject>
+- (void)keyboardEditorRootViewDidResize:(NSView *)view;
+@end
+
+@interface KeyboardEditorRootView : NSView
+@property (assign) id<KeyboardEditorRootViewDelegate> resizeDelegate;
+@end
+
+@implementation KeyboardEditorRootView
+
+- (void)setFrameSize:(NSSize)newSize
+{
+    [super setFrameSize:newSize];
+    [self.resizeDelegate keyboardEditorRootViewDidResize:self];
+}
+
+@end
+
 @implementation MacBookKeyboardView
 
 @synthesize keyItems, keyMapping, assignmentTypes, assignmentLabels;
 @synthesize selectedKeyCode, capturedKeyCode, capturedKeyHasBinding, delegate;
 @synthesize listeningForKeys, glowPhase, glowRemaining, glowTimer;
+@synthesize keyboardUnitCount, keyboardTopY;
+
+- (void)setKeyboardLayoutDefinition:(NSDictionary *)layout
+{
+    NSMutableArray *items = [NSMutableArray array];
+    CGFloat maximumX = 0;
+    CGFloat maximumY = 0;
+    for (NSDictionary *row in [layout objectForKey:@"rows"]) {
+        maximumY = fmax(maximumY, [[row objectForKey:@"y"] doubleValue]);
+        for (NSDictionary *item in [row objectForKey:@"keys"]) {
+            NSMutableDictionary *keyItem = [item mutableCopy];
+            [keyItem setObject:[row objectForKey:@"y"] forKey:@"y"];
+            [items addObject:keyItem];
+            maximumX = fmax(maximumX, [[item objectForKey:@"x"] doubleValue] + [[item objectForKey:@"width"] doubleValue]);
+        }
+    }
+    self.keyItems = items;
+    self.keyboardUnitCount = maximumX;
+    self.keyboardTopY = maximumY;
+    [self setNeedsDisplay:YES];
+}
 
 - (void)setListeningForKeys:(BOOL)enabled
 {
@@ -63,15 +102,19 @@
 
 - (NSRect)frameForKeyItem:(NSDictionary *)item
 {
-    CGFloat unit = fmin(80.0, (NSWidth(self.bounds) - 40.0) / 18.0);
-    CGFloat keyHeight = unit * 0.88;
-    CGFloat x = 20 + [[item objectForKey:@"x"] doubleValue] * unit;
-    CGFloat y = 200 + ([[item objectForKey:@"y"] doubleValue] - 332 + [[item objectForKey:@"dy"] doubleValue]) * unit / 50.0;
-    CGFloat width = [[item objectForKey:@"width"] doubleValue] * unit - 4;
+    CGFloat verticalUnits = (self.keyboardTopY - 332.0) * 1.06 / 50.0 + 1.0;
+    CGFloat horizontalUnit = (NSWidth(self.bounds) - 36.0) / MAX(self.keyboardUnitCount, 1);
+    CGFloat verticalUnit = (NSHeight(self.bounds) - 32.0) / MAX(verticalUnits, 1);
+    CGFloat unit = fmax(1.0, fmin(horizontalUnit, verticalUnit));
+    CGFloat keyHeight = unit;
+    CGFloat x = 18 + [[item objectForKey:@"x"] doubleValue] * unit;
+    CGFloat width = [[item objectForKey:@"width"] doubleValue] * unit - unit * 0.06;
     CGFloat heightScale = [[item objectForKey:@"height"] doubleValue];
     CGFloat height = [item[@"shape"] isEqualToString:@"vertical-enter"]
-        ? keyHeight * 2 + unit * 0.12
+        ? keyHeight * 2 + unit * 0.06
         : (heightScale > 0 ? unit * heightScale : keyHeight);
+    CGFloat rowY = [[item objectForKey:@"y"] doubleValue] + [[item objectForKey:@"dy"] doubleValue];
+    CGFloat y = NSHeight(self.bounds) - 16 - (self.keyboardTopY - rowY) * unit * 1.06 / 50.0 - height;
     return NSMakeRect(x, y, width, height);
 }
 
@@ -110,12 +153,14 @@
 
 - (void)drawRect:(NSRect)dirtyRect
 {
-    CGFloat chassisBottom = 190;
-    CGFloat chassisTop = 0;
+    NSRect keyBounds = NSZeroRect;
+    BOOL hasKeyBounds = NO;
     for (NSDictionary *item in self.keyItems) {
-        chassisTop = fmax(chassisTop, NSMaxY([self frameForKeyItem:item]));
+        NSRect keyRect = [self frameForKeyItem:item];
+        keyBounds = hasKeyBounds ? NSUnionRect(keyBounds, keyRect) : keyRect;
+        hasKeyBounds = YES;
     }
-    NSRect chassis = NSMakeRect(8, chassisBottom, NSWidth(self.bounds) - 16, chassisTop - chassisBottom + 16);
+    NSRect chassis = NSInsetRect(keyBounds, -10, -10);
     [[NSColor colorWithCalibratedRed:0.72 green:0.69 blue:0.67 alpha:1] setFill];
     [[NSBezierPath bezierPathWithRoundedRect:chassis xRadius:16 yRadius:16] fill];
 
@@ -276,7 +321,7 @@
 
 @end
 
-@interface KeyboardLayoutEditorController () <MacBookKeyboardViewDelegate>
+@interface KeyboardLayoutEditorController () <MacBookKeyboardViewDelegate, KeyboardEditorRootViewDelegate>
 @property (retain) NSMutableDictionary *keyfile;
 @property (retain) NSMutableArray *bindings;
 @property (retain) MacBookKeyboardView *keyboardView;
@@ -288,7 +333,20 @@
 @property (retain) NSTextField *authorField;
 @property (retain) NSTextField *descriptionField;
 @property (retain) NSTextField *statusLabel;
+@property (retain) NSTextField *titleLabel;
+@property (retain) NSTextField *hintLabel;
+@property (retain) NSTextField *keyboardLabel;
+@property (retain) NSTextField *modeKeyLabel;
+@property (retain) NSTextField *modifierColumnLabel;
+@property (retain) NSTextField *actionColumnLabel;
+@property (retain) NSTextField *valueColumnLabel;
+@property (retain) NSButton *tableEditorButton;
+@property (retain) NSButton *saveButton;
+@property (retain) NSButton *revertButton;
+@property (retain) NSButton *addBindingButton;
+@property (retain) NSButton *captureBindingButton;
 @property (retain) NSPopUpButton *modeKeyPopup;
+@property (retain) NSPopUpButton *physicalKeyboardPopup;
 @property (retain) NSScrollView *bindingRowsScrollView;
 @property (retain) NSView *bindingRowsView;
 @property (retain) NSArray *sortedKeyCodes;
@@ -309,7 +367,10 @@
 @synthesize mainController, keyControl, rootView;
 @synthesize keyfile, bindings, keyboardView, modifierValues, modifierTitles, actionKeys;
 @synthesize selectedKeyLabel, nameField, authorField, descriptionField, statusLabel;
-@synthesize modeKeyPopup, bindingRowsScrollView, bindingRowsView, sortedKeyCodes, selectedKeyCode;
+@synthesize titleLabel, hintLabel, keyboardLabel, modeKeyLabel;
+@synthesize modifierColumnLabel, actionColumnLabel, valueColumnLabel;
+@synthesize tableEditorButton, saveButton, revertButton, addBindingButton, captureBindingButton;
+@synthesize modeKeyPopup, physicalKeyboardPopup, bindingRowsScrollView, bindingRowsView, sortedKeyCodes, selectedKeyCode;
 @synthesize hasUnrepairableLoadedData;
 @synthesize listenForKeysSwitch, keyEventMonitor, selectedModifierValue;
 @synthesize isOneShotCapture, pendingActionBindingIndex;
@@ -381,28 +442,35 @@
 
 - (void)buildUI
 {
-    self.rootView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 825, 463)];
+    self.rootView = [[KeyboardEditorRootView alloc] initWithFrame:NSMakeRect(0, 0, 825, 463)];
+    [(KeyboardEditorRootView *)self.rootView setResizeDelegate:self];
     [self.rootView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
     [self.rootView setWantsLayer:YES];
     [self.rootView layer].backgroundColor = [NSColor colorWithCalibratedWhite:0.13 alpha:1].CGColor;
 
-    NSTextField *title = [self labelWithFrame:NSMakeRect(20, 790, 600, 28)
-                                         text:@"Keyboard Editor (Experimental)" size:16];
-    [title setFont:[NSFont boldSystemFontOfSize:16]];
-    [self.rootView addSubview:title];
+    self.titleLabel = [self labelWithFrame:NSZeroRect text:@"Keyboard Editor (Experimental)" size:16];
+    [self.titleLabel setFont:[NSFont boldSystemFontOfSize:16]];
+    [self.rootView addSubview:self.titleLabel];
 
-    NSTextField *hint = [self labelWithFrame:NSMakeRect(20, 765, 820, 18)
-                                        text:@"French ISO key positions with U.S. input labels. Select a key to edit its bindings." size:11];
-    [self.rootView addSubview:hint];
-    [self.rootView addSubview:[self buttonWithFrame:NSMakeRect(1155, 790, 185, 30) title:@"Table Editor" action:@selector(tableEditorClicked:)]];
-    self.listenForKeysSwitch = [[NSButton alloc] initWithFrame:NSMakeRect(930, 760, 190, 24)];
+    self.hintLabel = [self labelWithFrame:NSZeroRect text:@"Select a key or capture a physical key to edit its bindings." size:11];
+    [self.rootView addSubview:self.hintLabel];
+    self.tableEditorButton = [self buttonWithFrame:NSZeroRect title:@"Table Editor" action:@selector(tableEditorClicked:)];
+    [self.rootView addSubview:self.tableEditorButton];
+    self.keyboardLabel = [self labelWithFrame:NSZeroRect text:@"Keyboard" size:11];
+    [self.rootView addSubview:self.keyboardLabel];
+    self.physicalKeyboardPopup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
+    [self.physicalKeyboardPopup setTarget:self];
+    [self.physicalKeyboardPopup setAction:@selector(physicalKeyboardChanged:)];
+    [self.rootView addSubview:self.physicalKeyboardPopup];
+    self.listenForKeysSwitch = [[NSButton alloc] initWithFrame:NSZeroRect];
     [self.listenForKeysSwitch setButtonType:NSSwitchButton];
     [self.listenForKeysSwitch setTitle:@"Listen for Key"];
     [self.listenForKeysSwitch setToolTip:@"Press a key while this window is focused to select it."];
     [self.listenForKeysSwitch setTarget:self];
     [self.listenForKeysSwitch setAction:@selector(listenForKeysChanged:)];
     [self.rootView addSubview:self.listenForKeysSwitch];
-    [self.rootView addSubview:[self buttonWithFrame:NSMakeRect(1125, 758, 130, 26) title:@"Capture Binding" action:@selector(captureOneBindingClicked:)]];
+    self.captureBindingButton = [self buttonWithFrame:NSZeroRect title:@"Capture Binding" action:@selector(captureOneBindingClicked:)];
+    [self.rootView addSubview:self.captureBindingButton];
 
     self.nameField = [self fieldWithFrame:NSMakeRect(20, 718, 220, 28) placeholder:@"Layout name"];
     self.authorField = [self fieldWithFrame:NSMakeRect(250, 718, 170, 28) placeholder:@"Author"];
@@ -410,55 +478,188 @@
     [self.rootView addSubview:self.nameField];
     [self.rootView addSubview:self.authorField];
     [self.rootView addSubview:self.descriptionField];
-    [self.rootView addSubview:[self buttonWithFrame:NSMakeRect(930, 718, 150, 28) title:@"Save and Activate" action:@selector(saveClicked:)]];
-    [self.rootView addSubview:[self buttonWithFrame:NSMakeRect(1090, 718, 80, 28) title:@"Revert" action:@selector(revertClicked:)]];
+    self.saveButton = [self buttonWithFrame:NSZeroRect title:@"Save and Activate" action:@selector(saveClicked:)];
+    [self.rootView addSubview:self.saveButton];
+    self.revertButton = [self buttonWithFrame:NSZeroRect title:@"Revert" action:@selector(revertClicked:)];
+    [self.rootView addSubview:self.revertButton];
 
-    NSString *layoutPath = [[NSBundle mainBundle] pathForResource:@"MacBookISOKeyboard" ofType:@"json"];
-    NSDictionary *layout = nil;
-    if (layoutPath) {
-        layout = [[NSString stringWithContentsOfFile:layoutPath encoding:NSUTF8StringEncoding error:nil] JSONValue];
-    }
-    NSMutableArray *keyItems = [NSMutableArray array];
-    for (NSDictionary *row in [layout objectForKey:@"rows"]) {
-        for (NSDictionary *item in [row objectForKey:@"keys"]) {
-            NSMutableDictionary *keyItem = [item mutableCopy];
-            [keyItem setObject:[row objectForKey:@"y"] forKey:@"y"];
-            [keyItems addObject:keyItem];
-        }
-    }
     self.keyboardView = [[MacBookKeyboardView alloc] initWithFrame:self.rootView.bounds];
     [self.keyboardView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
-    [self.keyboardView setKeyItems:keyItems];
     [self.keyboardView setKeyMapping:self.keyControl.keyMapping];
     [self.keyboardView setAssignmentTypes:@{}];
     [self.keyboardView setDelegate:self];
     [self.rootView addSubview:self.keyboardView];
+    [self reloadPhysicalKeyboardLayout];
 
     CGFloat inspectorX = 20;
     self.selectedKeyLabel = [self labelWithFrame:NSMakeRect(inspectorX, 165, 420, 24) text:@"Select a key" size:14];
     [self.selectedKeyLabel setFont:[NSFont boldSystemFontOfSize:12]];
     [self.rootView addSubview:self.selectedKeyLabel];
 
-    [self.rootView addSubview:[self buttonWithFrame:NSMakeRect(1235, 160, 105, 30) title:@"Add Binding" action:@selector(addBindingClicked:)]];
-    [self.rootView addSubview:[self labelWithFrame:NSMakeRect(20, 140, 170, 16) text:@"Modifier" size:10]];
-    [self.rootView addSubview:[self labelWithFrame:NSMakeRect(200, 140, 430, 16) text:@"Action" size:10]];
-    [self.rootView addSubview:[self labelWithFrame:NSMakeRect(640, 140, 170, 16) text:@"Value / increment" size:10]];
+    self.addBindingButton = [self buttonWithFrame:NSZeroRect title:@"Add Binding" action:@selector(addBindingClicked:)];
+    [self.rootView addSubview:self.addBindingButton];
+    self.modifierColumnLabel = [self labelWithFrame:NSZeroRect text:@"Modifier" size:10];
+    [self.rootView addSubview:self.modifierColumnLabel];
+    self.actionColumnLabel = [self labelWithFrame:NSZeroRect text:@"Action" size:10];
+    [self.rootView addSubview:self.actionColumnLabel];
+    self.valueColumnLabel = [self labelWithFrame:NSZeroRect text:@"Value / increment" size:10];
+    [self.rootView addSubview:self.valueColumnLabel];
 
-    [self.rootView addSubview:[self labelWithFrame:NSMakeRect(840, 165, 80, 16) text:@"Mode key" size:10]];
-    self.modeKeyPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(910, 160, 190, 24) pullsDown:NO];
+    self.modeKeyLabel = [self labelWithFrame:NSZeroRect text:@"Mode key" size:10];
+    [self.rootView addSubview:self.modeKeyLabel];
+    self.modeKeyPopup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
     for (NSString *code in self.sortedKeyCodes) [self.modeKeyPopup addItemWithTitle:[self displayLabelForKeyCode:code]];
     [self.rootView addSubview:self.modeKeyPopup];
 
-    self.bindingRowsScrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(20, 24, 1320, 108)];
+    self.bindingRowsScrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
     [self.bindingRowsScrollView setHasVerticalScroller:YES];
     [self.bindingRowsScrollView setAutohidesScrollers:YES];
     [self.bindingRowsScrollView setDrawsBackground:NO];
-    self.bindingRowsView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 1300, 108)];
+    self.bindingRowsView = [[NSView alloc] initWithFrame:NSZeroRect];
     [self.bindingRowsScrollView setDocumentView:self.bindingRowsView];
     [self.rootView addSubview:self.bindingRowsScrollView];
 
-    self.statusLabel = [self labelWithFrame:NSMakeRect(20, 2, 1320, 18) text:@"" size:10];
+    self.statusLabel = [self labelWithFrame:NSZeroRect text:@"" size:10];
     [self.rootView addSubview:self.statusLabel];
+    [self layoutEditorViews];
+}
+
+- (void)keyboardEditorRootViewDidResize:(NSView *)view
+{
+    [self layoutEditorViews];
+}
+
+- (void)layoutEditorViews
+{
+    CGFloat width = NSWidth(self.rootView.bounds);
+    CGFloat height = NSHeight(self.rootView.bounds);
+    if (width <= 0 || height <= 0 || !self.keyboardView) return;
+
+    CGFloat padding = 16;
+    CGFloat right = width - padding;
+    CGFloat titleY = height - 38;
+    BOOL compactWidth = width < 900;
+    CGFloat optionsY = height - 72;
+    CGFloat captureY = compactWidth ? height - 104 : optionsY;
+    CGFloat metadataY = height - (compactWidth ? 140 : 108);
+
+    [self.titleLabel setFrame:NSMakeRect(padding, titleY, fmax(180, width - 250), 24)];
+    [self.tableEditorButton setFrame:NSMakeRect(right - 140, titleY - 1, 140, 27)];
+
+    if (compactWidth) {
+        [self.hintLabel setHidden:YES];
+        [self.keyboardLabel setFrame:NSMakeRect(padding, optionsY + 4, 65, 18)];
+        [self.physicalKeyboardPopup setFrame:NSMakeRect(82, optionsY, fmin(230, width - 100), 26)];
+        [self.listenForKeysSwitch setFrame:NSMakeRect(padding, captureY + 1, 135, 24)];
+    } else {
+        [self.hintLabel setHidden:NO];
+        [self.hintLabel setFrame:NSMakeRect(padding, optionsY + 4, 240, 18)];
+        [self.keyboardLabel setFrame:NSMakeRect(260, optionsY + 4, 65, 18)];
+        [self.physicalKeyboardPopup setFrame:NSMakeRect(324, optionsY, 230, 26)];
+        [self.listenForKeysSwitch setFrame:NSMakeRect(566, optionsY + 1, 135, 24)];
+    }
+    CGFloat captureWidth = 128;
+    CGFloat captureX = compactWidth ? 155 : 710;
+    [self.captureBindingButton setFrame:NSMakeRect(captureX, captureY, captureWidth, 27)];
+
+    CGFloat metaRight = right;
+    CGFloat revertWidth = 70;
+    CGFloat saveWidth = 132;
+    [self.revertButton setFrame:NSMakeRect(metaRight - revertWidth, metadataY, revertWidth, 28)];
+    [self.saveButton setFrame:NSMakeRect(metaRight - revertWidth - 8 - saveWidth, metadataY, saveWidth, 28)];
+    CGFloat metadataLeft = padding;
+    CGFloat nameWidth = fmin(170, width * 0.19);
+    CGFloat authorWidth = fmin(130, width * 0.15);
+    CGFloat nameX = metadataLeft;
+    CGFloat authorX = nameX + nameWidth + 8;
+    CGFloat descriptionX = authorX + authorWidth + 8;
+    CGFloat descriptionWidth = fmax(60, NSMinX(self.saveButton.frame) - descriptionX - 10);
+    [self.nameField setFrame:NSMakeRect(nameX, metadataY, nameWidth, 28)];
+    [self.authorField setFrame:NSMakeRect(authorX, metadataY, authorWidth, 28)];
+    [self.descriptionField setFrame:NSMakeRect(descriptionX, metadataY, descriptionWidth, 28)];
+
+    CGFloat inspectorHeight = fmin(190, fmax(148, height * 0.3));
+    CGFloat inspectorTop = inspectorHeight;
+    CGFloat inspectorWidth = width - 2 * padding;
+    CGFloat rowWidth = inspectorWidth;
+    if (width < 720) {
+        [self.selectedKeyLabel setFrame:NSMakeRect(padding, inspectorTop - 27, inspectorWidth, 22)];
+        [self.modeKeyLabel setFrame:NSMakeRect(padding, inspectorTop - 53, 65, 18)];
+        [self.modeKeyPopup setFrame:NSMakeRect(padding + 68, inspectorTop - 57, 145, 24)];
+        [self.addBindingButton setFrame:NSMakeRect(right - 108, inspectorTop - 57, 108, 28)];
+    } else {
+        [self.selectedKeyLabel setFrame:NSMakeRect(padding, inspectorTop - 28, fmax(160, inspectorWidth - 450), 24)];
+        [self.modeKeyLabel setFrame:NSMakeRect(width - 360, inspectorTop - 25, 65, 18)];
+        [self.modeKeyPopup setFrame:NSMakeRect(width - 292, inspectorTop - 29, 165, 24)];
+        [self.addBindingButton setFrame:NSMakeRect(right - 108, inspectorTop - 31, 108, 28)];
+    }
+
+    CGFloat removeWidth = fmin(74, fmax(56, rowWidth * 0.13));
+    CGFloat valueWidth = fmin(130, fmax(90, rowWidth * 0.22));
+    CGFloat modifierWidth = fmin(150, fmax(100, rowWidth * 0.24));
+    CGFloat actionX = modifierWidth + 8;
+    CGFloat valueX = rowWidth - removeWidth - 19 - valueWidth - 18;
+    CGFloat actionWidth = fmax(110, valueX - actionX - 8);
+    CGFloat columnY = inspectorTop - (width < 720 ? 78 : 49);
+    [self.modifierColumnLabel setFrame:NSMakeRect(padding, columnY, modifierWidth, 16)];
+    [self.actionColumnLabel setFrame:NSMakeRect(padding + actionX, columnY, actionWidth, 16)];
+    [self.valueColumnLabel setFrame:NSMakeRect(padding + valueX, columnY, valueWidth, 16)];
+    CGFloat rowsBottom = 20;
+    CGFloat rowsTop = columnY - 4;
+    [self.bindingRowsScrollView setFrame:NSMakeRect(padding, rowsBottom, inspectorWidth, fmax(32, rowsTop - rowsBottom))];
+    [self.bindingRowsView setFrameSize:NSMakeSize(rowWidth, NSHeight(self.bindingRowsScrollView.bounds))];
+    [self.bindingRowsScrollView setHasHorizontalScroller:NO];
+    [self.statusLabel setFrame:NSMakeRect(padding, 1, inspectorWidth, 18)];
+
+    CGFloat keyboardBottom = inspectorHeight + 4;
+    CGFloat keyboardTop = metadataY - 8;
+    CGFloat keyboardHeight = fmax(0, keyboardTop - keyboardBottom);
+    [self.keyboardView setFrame:NSMakeRect(0, keyboardBottom, width, keyboardHeight)];
+    [self.keyboardView setNeedsDisplay:YES];
+    [self rebuildBindingRows];
+}
+
+- (IBAction)physicalKeyboardChanged:(NSPopUpButton *)sender
+{
+    [self.keyControl selectPhysicalKeyboardLayout:[[sender selectedItem] representedObject]];
+}
+
+- (void)reloadPhysicalKeyboardLayout
+{
+    NSDictionary *layout = [self.keyControl physicalKeyboardLayoutDefinition];
+    [self.keyboardView setKeyboardLayoutDefinition:layout ?: @{}];
+    [self.keyboardView setKeyMapping:self.keyControl.keyMapping];
+
+    [self.physicalKeyboardPopup removeAllItems];
+    for (NSDictionary *option in [self.keyControl physicalKeyboardLayoutOptions]) {
+        [self.physicalKeyboardPopup addItemWithTitle:[option objectForKey:@"name"]];
+        [[self.physicalKeyboardPopup lastItem] setRepresentedObject:[option objectForKey:@"id"]];
+    }
+    NSUInteger layoutIndex = [[self.keyControl physicalKeyboardLayoutOptions] indexOfObjectPassingTest:^BOOL(NSDictionary *option, NSUInteger index, BOOL *stop) {
+        return [[option objectForKey:@"id"] isEqualToString:self.keyControl.physicalKeyboardLayoutIdentifier];
+    }];
+    if (layoutIndex != NSNotFound) [self.physicalKeyboardPopup selectItemAtIndex:(NSInteger)layoutIndex];
+
+    NSString *modeKey = [self.keyfile objectForKey:KEYFILE_MODEKEY_NODENAME] ?: @"53";
+    [self.modeKeyPopup removeAllItems];
+    for (NSString *code in self.sortedKeyCodes) [self.modeKeyPopup addItemWithTitle:[self displayLabelForKeyCode:code]];
+    NSUInteger modeIndex = [self.sortedKeyCodes indexOfObject:modeKey];
+    if (modeIndex != NSNotFound) [self.modeKeyPopup selectItemAtIndex:(NSInteger)modeIndex];
+
+    if (self.selectedKeyCode) {
+        NSString *keyName = [self displayLabelForKeyCode:self.selectedKeyCode];
+        NSString *suffix = nil;
+        BOOL displayed = NO;
+        for (NSDictionary *item in self.keyboardView.keyItems) {
+            if ([[item objectForKey:@"code"] isEqualToString:self.selectedKeyCode]) {
+                displayed = YES;
+                break;
+            }
+        }
+        if (!displayed) suffix = @" (not on this physical keyboard)";
+        [self.selectedKeyLabel setStringValue:[NSString stringWithFormat:@"%@ - keycode %@%@", keyName, self.selectedKeyCode, suffix ?: @""]];
+    }
+    [self.keyboardView setNeedsDisplay:YES];
 }
 
 - (void)loadKeyfile:(NSDictionary *)keyfile
@@ -552,20 +753,27 @@
     CGFloat rowHeight = 30;
     CGFloat rowGap = 4;
     CGFloat contentHeight = fmax(108, visibleBindings.count * (rowHeight + rowGap));
-    [self.bindingRowsView setFrame:NSMakeRect(0, 0, 1300, contentHeight)];
+    CGFloat rowWidth = fmax(420, NSWidth(self.bindingRowsView.frame));
+    CGFloat removeWidth = fmin(74, fmax(56, rowWidth * 0.13));
+    CGFloat valueWidth = fmin(130, fmax(90, rowWidth * 0.22));
+    CGFloat modifierWidth = fmin(150, fmax(100, rowWidth * 0.24));
+    CGFloat actionX = modifierWidth + 8;
+    CGFloat valueX = rowWidth - removeWidth - 19 - valueWidth - 18;
+    CGFloat actionWidth = fmax(110, valueX - actionX - 8);
+    [self.bindingRowsView setFrame:NSMakeRect(0, 0, rowWidth, contentHeight)];
 
     for (NSUInteger visibleIndex = 0; visibleIndex < visibleBindings.count; visibleIndex++) {
         NSDictionary *binding = [visibleBindings objectAtIndex:visibleIndex];
         NSUInteger bindingIndex = [self.bindings indexOfObjectIdenticalTo:binding];
         CGFloat y = contentHeight - (visibleIndex + 1) * (rowHeight + rowGap);
-        NSView *row = [[NSView alloc] initWithFrame:NSMakeRect(0, y, 1300, rowHeight)];
+        NSView *row = [[NSView alloc] initWithFrame:NSMakeRect(0, y, rowWidth, rowHeight)];
         NSString *rowModifier = [binding objectForKey:KEYFILE_MODIFIERS_NODENAME] ?: @"0";
         if (self.selectedModifierValue && [rowModifier isEqualToString:self.selectedModifierValue]) {
             [row setWantsLayer:YES];
             [row layer].backgroundColor = [NSColor colorWithCalibratedRed:0.25 green:0.34 blue:0.30 alpha:0.8].CGColor;
         }
 
-        NSPopUpButton *modifier = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0, 1, 170, 26) pullsDown:NO];
+        NSPopUpButton *modifier = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0, 1, modifierWidth, 26) pullsDown:NO];
         for (NSUInteger index = 0; index < self.modifierTitles.count; index++) {
             [modifier addItemWithTitle:[self.modifierTitles objectAtIndex:index]];
             [[modifier lastItem] setRepresentedObject:[self.modifierValues objectAtIndex:index]];
@@ -583,11 +791,11 @@
         NSUInteger actionIndex = [self.actionKeys indexOfObject:action];
         NSPopUpButton *actionPopup;
         if (actionIndex == NSNotFound) {
-            actionPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(180, 1, 430, 26) pullsDown:NO];
+            actionPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(actionX, 1, actionWidth, 26) pullsDown:NO];
             [actionPopup addItemWithTitle:@"Remap (edit in Table Editor)"];
             [actionPopup setEnabled:NO];
         } else {
-            actionPopup = VSCOCreateActionPopup(self.actionKeys, self.keyControl.adjustmentMapping, action, NSMakeRect(180, 1, 430, 26));
+            actionPopup = VSCOCreateActionPopup(self.actionKeys, self.keyControl.adjustmentMapping, action, NSMakeRect(actionX, 1, actionWidth, 26));
             [actionPopup setTag:(NSInteger)bindingIndex];
             [actionPopup setTarget:self];
             [actionPopup setAction:@selector(bindingActionChanged:)];
@@ -597,12 +805,12 @@
         id value = [adjustments objectForKey:action];
         NSTextField *valueField;
         if ([action isEqualToString:@"_SetPreset"]) {
-            NSComboBox *presetField = [[NSComboBox alloc] initWithFrame:NSMakeRect(620, 1, 120, 26)];
+            NSComboBox *presetField = [[NSComboBox alloc] initWithFrame:NSMakeRect(valueX, 1, valueWidth, 26)];
             [presetField setCompletes:YES];
             [presetField addItemsWithObjectValues:self.keyControl.availableDevelopPresets ?: @[]];
             valueField = presetField;
         } else {
-            valueField = [self fieldWithFrame:NSMakeRect(620, 1, 120, 26) placeholder:@"Value"];
+            valueField = [self fieldWithFrame:NSMakeRect(valueX, 1, valueWidth, 26) placeholder:@"Value"];
         }
         [valueField setStringValue:[value description] ?: @""];
         [valueField setTag:(NSInteger)bindingIndex + 10000];
@@ -613,7 +821,7 @@
         NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:action];
         NSNumber *number = [self numericValue:value];
         if (limits && number) {
-            NSStepper *stepper = [[NSStepper alloc] initWithFrame:NSMakeRect(744, 1, 19, 26)];
+            NSStepper *stepper = [[NSStepper alloc] initWithFrame:NSMakeRect(valueX + valueWidth + 3, 1, 19, 26)];
             double maximum = [[limits objectForKey:@"max"] doubleValue];
             id minimum = [limits objectForKey:@"min"];
             double increment = minimum && minimum != [NSNull null] ? fabs([minimum doubleValue]) : 1.0;
@@ -627,7 +835,7 @@
             [row addSubview:stepper];
         }
 
-        NSButton *remove = [self buttonWithFrame:NSMakeRect(785, 1, 74, 26) title:@"Remove" action:@selector(removeBindingClicked:)];
+        NSButton *remove = [self buttonWithFrame:NSMakeRect(rowWidth - removeWidth, 1, removeWidth - 4, 26) title:@"Remove" action:@selector(removeBindingClicked:)];
         [remove setTag:(NSInteger)bindingIndex];
         [row addSubview:remove];
         [self.bindingRowsView addSubview:row];

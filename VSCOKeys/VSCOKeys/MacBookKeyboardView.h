@@ -17,6 +17,9 @@
 @property (assign) CGFloat glowPhase;
 @property (assign) CGFloat glowRemaining;
 @property (retain) NSTimer *glowTimer;
+@property (assign) CGFloat keyboardUnitCount;
+@property (assign) CGFloat keyboardTopY;
+- (void)setKeyboardLayoutDefinition:(NSDictionary *)layout;
 - (void)showCapturedKeyCode:(NSString *)keyCode hasBinding:(BOOL)hasBinding;
 - (void)showCapturedKeyCode:(NSString *)keyCode hasBinding:(BOOL)hasBinding actionTitle:(NSString *)actionTitle;
 - (void)advanceGlowAnimation:(NSTimer *)timer;

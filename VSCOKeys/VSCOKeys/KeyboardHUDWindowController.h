@@ -5,6 +5,7 @@
 - (id)initWithKeyMapping:(NSDictionary *)keyMapping;
 - (void)showHUD;
 - (void)hideHUD;
+- (void)setKeyboardLayoutDefinition:(NSDictionary *)layout;
 - (void)setBindings:(NSArray *)bindings adjustmentMapping:(NSDictionary *)adjustmentMapping usesShortLabels:(BOOL)usesShortLabels;
 - (void)updateModifierMask:(NSUInteger)modifierMask;
 - (void)showKeyCode:(NSString *)keyCode actionTitle:(NSString *)actionTitle modifierMask:(NSUInteger)modifierMask;

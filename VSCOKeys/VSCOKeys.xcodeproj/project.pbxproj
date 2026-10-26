@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000011 /* KeyboardLayoutEditorController.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* KeyboardLayoutEditorController.m */; };
 		A10000000000000000000012 /* MacBookISOKeyboard.json in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* MacBookISOKeyboard.json */; };
+		A1000000000000000000002C /* AppleMagicANSIKeyboard.json in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002D /* AppleMagicANSIKeyboard.json */; };
 		A10000000000000000000020 /* KeyfileValidator.m in App Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* KeyfileValidator.m */; };
 		A10000000000000000000021 /* KeyfileValidator.m in Test Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* KeyfileValidator.m */; };
 		A10000000000000000000024 /* ActionPopupBuilder.m in App Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000026 /* ActionPopupBuilder.m */; };
@@ -147,6 +148,7 @@
 		A10000000000000000000001 /* KeyboardLayoutEditorController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyboardLayoutEditorController.h; sourceTree = "<group>"; };
 		A10000000000000000000002 /* KeyboardLayoutEditorController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KeyboardLayoutEditorController.m; sourceTree = "<group>"; };
 		A10000000000000000000003 /* MacBookISOKeyboard.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MacBookISOKeyboard.json; sourceTree = "<group>"; };
+		A1000000000000000000002D /* AppleMagicANSIKeyboard.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = AppleMagicANSIKeyboard.json; sourceTree = "<group>"; };
 		A10000000000000000000022 /* KeyfileValidator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KeyfileValidator.m; sourceTree = "<group>"; };
 		A10000000000000000000023 /* KeyfileValidator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyfileValidator.h; sourceTree = "<group>"; };
 		A10000000000000000000026 /* ActionPopupBuilder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ActionPopupBuilder.m; sourceTree = "<group>"; };
@@ -491,6 +493,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000003 /* MacBookISOKeyboard.json */,
+				A1000000000000000000002D /* AppleMagicANSIKeyboard.json */,
 				307BFF5B15BF95DB005F514E /* KeyMapping.json */,
 				307BFF5D15BF962A005F514E /* AdjustmentMapping.json */,
 				307BFF5D15BF962A005F514F /* AdjustmentLimits.json */,
@@ -742,6 +745,7 @@
 				30F99FE315F7EA700093FB62 /* VSCOStandard.vkeys in Resources */,
 				307BFF5C15BF95DB005F514E /* KeyMapping.json in Resources */,
 				A10000000000000000000012 /* MacBookISOKeyboard.json in Resources */,
+				A1000000000000000000002C /* AppleMagicANSIKeyboard.json in Resources */,
 				307BFF5E15BF962A005F514E /* AdjustmentMapping.json in Resources */,
 				307BFF5E15BF962A005F514F /* AdjustmentLimits.json in Resources */,
 				307BFF5E15BF962A005F5150 /* CommandCategories.json in Resources */,

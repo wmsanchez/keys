@@ -48,6 +48,9 @@
 
 #define DEFAULTS_ACTIVE_KEYFILE @"active_keyfile"
 #define DEFAULTS_KEYBOARD_HUD_SHORT_LABELS @"keyboard_hud_short_labels"
+#define DEFAULTS_PHYSICAL_KEYBOARD_LAYOUT @"physical_keyboard_layout"
+#define KEYBOARD_LAYOUT_MACBOOK_ISO @"macbook-pro-iso-azerty-qwerty-caps"
+#define KEYBOARD_LAYOUT_APPLE_MAGIC_ANSI @"apple-magic-ansi-qwerty"
 #define DEFAULTS_KEYFILE_ISACTIVE @"isActive"
 #define DEFAULTS_KEYFILE_FORMAT @"keyfile_%@"
 

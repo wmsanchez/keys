@@ -13,5 +13,6 @@
 - (void)loadKeyfile:(NSDictionary *)keyfile;
 - (void)startNewLayout;
 - (void)stopListeningForKeys;
+- (void)reloadPhysicalKeyboardLayout;
 
 @end
