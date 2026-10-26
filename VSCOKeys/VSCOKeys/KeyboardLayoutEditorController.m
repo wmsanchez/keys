@@ -341,6 +341,7 @@
 @property (retain) NSTextField *actionColumnLabel;
 @property (retain) NSTextField *valueColumnLabel;
 @property (retain) NSButton *tableEditorButton;
+@property (retain) NSButton *duplicateButton;
 @property (retain) NSButton *saveButton;
 @property (retain) NSButton *revertButton;
 @property (retain) NSButton *addBindingButton;
@@ -369,7 +370,7 @@
 @synthesize selectedKeyLabel, nameField, authorField, descriptionField, statusLabel;
 @synthesize titleLabel, hintLabel, keyboardLabel, modeKeyLabel;
 @synthesize modifierColumnLabel, actionColumnLabel, valueColumnLabel;
-@synthesize tableEditorButton, saveButton, revertButton, addBindingButton, captureBindingButton;
+@synthesize tableEditorButton, duplicateButton, saveButton, revertButton, addBindingButton, captureBindingButton;
 @synthesize modeKeyPopup, physicalKeyboardPopup, bindingRowsScrollView, bindingRowsView, sortedKeyCodes, selectedKeyCode;
 @synthesize hasUnrepairableLoadedData;
 @synthesize listenForKeysSwitch, keyEventMonitor, selectedModifierValue;
@@ -456,6 +457,8 @@
     [self.rootView addSubview:self.hintLabel];
     self.tableEditorButton = [self buttonWithFrame:NSZeroRect title:@"Table Editor" action:@selector(tableEditorClicked:)];
     [self.rootView addSubview:self.tableEditorButton];
+    self.duplicateButton = [self buttonWithFrame:NSZeroRect title:@"Duplicate" action:@selector(duplicateClicked:)];
+    [self.rootView addSubview:self.duplicateButton];
     self.keyboardLabel = [self labelWithFrame:NSZeroRect text:@"Keyboard" size:11];
     [self.rootView addSubview:self.keyboardLabel];
     self.physicalKeyboardPopup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
@@ -543,8 +546,9 @@
     CGFloat captureY = compactWidth ? height - 104 : optionsY;
     CGFloat metadataY = height - (compactWidth ? 140 : 108);
 
-    [self.titleLabel setFrame:NSMakeRect(padding, titleY, fmax(180, width - 250), 24)];
     [self.tableEditorButton setFrame:NSMakeRect(right - 140, titleY - 1, 140, 27)];
+    [self.duplicateButton setFrame:NSMakeRect(NSMinX(self.tableEditorButton.frame) - 108, titleY - 1, 100, 27)];
+    [self.titleLabel setFrame:NSMakeRect(padding, titleY, fmax(60, NSMinX(self.duplicateButton.frame) - padding - 12), 24)];
 
     if (compactWidth) {
         [self.hintLabel setHidden:YES];
@@ -1202,6 +1206,38 @@
     NSDictionary *saved = [self.keyControl.keyfileList objectForKey:uuid];
     [self loadKeyfile:saved ?: self.keyfile];
     [self.statusLabel setStringValue:@"Unsaved changes reverted."];
+}
+
+- (void)duplicateClicked:(id)sender
+{
+    if (self.hasUnrepairableLoadedData) {
+        [self.statusLabel setStringValue:@"Duplicate blocked: this layout contains malformed binding data."];
+        return;
+    }
+
+    NSString *sourceName = [[self.nameField stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (sourceName.length == 0) {
+        [self.statusLabel setStringValue:@"Save this layout with a name before duplicating it."];
+        return;
+    }
+
+    NSString *baseName = [NSString stringWithFormat:@"Copy of %@", sourceName];
+    NSString *copyName = baseName;
+    NSMutableSet *existingNames = [NSMutableSet set];
+    for (NSDictionary *layout in [self.keyControl.keyfileList allValues]) {
+        NSString *existingName = [layout objectForKey:KEYFILE_NAME_NODENAME];
+        if ([existingName isKindOfClass:[NSString class]]) [existingNames addObject:[existingName lowercaseString]];
+    }
+    NSUInteger copyIndex = 2;
+    while ([existingNames containsObject:[copyName lowercaseString]]) {
+        copyName = [NSString stringWithFormat:@"%@ (%lu)", baseName, (unsigned long)copyIndex++];
+    }
+
+    NSMutableDictionary *duplicate = [self.keyfile mutableCopy] ?: [NSMutableDictionary dictionary];
+    [duplicate setObject:[[NSUUID UUID] UUIDString] forKey:KEYFILE_UUID_NODENAME];
+    self.keyfile = duplicate;
+    [self.nameField setStringValue:copyName];
+    [self saveClicked:self];
 }
 
 - (void)tableEditorClicked:(id)sender

@@ -333,8 +333,9 @@
     if (![self validateKeyfile:keyfile error:error]) return NO;
 
     NSString *uuid = [keyfile objectForKey:KEYFILE_UUID_NODENAME];
+    NSString *name = [keyfile objectForKey:KEYFILE_NAME_NODENAME];
     NSString *json = [keyfile JSONRepresentation];
-    if (!uuid || [uuid length] == 0 || !json) {
+    if (!uuid || [uuid length] == 0 || ![name isKindOfClass:[NSString class]] || name.length == 0 || !json) {
         if (error) {
             *error = [NSError errorWithDomain:@"VSCOKeys.Keyfile"
                                          code:1
@@ -343,12 +344,35 @@
         return NO;
     }
 
-    NSString *path = [[self.keyfileDirectory stringByAppendingPathComponent:uuid]
-                      stringByAppendingPathExtension:KEYFILE_JSON_EXTENSION];
+    NSString *fileNameBase = [name stringByReplacingOccurrencesOfString:@"/" withString:@"-"];
+    fileNameBase = [fileNameBase stringByReplacingOccurrencesOfString:@":" withString:@"-"];
+    fileNameBase = [fileNameBase stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (fileNameBase.length == 0) fileNameBase = @"Layout";
+
+    NSDictionary *existingKeyfile = [self.keyfileList objectForKey:uuid];
+    NSString *existingFilename = [existingKeyfile objectForKey:KEYFILE_FILENAME_NODENAME];
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSString *filename = [fileNameBase stringByAppendingPathExtension:KEYFILE_JSON_EXTENSION];
+    NSUInteger suffix = 2;
+    NSString *path = [self.keyfileDirectory stringByAppendingPathComponent:filename];
+    while ([fileManager fileExistsAtPath:path] && ![filename isEqualToString:existingFilename]) {
+        filename = [NSString stringWithFormat:@"%@ (%lu).%@", fileNameBase, (unsigned long)suffix++, KEYFILE_JSON_EXTENSION];
+        path = [self.keyfileDirectory stringByAppendingPathComponent:filename];
+    }
+
     NSError *writeError = nil;
     if (![json writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:&writeError]) {
         if (error) *error = writeError;
         return NO;
+    }
+
+    if (existingFilename.length > 0 && ![existingFilename isEqualToString:filename]) {
+        NSString *existingPath = [self.keyfileDirectory stringByAppendingPathComponent:existingFilename];
+        if ([fileManager fileExistsAtPath:existingPath] && ![fileManager removeItemAtPath:existingPath error:&writeError]) {
+            [fileManager removeItemAtPath:path error:NULL];
+            if (error) *error = writeError;
+            return NO;
+        }
     }
 
     [self loadAllKeyfiles];

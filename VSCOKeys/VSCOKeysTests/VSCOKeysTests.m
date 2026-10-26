@@ -153,11 +153,18 @@
         @"ResetParametricDarks": @"Reset Dark Tones"
     };
 
+    NSMutableArray *commands = [NSMutableArray array];
+    for (NSString *actionKey in actionKeys) {
+        [commands addObject:@{@"id": actionKey, @"name": actionNames[actionKey]}];
+    }
+    NSArray *categories = @[@{@"category": @"Actions", @"items": commands}];
+
     for (NSString *actionKey in [actionKeys subarrayWithRange:NSMakeRange(2, 6)]) {
-        NSPopUpButton *popup = VSCOCreateActionPopup(actionKeys, actionNames, actionKey, NSZeroRect);
-        XCTAssertEqual(popup.numberOfItems, (NSInteger)actionKeys.count);
+        NSPopUpButton *popup = VSCOCreateActionPopup(actionKeys, actionNames, categories, actionKey, NSZeroRect);
+        XCTAssertEqual(popup.numberOfItems, (NSInteger)2);
         XCTAssertEqualObjects(popup.titleOfSelectedItem, actionNames[actionKey]);
         XCTAssertEqualObjects(popup.selectedItem.representedObject, actionKey);
+        XCTAssertEqual(popup.menu.itemArray[1].submenu.numberOfItems, (NSInteger)actionKeys.count);
     }
 }
 
