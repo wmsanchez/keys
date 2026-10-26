@@ -20,10 +20,7 @@
 
 #Prequisites:
 #1. Must download Bitrock installer and put app into the following directory: /Applications/BitRock/bin/Builder.app/Contents/MacOS/installbuilder.sh
-#2. Put app into correct folders (OSX app to ../Build/ and Windows app to ../Build/VSCOKeys)
+#2. Put the macOS app and Lightroom plugin into ../Build/
 
-#Build OSX installer
+#Build macOS installer
 "/Applications/BitRock/bin/Builder.app/Contents/MacOS/installbuilder.sh" build VSCOKeys.xml osx
-
-#Build windows installer
-"/Applications/BitRock/bin/Builder.app/Contents/MacOS/installbuilder.sh" build VSCOKeys.xml windows

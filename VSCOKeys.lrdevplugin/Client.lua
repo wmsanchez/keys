@@ -449,15 +449,9 @@ function Client:init()
     self:sendKillMessageToServer()
 
     logging:log("Booting server")
-    if WIN_ENV then
-      LrTasks.startAsyncTask(function()
-        LrTasks.execute("cd " .. _PLUGIN.path .. "\\halfway_server & lua5.1.exe Server.lua")
-      end, "Boot win server")
-    else
-      LrTasks.startAsyncTask(function()
-        LrTasks.execute("cd \"" .. _PLUGIN.path .. "/halfway_server\" && /usr/bin/python3 server.py > server.log 2>&1 &")
-      end, "Boot mac server")
-    end
+    LrTasks.startAsyncTask(function()
+      LrTasks.execute("cd \"" .. _PLUGIN.path .. "/halfway_server\" && /usr/bin/python3 server.py > server.log 2>&1 &")
+    end, "Boot server")
 
     LrTasks.sleep(CLIENT_WAIT_FOR_SERVER_TIME)
 

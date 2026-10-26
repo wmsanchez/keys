@@ -46,13 +46,5 @@ Client:auth( function()
 		logging:log("boot mac apps error: " .. tostring(result))
 	  end
     end, "Start external apps")
-
-    LrTasks.startAsyncTask( function ()
-      local result = LrTasks.execute("cd " .. _PLUGIN.path .. "\\apps & for %f in (*.*) do %f")
-
-	  if (result) then
-		logging:log("boot win apps error: " .. tostring(result))
-	  end
-    end, "Start external apps")
   end
 end)

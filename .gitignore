@@ -7,11 +7,4 @@ VSCOKeys.lrdevplugin/halfway_server/test.log
 VSCOKeys/build
 VSCOKeys/VSCOKeys/AdjustmentMapping.vkeys
 VSCOKeys/VSCOKeys/KeyMapping.vkeys
-VSCOKeys-win/*.suo
-VSCOKeys-win/VSCOKeys/bin
-VSCOKeys-win/VSCOKeys/obj
-VSCOKeys-win/NotifyIconWpf/bin
-VSCOKeys-win/NotifyIconWpf/obj
-/VSCOKeys-win/VSCOKeys/VSCOKeys.csproj.user
-/Tools/VSCOKeys-win.xml.backup
 *.p12
