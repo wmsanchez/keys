@@ -38,6 +38,8 @@ trap cleanup EXIT
 trap 'exit 1' HUP INT TERM
 
 /usr/bin/ditto "$source_app" "$staged_app"
+signing_identity="${EXPANDED_CODE_SIGN_IDENTITY:-${CODE_SIGN_IDENTITY:--}}"
+/usr/bin/codesign --force --deep --sign "$signing_identity" "$staged_app"
 /usr/bin/killall VSCOKeys >/dev/null 2>&1 || true
 
 layout_dir="$HOME/Library/Application Support/VSCOKeys"
