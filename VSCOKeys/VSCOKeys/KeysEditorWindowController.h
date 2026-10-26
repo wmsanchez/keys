@@ -45,5 +45,6 @@
 
 /// Clear all fields and start a brand-new layout.
 - (void)startNewLayout;
+- (void)reloadActionCatalog;
 
 @end

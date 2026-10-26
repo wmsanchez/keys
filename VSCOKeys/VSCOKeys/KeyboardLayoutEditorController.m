@@ -24,10 +24,28 @@
 
 @end
 
+@interface KeyboardInlineLabelField : NSTextField
+@property (nonatomic, copy) NSString *presetValue;
+@end
+
+@implementation KeyboardInlineLabelField
+@end
+
+@interface MacBookKeyboardView () <NSTextFieldDelegate, NSDraggingSource, NSDraggingDestination>
+@property (retain) NSMutableDictionary *inlineLabelFields;
+@property (retain) NSString *dragSourceKeyCode;
+@property (nonatomic, assign) NSString *dragAnchorKeyCode;
+@property (assign) NSPoint mouseDownPoint;
+@property (assign) BOOL dragSessionStarted;
+- (void)rebuildInlineLabelFields;
+@end
+
 @implementation MacBookKeyboardView
 
 @synthesize keyItems, keyMapping, assignmentTypes, assignmentLabels;
-@synthesize selectedKeyCode, capturedKeyCode, capturedKeyHasBinding, delegate;
+@synthesize assignmentDetails = _assignmentDetails;
+@synthesize usesMotibodoLabels = _usesMotibodoLabels, showsIncrementAmounts, allowsInlineLabelEditing = _allowsInlineLabelEditing;
+@synthesize selectedKeyCode, selectedKeyCodes, capturedKeyCode, capturedKeyHasBinding, delegate;
 @synthesize listeningForKeys, glowPhase, glowRemaining, glowTimer;
 @synthesize keyboardUnitCount, keyboardTopY;
 
@@ -49,6 +67,86 @@
     self.keyboardUnitCount = maximumX;
     self.keyboardTopY = maximumY;
     [self setNeedsDisplay:YES];
+}
+
+- (id)initWithFrame:(NSRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) [self registerForDraggedTypes:@[@"com.vsco.keys.binding-key-code"]];
+    return self;
+}
+
+- (void)setAssignmentDetails:(NSDictionary *)details
+{
+    _assignmentDetails = details;
+    [self rebuildInlineLabelFields];
+    [self setNeedsDisplay:YES];
+}
+
+- (void)setAllowsInlineLabelEditing:(BOOL)enabled
+{
+    _allowsInlineLabelEditing = enabled;
+    [self rebuildInlineLabelFields];
+    [self setNeedsDisplay:YES];
+}
+
+- (void)setUsesMotibodoLabels:(BOOL)enabled
+{
+    _usesMotibodoLabels = enabled;
+    [self rebuildInlineLabelFields];
+    [self setNeedsDisplay:YES];
+}
+
+- (void)setFrameSize:(NSSize)newSize
+{
+    [super setFrameSize:newSize];
+    [self rebuildInlineLabelFields];
+}
+
+- (void)rebuildInlineLabelFields
+{
+    for (NSArray *fields in self.inlineLabelFields.allValues) {
+        for (NSTextField *field in fields) [field removeFromSuperview];
+    }
+    self.inlineLabelFields = [NSMutableDictionary dictionary];
+    if (!self.allowsInlineLabelEditing || !self.usesMotibodoLabels) return;
+
+    for (NSDictionary *item in self.keyItems) {
+        NSString *code = item[@"code"];
+        NSArray *details = code ? self.assignmentDetails[code] : nil;
+        NSDictionary *detail = details.firstObject;
+        NSString *action = detail[@"action"];
+        if (!action || !detail[@"title"]) continue;
+
+        NSRect keyRect = [self frameForKeyItem:item];
+        NSMutableArray *fields = [NSMutableArray array];
+        NSString *presetValue = [detail[@"presetValue"] description];
+        if (presetValue.length == 0) {
+            NSTextField *titleField = [[NSTextField alloc] initWithFrame:NSMakeRect(NSMinX(keyRect) + 5, NSMaxY(keyRect) - 19, NSWidth(keyRect) - 10, 15)];
+            [titleField setStringValue:detail[@"title"]];
+            [titleField setIdentifier:action];
+            [titleField setFont:[NSFont systemFontOfSize:9 weight:NSFontWeightMedium]];
+            [fields addObject:titleField];
+            [self addSubview:titleField];
+        } else {
+            KeyboardInlineLabelField *presetField = [[KeyboardInlineLabelField alloc] initWithFrame:NSMakeRect(NSMinX(keyRect) + 4, NSMinY(keyRect) + 15, NSWidth(keyRect) - 8, 12)];
+            [presetField setStringValue:detail[@"subtitle"] ?: @""];
+            [presetField setPresetValue:presetValue];
+            [presetField setFont:[NSFont systemFontOfSize:8 weight:NSFontWeightMedium]];
+            [fields addObject:presetField];
+            [self addSubview:presetField];
+        }
+        for (NSTextField *field in fields) {
+            [field setEditable:YES];
+            [field setSelectable:YES];
+            [field setBordered:NO];
+            [field setDrawsBackground:NO];
+            [field setAlignment:NSTextAlignmentCenter];
+            [field setTextColor:[NSColor colorWithCalibratedWhite:0.12 alpha:1]];
+            [field setDelegate:self];
+        }
+        self.inlineLabelFields[code] = fields;
+    }
 }
 
 - (void)setListeningForKeys:(BOOL)enabled
@@ -177,7 +275,7 @@
         NSUInteger discreteCount = [[types objectForKey:@"discrete"] unsignedIntegerValue];
         NSUInteger totalCount = [[types objectForKey:@"total"] unsignedIntegerValue];
         BOOL assigned = totalCount > 0;
-        BOOL selected = code && [code isEqualToString:self.selectedKeyCode];
+        BOOL selected = code && ([code isEqualToString:self.selectedKeyCode] || [self.selectedKeyCodes containsObject:code]);
         BOOL captured = code && [code isEqualToString:self.capturedKeyCode];
         BOOL glowing = captured && (self.listeningForKeys || self.glowRemaining > 0);
         BOOL selectable = code != nil;
@@ -228,22 +326,56 @@
         if (!label && code) label = [self.keyMapping objectForKey:code];
         NSString *secondaryLabel = [item objectForKey:@"secondary"];
         NSString *assignmentLabel = code ? [self.assignmentLabels objectForKey:code] : nil;
+        NSArray *assignmentDetailsForKey = code ? [self.assignmentDetails objectForKey:code] : nil;
         NSColor *textColor = (assigned || selected)
             ? [NSColor colorWithCalibratedWhite:0.14 alpha:1]
             : [NSColor colorWithCalibratedWhite:0.84 alpha:0.52];
         if (assignmentLabel.length > 0) {
-            NSRect actionRect = NSMakeRect(NSMinX(keyRect) + 2, NSMaxY(keyRect) - 15, NSWidth(keyRect) - 4, 13);
-            [self drawString:assignmentLabel inRect:actionRect fontSize:8 color:textColor];
-            if (secondaryLabel) {
-                NSRect secondaryRect = NSMakeRect(NSMinX(keyRect) + 3, NSMinY(keyRect) + NSHeight(keyRect) * 0.42,
-                                                  NSWidth(keyRect) - 6, NSHeight(keyRect) * 0.25);
-                NSRect primaryRect = NSMakeRect(NSMinX(keyRect) + 3, NSMinY(keyRect) + 1,
-                                                NSWidth(keyRect) - 6, NSHeight(keyRect) * 0.35);
-                [self drawString:secondaryLabel inRect:secondaryRect fontSize:8 color:textColor];
-                [self drawString:label ?: @"" inRect:primaryRect fontSize:9 color:textColor];
+            if (self.usesMotibodoLabels) {
+                NSDictionary *firstDetail = assignmentDetailsForKey.firstObject;
+                NSString *actionTitle = firstDetail[@"title"] ?: assignmentLabel;
+                NSString *presetValue = [firstDetail[@"presetValue"] description];
+                BOOL editingActionTitle = self.allowsInlineLabelEditing && presetValue.length == 0;
+                BOOL editingPresetLabel = self.allowsInlineLabelEditing && presetValue.length > 0;
+                NSRect actionRect = NSMakeRect(NSMinX(keyRect) + 5, NSMaxY(keyRect) - 19, NSWidth(keyRect) - 10, 15);
+                if (!editingActionTitle) [self drawString:actionTitle inRect:actionRect fontSize:9 color:textColor];
+                NSSize titleSize = [actionTitle sizeWithAttributes:@{NSFontAttributeName: [NSFont systemFontOfSize:9 weight:NSFontWeightMedium]}];
+                NSColor *directionColor = [NSColor colorWithCalibratedWhite:0.12 alpha:1];
+                if (leftCount) [self drawDirectionTriangleAt:NSMakePoint(NSMidX(keyRect) - titleSize.width / 2 - 7, NSMaxY(keyRect) - 11) pointsLeft:YES color:directionColor];
+                if (rightCount) [self drawDirectionTriangleAt:NSMakePoint(NSMidX(keyRect) + titleSize.width / 2 + 7, NSMaxY(keyRect) - 11) pointsLeft:NO color:directionColor];
+                NSString *amount = [firstDetail[@"amount"] description];
+                if (self.showsIncrementAmounts && amount.length > 0) {
+                    NSRect amountRect = NSMakeRect(NSMaxX(keyRect) - 30, NSMinY(keyRect) + 2, 26, 11);
+                    [self drawString:amount inRect:amountRect fontSize:7 color:textColor];
+                }
+                NSString *subtitle = [firstDetail[@"subtitle"] description];
+                if (subtitle.length > 0 && !editingPresetLabel) {
+                    NSRect subtitleRect = NSMakeRect(NSMinX(keyRect) + 4, NSMinY(keyRect) + 15, NSWidth(keyRect) - 8, 12);
+                    [self drawString:subtitle inRect:subtitleRect fontSize:8 color:textColor];
+                }
+                NSRect keyLabelRect = NSMakeRect(NSMinX(keyRect) + 4, NSMinY(keyRect) + 2, NSWidth(keyRect) * 0.55, 13);
+                [self drawString:label ?: @"" inRect:keyLabelRect fontSize:8 color:textColor];
             } else {
-                NSRect keyLabelRect = NSMakeRect(NSMinX(keyRect) + 3, NSMinY(keyRect) + 2, NSWidth(keyRect) - 6, NSHeight(keyRect) - 18);
-                [self drawString:label ?: @"" inRect:keyLabelRect fontSize:(NSWidth(keyRect) < 38 ? 9 : 11) color:textColor];
+                NSRect actionRect = NSMakeRect(NSMinX(keyRect) + 2, NSMaxY(keyRect) - 15, NSWidth(keyRect) - 4, 13);
+                [self drawString:assignmentLabel inRect:actionRect fontSize:8 color:textColor];
+                NSDictionary *firstDetail = assignmentDetailsForKey.firstObject;
+                NSString *presetSubtitle = [firstDetail[@"subtitle"] description];
+                if (presetSubtitle.length > 0) {
+                    NSRect subtitleRect = NSMakeRect(NSMinX(keyRect) + 4, NSMinY(keyRect) + 15, NSWidth(keyRect) - 8, 12);
+                    [self drawString:presetSubtitle inRect:subtitleRect fontSize:8 color:textColor];
+                    NSRect keyLabelRect = NSMakeRect(NSMinX(keyRect) + 4, NSMinY(keyRect) + 2, NSWidth(keyRect) * 0.55, 13);
+                    [self drawString:label ?: @"" inRect:keyLabelRect fontSize:8 color:textColor];
+                } else if (secondaryLabel) {
+                    NSRect secondaryRect = NSMakeRect(NSMinX(keyRect) + 3, NSMinY(keyRect) + NSHeight(keyRect) * 0.42,
+                                                      NSWidth(keyRect) - 6, NSHeight(keyRect) * 0.25);
+                    NSRect primaryRect = NSMakeRect(NSMinX(keyRect) + 3, NSMinY(keyRect) + 1,
+                                                    NSWidth(keyRect) - 6, NSHeight(keyRect) * 0.35);
+                    [self drawString:secondaryLabel inRect:secondaryRect fontSize:8 color:textColor];
+                    [self drawString:label ?: @"" inRect:primaryRect fontSize:9 color:textColor];
+                } else {
+                    NSRect keyLabelRect = NSMakeRect(NSMinX(keyRect) + 3, NSMinY(keyRect) + 2, NSWidth(keyRect) - 6, NSHeight(keyRect) - 18);
+                    [self drawString:label ?: @"" inRect:keyLabelRect fontSize:(NSWidth(keyRect) < 38 ? 9 : 11) color:textColor];
+                }
             }
         } else if ([item[@"shape"] isEqualToString:@"vertical-enter"]) {
             [self drawString:label ?: @"return" inRect:keyRect fontSize:12 color:textColor];
@@ -258,7 +390,7 @@
             [self drawString:label ?: @"" inRect:keyRect fontSize:(keyRect.size.width < 38 ? 10 : 12) color:textColor];
         }
 
-        if (assigned) {
+        if (assigned && !self.usesMotibodoLabels) {
             NSColor *markerColor = discreteCount > 0
                 ? [NSColor colorWithCalibratedRed:0.62 green:0.37 blue:0.08 alpha:1]
                 : [NSColor colorWithCalibratedRed:0.08 green:0.48 blue:0.33 alpha:1];
@@ -298,6 +430,11 @@
 - (NSView *)hitTest:(NSPoint)point
 {
     NSPoint localPoint = [self convertPoint:point fromView:self.superview];
+    for (NSArray *fields in self.inlineLabelFields.allValues) {
+        for (NSTextField *field in fields) {
+            if (NSPointInRect(localPoint, field.frame)) return field;
+        }
+    }
     for (NSDictionary *item in self.keyItems) {
         if ([item objectForKey:@"code"] && NSPointInRect(localPoint, [self frameForKeyItem:item])) {
             return self;
@@ -306,18 +443,150 @@
     return nil;
 }
 
+- (void)controlTextDidChange:(NSNotification *)notification
+{
+    NSTextField *field = [notification object];
+    if ([field isKindOfClass:[KeyboardInlineLabelField class]]) {
+        KeyboardInlineLabelField *presetField = (KeyboardInlineLabelField *)field;
+        if ([self.delegate respondsToSelector:@selector(keyboardView:didChangePresetLabel:forPreset:)]) {
+            [self.delegate keyboardView:self didChangePresetLabel:field.stringValue forPreset:presetField.presetValue];
+        }
+        return;
+    }
+    NSString *action = [field identifier];
+    if ([self.delegate respondsToSelector:@selector(keyboardView:didChangeShortLabel:forAction:)]) {
+        [self.delegate keyboardView:self didChangeShortLabel:field.stringValue forAction:action];
+    }
+}
+
+- (void)controlTextDidEndEditing:(NSNotification *)notification
+{
+    if ([self.delegate respondsToSelector:@selector(keyboardViewDidFinishEditingShortLabel:)]) {
+        [self.delegate keyboardViewDidFinishEditingShortLabel:self];
+    }
+}
+
 - (void)mouseDown:(NSEvent *)event
 {
     NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
+    self.dragSourceKeyCode = nil;
+    self.dragAnchorKeyCode = nil;
+    self.dragSessionStarted = NO;
     for (NSDictionary *item in [self.keyItems reverseObjectEnumerator]) {
         NSString *code = [item objectForKey:@"code"];
         if (code && NSPointInRect(point, [self frameForKeyItem:item])) {
-            [self setSelectedKeyCode:code];
+            self.mouseDownPoint = point;
+            NSMutableSet *selection = ([event modifierFlags] & NSEventModifierFlagShift)
+                ? [self.selectedKeyCodes mutableCopy] : [NSMutableSet set];
+            if (!selection) selection = [NSMutableSet set];
+            if ([event modifierFlags] & NSEventModifierFlagShift) {
+                if ([selection containsObject:code]) [selection removeObject:code];
+                else [selection addObject:code];
+            } else {
+                [selection addObject:code];
+            }
+            self.selectedKeyCodes = selection;
+            self.selectedKeyCode = [selection containsObject:code] ? code : [selection anyObject];
+            self.dragAnchorKeyCode = [selection containsObject:code] ? code : nil;
+            self.dragSourceKeyCode = self.dragAnchorKeyCode;
             [self setNeedsDisplay:YES];
-            [self.delegate keyboardViewDidSelectKeyCode:code];
+            if ([self.delegate respondsToSelector:@selector(keyboardView:didSelectKeyCodes:primaryKeyCode:)]) {
+                [self.delegate keyboardView:self didSelectKeyCodes:self.selectedKeyCodes primaryKeyCode:self.selectedKeyCode];
+            } else {
+                [self.delegate keyboardViewDidSelectKeyCode:self.selectedKeyCode];
+            }
             return;
         }
     }
+}
+
+- (void)mouseDragged:(NSEvent *)event
+{
+    if (!self.dragSourceKeyCode || self.dragSessionStarted) return;
+    NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
+    if (hypot(point.x - self.mouseDownPoint.x, point.y - self.mouseDownPoint.y) < 5) return;
+
+    NSMutableArray *boundSelectedKeys = [NSMutableArray array];
+    for (NSString *keyCode in self.selectedKeyCodes) {
+        if ([self.assignmentLabels[keyCode] length] > 0) [boundSelectedKeys addObject:keyCode];
+    }
+    if (boundSelectedKeys.count == 0) return;
+
+    NSPasteboardItem *pasteboardItem = [[NSPasteboardItem alloc] init];
+    [pasteboardItem setPropertyList:@{@"keyCodes": boundSelectedKeys, @"anchorKeyCode": self.dragAnchorKeyCode}
+                            forType:@"com.vsco.keys.binding-key-codes"];
+    NSDraggingItem *draggingItem = [[NSDraggingItem alloc] initWithPasteboardWriter:pasteboardItem];
+    NSImage *dragImage = [[NSImage alloc] initWithSize:NSMakeSize(96, 34)];
+    [dragImage lockFocus];
+    [[NSColor colorWithCalibratedWhite:0.22 alpha:0.92] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:NSMakeRect(0, 0, 96, 34) xRadius:5 yRadius:5] fill];
+    NSString *dragTitle = boundSelectedKeys.count > 1
+        ? [NSString stringWithFormat:@"%lu keys", (unsigned long)boundSelectedKeys.count]
+        : self.dragSourceKeyCode;
+    NSDictionary *attributes = @{
+        NSFontAttributeName: [NSFont boldSystemFontOfSize:13],
+        NSForegroundColorAttributeName: [NSColor whiteColor]
+    };
+    [dragTitle drawAtPoint:NSMakePoint(8, 10) withAttributes:attributes];
+    [dragImage unlockFocus];
+    NSRect keyFrame = NSMakeRect(point.x - 48, point.y - 17, 96, 34);
+    [draggingItem setDraggingFrame:keyFrame contents:dragImage];
+    self.dragSessionStarted = YES;
+    [self beginDraggingSessionWithItems:@[draggingItem] event:event source:self];
+}
+
+- (void)mouseUp:(NSEvent *)event
+{
+    self.dragSourceKeyCode = nil;
+    self.dragSessionStarted = NO;
+}
+
+- (NSDragOperation)draggingSession:(NSDraggingSession *)session sourceOperationMaskForDraggingContext:(NSDraggingContext)context
+{
+    return NSDragOperationMove;
+}
+
+- (BOOL)ignoreModifierKeysForDraggingSession:(NSDraggingSession *)session
+{
+    return YES;
+}
+
+- (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender
+{
+    NSDictionary *payload = [[sender draggingPasteboard] propertyListForType:@"com.vsco.keys.binding-key-codes"];
+    return [payload isKindOfClass:[NSDictionary class]] ? NSDragOperationMove : NSDragOperationNone;
+}
+
+- (BOOL)prepareForDragOperation:(id<NSDraggingInfo>)sender
+{
+    NSDictionary *payload = [[sender draggingPasteboard] propertyListForType:@"com.vsco.keys.binding-key-codes"];
+    return [payload isKindOfClass:[NSDictionary class]];
+}
+
+- (BOOL)performDragOperation:(id<NSDraggingInfo>)sender
+{
+    NSDictionary *payload = [[sender draggingPasteboard] propertyListForType:@"com.vsco.keys.binding-key-codes"];
+    NSPoint point = [self convertPoint:[sender draggingLocation] fromView:nil];
+    NSString *targetKeyCode = nil;
+    for (NSDictionary *item in [self.keyItems reverseObjectEnumerator]) {
+        NSString *code = [item objectForKey:@"code"];
+        if (code && NSPointInRect(point, [self frameForKeyItem:item])) {
+            targetKeyCode = code;
+            break;
+        }
+    }
+    NSArray *sourceKeyCodes = [payload isKindOfClass:[NSDictionary class]] ? payload[@"keyCodes"] : nil;
+    NSString *anchorKeyCode = [payload isKindOfClass:[NSDictionary class]] ? payload[@"anchorKeyCode"] : nil;
+    if (![sourceKeyCodes isKindOfClass:[NSArray class]] || !anchorKeyCode || !targetKeyCode) return NO;
+    if ([self.delegate respondsToSelector:@selector(keyboardView:didMoveBindingsFromKeys:anchorKey:toKey:)]) {
+        [self.delegate keyboardView:self didMoveBindingsFromKeys:sourceKeyCodes anchorKey:anchorKeyCode toKey:targetKeyCode];
+        return YES;
+    }
+    if (sourceKeyCodes.count == 1 && [self.delegate respondsToSelector:@selector(keyboardView:didMoveBindingFromKey:toKey:)]) {
+        [self.delegate keyboardView:self didMoveBindingFromKey:sourceKeyCodes.firstObject toKey:targetKeyCode];
+        return YES;
+    }
+    return NO;
 }
 
 @end
@@ -346,17 +615,26 @@
 @property (retain) NSButton *saveButton;
 @property (retain) NSButton *revertButton;
 @property (retain) NSButton *addBindingButton;
+@property (retain) NSButton *bindingCopyButton;
+@property (retain) NSButton *bindingPasteButton;
 @property (retain) NSButton *captureBindingButton;
 @property (retain) NSPopUpButton *modeKeyPopup;
 @property (retain) NSPopUpButton *physicalKeyboardPopup;
+@property (retain) NSSegmentedControl *labelStyleControl;
+@property (retain) NSPopUpButton *labelLayerPopup;
+@property (retain) NSButton *incrementAmountsSwitch;
+@property (retain) NSButton *editLabelsSwitch;
 @property (retain) NSScrollView *bindingRowsScrollView;
 @property (retain) NSView *bindingRowsView;
 @property (retain) NSArray *sortedKeyCodes;
 @property (retain) NSString *selectedKeyCode;
+@property (retain) NSSet *selectedKeyCodes;
 @property (assign) BOOL hasUnrepairableLoadedData;
 @property (retain) NSButton *listenForKeysSwitch;
 @property (retain) id keyEventMonitor;
 @property (retain) NSString *selectedModifierValue;
+@property (retain) NSString *previewModifierValue;
+@property (retain) NSDictionary *copiedBindingGroup;
 @property (assign) BOOL isOneShotCapture;
 @property (assign) NSInteger pendingActionBindingIndex;
 - (void)selectKeyCode:(NSString *)keyCode modifierValue:(NSString *)modifierValue;
@@ -371,11 +649,12 @@
 @synthesize selectedKeyLabel, nameField, authorField, descriptionField, statusLabel;
 @synthesize titleLabel, hintLabel, keyboardLabel, modeKeyLabel;
 @synthesize modifierColumnLabel, actionColumnLabel, valueColumnLabel;
-@synthesize tableEditorButton, duplicateButton, saveButton, revertButton, addBindingButton, captureBindingButton;
-@synthesize modeKeyPopup, physicalKeyboardPopup, bindingRowsScrollView, bindingRowsView, sortedKeyCodes, selectedKeyCode;
+@synthesize tableEditorButton, duplicateButton, saveButton, revertButton, addBindingButton, bindingCopyButton, bindingPasteButton, captureBindingButton;
+@synthesize modeKeyPopup, physicalKeyboardPopup, bindingRowsScrollView, bindingRowsView, sortedKeyCodes, selectedKeyCode, selectedKeyCodes;
+@synthesize labelStyleControl, labelLayerPopup, incrementAmountsSwitch, editLabelsSwitch;
 @synthesize hasUnrepairableLoadedData;
-@synthesize listenForKeysSwitch, keyEventMonitor, selectedModifierValue;
-@synthesize isOneShotCapture, pendingActionBindingIndex;
+@synthesize listenForKeysSwitch, keyEventMonitor, selectedModifierValue, previewModifierValue;
+@synthesize isOneShotCapture, pendingActionBindingIndex, copiedBindingGroup;
 
 - (NSString *)displayLabelForKeyCode:(NSString *)keyCode
 {
@@ -395,6 +674,7 @@
         self.keyfile = [@{KEYFILE_KEYS_NODENAME: @[]} mutableCopy];
         self.bindings = [NSMutableArray array];
         self.pendingActionBindingIndex = NSNotFound;
+        self.previewModifierValue = @"0";
         self.modifierValues = @[@"0", @"1", @"2", @"4", @"8", @"3", @"5", @"9", @"6", @"10", @"12", @"7", @"11", @"13", @"14", @"15"];
         self.modifierTitles = @[@"None", @"Shift", @"Control", @"Option", @"Command", @"Shift + Control", @"Shift + Option", @"Shift + Command", @"Control + Option", @"Control + Command", @"Option + Command", @"Shift + Control + Option", @"Shift + Control + Command", @"Shift + Option + Command", @"Control + Option + Command", @"Shift + Control + Option + Command"];
         self.sortedKeyCodes = [[self.keyControl.keyMapping allKeys] sortedArrayUsingComparator:^NSComparisonResult(NSString *left, NSString *right) {
@@ -405,7 +685,8 @@
             return [[mapping objectForKey:left] compare:[mapping objectForKey:right]];
         }];
         self.actionKeys = [self.actionKeys filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString *key, NSDictionary *bindings) {
-            return ![key isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME];
+            return ![key isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME] &&
+                   ![self.keyControl.hiddenCommandIdentifiers containsObject:key];
         }]];
         [self buildUI];
     }
@@ -466,6 +747,44 @@
     [self.physicalKeyboardPopup setTarget:self];
     [self.physicalKeyboardPopup setAction:@selector(physicalKeyboardChanged:)];
     [self.rootView addSubview:self.physicalKeyboardPopup];
+
+    self.labelStyleControl = [[NSSegmentedControl alloc] initWithFrame:NSZeroRect];
+    [self.labelStyleControl setSegmentCount:2];
+    [self.labelStyleControl setLabel:@"Standard" forSegment:0];
+    [self.labelStyleControl setLabel:@"Motibodo" forSegment:1];
+    [self.labelStyleControl setTarget:self];
+    [self.labelStyleControl setAction:@selector(labelOptionsChanged:)];
+    [self.rootView addSubview:self.labelStyleControl];
+
+    self.incrementAmountsSwitch = [[NSButton alloc] initWithFrame:NSZeroRect];
+    [self.incrementAmountsSwitch setButtonType:NSButtonTypeSwitch];
+    [self.incrementAmountsSwitch setTitle:@"Increment amounts"];
+    [self.incrementAmountsSwitch setTarget:self];
+    [self.incrementAmountsSwitch setAction:@selector(labelOptionsChanged:)];
+    [self.rootView addSubview:self.incrementAmountsSwitch];
+
+    self.editLabelsSwitch = [[NSButton alloc] initWithFrame:NSZeroRect];
+    [self.editLabelsSwitch setButtonType:NSButtonTypeSwitch];
+    [self.editLabelsSwitch setTitle:@"Edit labels"];
+    [self.editLabelsSwitch setToolTip:@"Click an action name on the keyboard to edit its alias for every layout."];
+    [self.editLabelsSwitch setTarget:self];
+    [self.editLabelsSwitch setAction:@selector(labelOptionsChanged:)];
+    [self.rootView addSubview:self.editLabelsSwitch];
+
+    self.labelLayerPopup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
+    for (NSUInteger index = 0; index < self.modifierTitles.count; index++) {
+        [self.labelLayerPopup addItemWithTitle:[NSString stringWithFormat:@"Preview: %@", self.modifierTitles[index]]];
+        [[self.labelLayerPopup lastItem] setRepresentedObject:self.modifierValues[index]];
+    }
+    [self.labelLayerPopup setTarget:self];
+    [self.labelLayerPopup setAction:@selector(labelOptionsChanged:)];
+    [self.rootView addSubview:self.labelLayerPopup];
+
+    NSString *savedStyle = self.keyControl.keyboardHUDLabelStyle ?: KEYBOARD_HUD_LABEL_STYLE_STANDARD;
+    [self.labelStyleControl setSelectedSegment:[savedStyle isEqualToString:KEYBOARD_HUD_LABEL_STYLE_MOTIBODO] ? 1 : 0];
+    [self.incrementAmountsSwitch setState:self.keyControl.keyboardHUDShowsIncrements ? NSControlStateValueOn : NSControlStateValueOff];
+    [self.incrementAmountsSwitch setHidden:![savedStyle isEqualToString:KEYBOARD_HUD_LABEL_STYLE_MOTIBODO]];
+    [self.editLabelsSwitch setEnabled:[savedStyle isEqualToString:KEYBOARD_HUD_LABEL_STYLE_MOTIBODO]];
     self.listenForKeysSwitch = [[NSButton alloc] initWithFrame:NSZeroRect];
     [self.listenForKeysSwitch setButtonType:NSSwitchButton];
     [self.listenForKeysSwitch setTitle:@"Listen for Key"];
@@ -491,6 +810,10 @@
     [self.keyboardView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
     [self.keyboardView setKeyMapping:self.keyControl.keyMapping];
     [self.keyboardView setAssignmentTypes:@{}];
+    [self.keyboardView setAssignmentLabels:@{}];
+    [self.keyboardView setAssignmentDetails:@{}];
+    [self.keyboardView setUsesMotibodoLabels:[savedStyle isEqualToString:KEYBOARD_HUD_LABEL_STYLE_MOTIBODO]];
+    [self.keyboardView setShowsIncrementAmounts:self.keyControl.keyboardHUDShowsIncrements];
     [self.keyboardView setDelegate:self];
     [self.rootView addSubview:self.keyboardView];
     [self reloadPhysicalKeyboardLayout];
@@ -502,6 +825,10 @@
 
     self.addBindingButton = [self buttonWithFrame:NSZeroRect title:@"Add Binding" action:@selector(addBindingClicked:)];
     [self.rootView addSubview:self.addBindingButton];
+    self.bindingCopyButton = [self buttonWithFrame:NSZeroRect title:@"Copy Binding" action:@selector(copyBindingClicked:)];
+    [self.rootView addSubview:self.bindingCopyButton];
+    self.bindingPasteButton = [self buttonWithFrame:NSZeroRect title:@"Paste Binding" action:@selector(pasteBindingClicked:)];
+    [self.rootView addSubview:self.bindingPasteButton];
     self.modifierColumnLabel = [self labelWithFrame:NSZeroRect text:@"Modifier" size:10];
     [self.rootView addSubview:self.modifierColumnLabel];
     self.actionColumnLabel = [self labelWithFrame:NSZeroRect text:@"Action" size:10];
@@ -545,7 +872,9 @@
     BOOL compactWidth = width < 900;
     CGFloat optionsY = height - 72;
     CGFloat captureY = compactWidth ? height - 104 : optionsY;
-    CGFloat metadataY = height - (compactWidth ? 140 : 108);
+    BOOL wrapLabelControls = width < 900;
+    CGFloat labelOptionsY = compactWidth ? height - 140 : height - 108;
+    CGFloat metadataY = height - (compactWidth ? (wrapLabelControls ? 206 : 174) : 142);
 
     [self.tableEditorButton setFrame:NSMakeRect(right - 140, titleY - 1, 140, 27)];
     [self.duplicateButton setFrame:NSMakeRect(NSMinX(self.tableEditorButton.frame) - 108, titleY - 1, 100, 27)];
@@ -567,6 +896,13 @@
     CGFloat captureX = compactWidth ? 155 : 710;
     [self.captureBindingButton setFrame:NSMakeRect(captureX, captureY, captureWidth, 27)];
 
+    [self.labelStyleControl setFrame:NSMakeRect(padding, labelOptionsY, 180, 26)];
+    [self.incrementAmountsSwitch setFrame:NSMakeRect(padding + 190, labelOptionsY + 1, 150, 24)];
+    [self.editLabelsSwitch setFrame:NSMakeRect(padding + 350, labelOptionsY + 1, 120, 24)];
+    CGFloat previewY = wrapLabelControls ? labelOptionsY - 32 : labelOptionsY;
+    CGFloat previewX = wrapLabelControls ? padding : padding + 480;
+    [self.labelLayerPopup setFrame:NSMakeRect(previewX, previewY, fmax(150, right - previewX), 26)];
+
     CGFloat metaRight = right;
     CGFloat revertWidth = 70;
     CGFloat saveWidth = 132;
@@ -587,16 +923,22 @@
     CGFloat inspectorTop = inspectorHeight;
     CGFloat inspectorWidth = width - 2 * padding;
     CGFloat rowWidth = inspectorWidth;
+    CGFloat actionButtonWidth = fmin(110, fmax(74, (inspectorWidth - 300) / 3));
+    CGFloat actionButtonGap = 8;
+    CGFloat actionButtonsWidth = actionButtonWidth * 3 + actionButtonGap * 2;
+    CGFloat selectedKeyWidth = fmax(120, inspectorWidth - actionButtonsWidth - actionButtonGap);
+    CGFloat actionButtonsX = padding + selectedKeyWidth + actionButtonGap;
+    CGFloat actionButtonsY = inspectorTop - 31;
+    [self.selectedKeyLabel setFrame:NSMakeRect(padding, inspectorTop - 28, selectedKeyWidth, 24)];
+    [self.bindingCopyButton setFrame:NSMakeRect(actionButtonsX, actionButtonsY, actionButtonWidth, 27)];
+    [self.bindingPasteButton setFrame:NSMakeRect(actionButtonsX + actionButtonWidth + actionButtonGap, actionButtonsY, actionButtonWidth, 27)];
+    [self.addBindingButton setFrame:NSMakeRect(actionButtonsX + (actionButtonWidth + actionButtonGap) * 2, actionButtonsY, actionButtonWidth, 27)];
     if (width < 720) {
-        [self.selectedKeyLabel setFrame:NSMakeRect(padding, inspectorTop - 27, inspectorWidth, 22)];
-        [self.modeKeyLabel setFrame:NSMakeRect(padding, inspectorTop - 53, 65, 18)];
-        [self.modeKeyPopup setFrame:NSMakeRect(padding + 68, inspectorTop - 57, 145, 24)];
-        [self.addBindingButton setFrame:NSMakeRect(right - 108, inspectorTop - 57, 108, 28)];
+        [self.modeKeyLabel setFrame:NSMakeRect(padding, inspectorTop - 59, 65, 18)];
+        [self.modeKeyPopup setFrame:NSMakeRect(padding + 68, inspectorTop - 63, fmin(210, inspectorWidth - 68), 24)];
     } else {
-        [self.selectedKeyLabel setFrame:NSMakeRect(padding, inspectorTop - 28, fmax(160, inspectorWidth - 450), 24)];
-        [self.modeKeyLabel setFrame:NSMakeRect(width - 360, inspectorTop - 25, 65, 18)];
-        [self.modeKeyPopup setFrame:NSMakeRect(width - 292, inspectorTop - 29, 165, 24)];
-        [self.addBindingButton setFrame:NSMakeRect(right - 108, inspectorTop - 31, 108, 28)];
+        [self.modeKeyLabel setFrame:NSMakeRect(padding, inspectorTop - 59, 65, 18)];
+        [self.modeKeyPopup setFrame:NSMakeRect(padding + 68, inspectorTop - 63, 210, 24)];
     }
 
     CGFloat removeWidth = fmin(74, fmax(56, rowWidth * 0.13));
@@ -605,7 +947,7 @@
     CGFloat actionX = modifierWidth + 8;
     CGFloat valueX = rowWidth - removeWidth - 19 - valueWidth - 18;
     CGFloat actionWidth = fmax(110, valueX - actionX - 8);
-    CGFloat columnY = inspectorTop - (width < 720 ? 78 : 49);
+    CGFloat columnY = inspectorTop - 84;
     [self.modifierColumnLabel setFrame:NSMakeRect(padding, columnY, modifierWidth, 16)];
     [self.actionColumnLabel setFrame:NSMakeRect(padding + actionX, columnY, actionWidth, 16)];
     [self.valueColumnLabel setFrame:NSMakeRect(padding + valueX, columnY, valueWidth, 16)];
@@ -622,6 +964,19 @@
     [self.keyboardView setFrame:NSMakeRect(0, keyboardBottom, width, keyboardHeight)];
     [self.keyboardView setNeedsDisplay:YES];
     [self rebuildBindingRows];
+}
+
+- (void)reloadActionCatalog
+{
+    NSDictionary *mapping = self.keyControl.adjustmentMapping ?: @{};
+    NSArray *sortedKeys = [[mapping allKeys] sortedArrayUsingComparator:^NSComparisonResult(NSString *left, NSString *right) {
+        return [[mapping objectForKey:left] compare:[mapping objectForKey:right]];
+    }];
+    self.actionKeys = [sortedKeys filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString *key, NSDictionary *bindings) {
+        return ![key isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME] &&
+               ![self.keyControl.hiddenCommandIdentifiers containsObject:key];
+    }]];
+    if (self.bindingRowsView) [self rebuildBindingRows];
 }
 
 - (IBAction)physicalKeyboardChanged:(NSPopUpButton *)sender
@@ -665,6 +1020,250 @@
         [self.selectedKeyLabel setStringValue:[NSString stringWithFormat:@"%@ - keycode %@%@", keyName, self.selectedKeyCode, suffix ?: @""]];
     }
     [self.keyboardView setNeedsDisplay:YES];
+}
+
+- (IBAction)labelOptionsChanged:(id)sender
+{
+    self.previewModifierValue = [[self.labelLayerPopup selectedItem] representedObject] ?: @"0";
+    NSString *style = [self.labelStyleControl selectedSegment] == 1 ? KEYBOARD_HUD_LABEL_STYLE_MOTIBODO : KEYBOARD_HUD_LABEL_STYLE_STANDARD;
+    NSDictionary *customLabels = [[NSUserDefaults standardUserDefaults] dictionaryForKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_LABELS] ?: @{};
+    [self.keyControl updateKeyboardHUDLabelSettingsWithStyle:style
+                                              showsIncrements:[self.incrementAmountsSwitch state] == NSControlStateValueOn
+                                                 customLabels:customLabels];
+    BOOL usesMotibodo = [style isEqualToString:KEYBOARD_HUD_LABEL_STYLE_MOTIBODO];
+    [self.incrementAmountsSwitch setHidden:!usesMotibodo];
+    [self.editLabelsSwitch setEnabled:usesMotibodo];
+    self.keyboardView.usesMotibodoLabels = usesMotibodo;
+    self.keyboardView.showsIncrementAmounts = [self.incrementAmountsSwitch state] == NSControlStateValueOn;
+    self.keyboardView.allowsInlineLabelEditing = usesMotibodo && [self.editLabelsSwitch state] == NSControlStateValueOn;
+    [self updateBindingTransferButtons];
+    [self refreshKeyStates];
+}
+
+- (NSInteger)bindingIndexForKeyCode:(NSString *)keyCode modifierValue:(NSString *)modifierValue
+{
+    if (keyCode.length == 0) return NSNotFound;
+    NSString *modifier = modifierValue ?: @"0";
+    for (NSUInteger index = 0; index < self.bindings.count; index++) {
+        NSDictionary *binding = self.bindings[index];
+        if ([binding[KEYFILE_KEY_NODENAME] isEqualToString:keyCode] &&
+            [binding[KEYFILE_MODIFIERS_NODENAME] isEqualToString:modifier]) return (NSInteger)index;
+    }
+    return NSNotFound;
+}
+
+- (void)updateBindingTransferButtons
+{
+    NSString *modifier = self.previewModifierValue ?: @"0";
+    BOOL hasBinding = NO;
+    for (NSString *keyCode in self.selectedKeyCodes ?: [NSSet setWithObject:self.selectedKeyCode ?: @""]) {
+        if ([self bindingIndexForKeyCode:keyCode modifierValue:modifier] != NSNotFound) {
+            hasBinding = YES;
+            break;
+        }
+    }
+    [self.bindingCopyButton setEnabled:hasBinding];
+    [self.bindingPasteButton setEnabled:self.selectedKeyCode.length > 0 && self.copiedBindingGroup != nil];
+}
+
+- (BOOL)confirmReplacingBindingOnKeyCode:(NSString *)keyCode
+{
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:[NSString stringWithFormat:@"Replace the binding on %@?", [self displayLabelForKeyCode:keyCode]]];
+    [alert setInformativeText:@"The existing binding for this modifier combination will be replaced."];
+    [alert addButtonWithTitle:@"Replace"];
+    [alert addButtonWithTitle:@"Cancel"];
+    return [alert runModal] == NSAlertFirstButtonReturn;
+}
+
+- (void)copyBindingClicked:(id)sender
+{
+    NSArray *keyCodes = [[self.selectedKeyCodes allObjects] sortedArrayUsingSelector:@selector(compare:)];
+    if (keyCodes.count == 0 && self.selectedKeyCode.length > 0) keyCodes = @[self.selectedKeyCode];
+    NSMutableArray *items = [NSMutableArray array];
+    for (NSString *keyCode in keyCodes) {
+        NSInteger index = [self bindingIndexForKeyCode:keyCode modifierValue:self.previewModifierValue];
+        if (index == NSNotFound) continue;
+        [items addObject:@{@"sourceKeyCode": keyCode, @"binding": [self.bindings[(NSUInteger)index] copy]}];
+    }
+    if (items.count == 0) return;
+    self.copiedBindingGroup = @{@"anchorKeyCode": self.selectedKeyCode ?: keyCodes.firstObject,
+                                @"items": items};
+    [self updateBindingTransferButtons];
+    [self.statusLabel setStringValue:items.count == 1 ? @"Copied 1 binding." : [NSString stringWithFormat:@"Copied %lu bindings.", (unsigned long)items.count]];
+}
+
+- (void)pasteBindingClicked:(id)sender
+{
+    if (!self.copiedBindingGroup || self.selectedKeyCode.length == 0) return;
+    [self transferBindingGroup:self.copiedBindingGroup toAnchorKey:self.selectedKeyCode moving:NO];
+}
+
+- (void)keyboardView:(MacBookKeyboardView *)keyboardView didMoveBindingFromKey:(NSString *)sourceKeyCode toKey:(NSString *)targetKeyCode
+{
+    [self keyboardView:keyboardView didMoveBindingsFromKeys:@[sourceKeyCode]
+              anchorKey:sourceKeyCode toKey:targetKeyCode];
+}
+
+- (NSDictionary *)keyItemForCode:(NSString *)keyCode
+{
+    for (NSDictionary *item in self.keyboardView.keyItems) {
+        if ([item[@"code"] isEqualToString:keyCode]) return item;
+    }
+    return nil;
+}
+
+- (NSString *)nearestKeyCodeToPoint:(NSPoint)point tolerance:(CGFloat)tolerance
+{
+    NSString *nearestKeyCode = nil;
+    CGFloat nearestDistance = CGFLOAT_MAX;
+    for (NSDictionary *item in self.keyboardView.keyItems) {
+        NSString *keyCode = item[@"code"];
+        if (!keyCode) continue;
+        NSRect frame = [self.keyboardView frameForKeyItem:item];
+        CGFloat distance = hypot(NSMidX(frame) - point.x, NSMidY(frame) - point.y);
+        if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestKeyCode = keyCode;
+        }
+    }
+    return nearestDistance <= tolerance ? nearestKeyCode : nil;
+}
+
+- (void)keyboardView:(MacBookKeyboardView *)keyboardView didMoveBindingsFromKeys:(NSArray *)sourceKeyCodes anchorKey:(NSString *)anchorKeyCode toKey:(NSString *)targetKeyCode
+{
+    NSString *modifier = self.previewModifierValue ?: @"0";
+    NSMutableArray *items = [NSMutableArray array];
+    for (NSString *sourceKeyCode in sourceKeyCodes) {
+        NSInteger index = [self bindingIndexForKeyCode:sourceKeyCode modifierValue:modifier];
+        if (index != NSNotFound) {
+            [items addObject:@{@"sourceKeyCode": sourceKeyCode, @"binding": [self.bindings[(NSUInteger)index] copy]}];
+        }
+    }
+    if (items.count == 0) {
+        [self.statusLabel setStringValue:@"No selected keys have a binding in this modifier layer."];
+        return;
+    }
+    [self transferBindingGroup:@{@"anchorKeyCode": anchorKeyCode, @"items": items}
+                 toAnchorKey:targetKeyCode moving:YES];
+}
+
+- (void)transferBindingGroup:(NSDictionary *)group toAnchorKey:(NSString *)targetAnchorKey moving:(BOOL)moving
+{
+    NSArray *items = group[@"items"];
+    NSString *sourceAnchorKey = group[@"anchorKeyCode"];
+    NSDictionary *sourceAnchorItem = [self keyItemForCode:sourceAnchorKey];
+    NSDictionary *targetAnchorItem = [self keyItemForCode:targetAnchorKey];
+    if (!sourceAnchorItem || !targetAnchorItem || items.count == 0) {
+        [self.statusLabel setStringValue:@"Could not map the selected bindings to this keyboard."];
+        return;
+    }
+
+    NSRect sourceAnchorFrame = [self.keyboardView frameForKeyItem:sourceAnchorItem];
+    NSRect targetAnchorFrame = [self.keyboardView frameForKeyItem:targetAnchorItem];
+    CGFloat snapTolerance = fmin(NSWidth(targetAnchorFrame), NSHeight(targetAnchorFrame)) * 0.48;
+    NSPoint sourceAnchorCenter = NSMakePoint(NSMidX(sourceAnchorFrame), NSMidY(sourceAnchorFrame));
+    NSPoint targetAnchorCenter = NSMakePoint(NSMidX(targetAnchorFrame), NSMidY(targetAnchorFrame));
+    NSMutableArray *moves = [NSMutableArray array];
+    NSMutableSet *destinationKeys = [NSMutableSet set];
+    NSMutableSet *sourceKeys = [NSMutableSet set];
+
+    for (NSDictionary *entry in items) {
+        NSString *sourceKeyCode = entry[@"sourceKeyCode"];
+        NSDictionary *sourceItem = [self keyItemForCode:sourceKeyCode];
+        if (!sourceItem) {
+            [self.statusLabel setStringValue:@"A selected key is not present on this physical keyboard."];
+            return;
+        }
+        NSRect sourceFrame = [self.keyboardView frameForKeyItem:sourceItem];
+        NSPoint translatedCenter = NSMakePoint(targetAnchorCenter.x + NSMidX(sourceFrame) - sourceAnchorCenter.x,
+                                               targetAnchorCenter.y + NSMidY(sourceFrame) - sourceAnchorCenter.y);
+        NSString *destinationKeyCode = [self nearestKeyCodeToPoint:translatedCenter tolerance:snapTolerance];
+        if (!destinationKeyCode || [destinationKeys containsObject:destinationKeyCode]) {
+            [self.statusLabel setStringValue:@"The group does not fit at that keyboard position."];
+            return;
+        }
+        [destinationKeys addObject:destinationKeyCode];
+        [sourceKeys addObject:sourceKeyCode];
+        [moves addObject:@{@"sourceKeyCode": sourceKeyCode,
+                           @"destinationKeyCode": destinationKeyCode,
+                           @"binding": entry[@"binding"]}];
+    }
+
+    NSMutableSet *conflictingKeys = [NSMutableSet set];
+    for (NSDictionary *move in moves) {
+        NSString *destinationKeyCode = move[@"destinationKeyCode"];
+        NSInteger index = [self bindingIndexForKeyCode:destinationKeyCode modifierValue:self.previewModifierValue];
+        if (index != NSNotFound && !(moving && [sourceKeys containsObject:destinationKeyCode])) {
+            [conflictingKeys addObject:destinationKeyCode];
+        }
+    }
+    if (conflictingKeys.count > 0) {
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:conflictingKeys.count == 1 ? @"Replace the destination binding?" : [NSString stringWithFormat:@"Replace %lu destination bindings?", (unsigned long)conflictingKeys.count]];
+        [alert setInformativeText:@"Existing bindings for this modifier combination will be replaced."];
+        [alert addButtonWithTitle:@"Replace"];
+        [alert addButtonWithTitle:@"Cancel"];
+        if ([alert runModal] != NSAlertFirstButtonReturn) return;
+    }
+
+    if (moving) {
+        NSMutableIndexSet *sourceIndexes = [NSMutableIndexSet indexSet];
+        for (NSString *sourceKeyCode in sourceKeys) {
+            NSInteger index = [self bindingIndexForKeyCode:sourceKeyCode modifierValue:self.previewModifierValue];
+            if (index != NSNotFound) [sourceIndexes addIndex:(NSUInteger)index];
+        }
+        [self.bindings removeObjectsAtIndexes:sourceIndexes];
+    }
+
+    NSMutableSet *destinationSelection = [NSMutableSet set];
+    for (NSDictionary *move in moves) {
+        NSString *destinationKeyCode = move[@"destinationKeyCode"];
+        NSInteger existingIndex = [self bindingIndexForKeyCode:destinationKeyCode modifierValue:self.previewModifierValue];
+        if (existingIndex != NSNotFound) [self.bindings removeObjectAtIndex:(NSUInteger)existingIndex];
+        NSMutableDictionary *binding = [move[@"binding"] mutableCopy];
+        binding[KEYFILE_KEY_NODENAME] = destinationKeyCode;
+        binding[KEYFILE_MODIFIERS_NODENAME] = self.previewModifierValue ?: @"0";
+        [self.bindings addObject:binding];
+        [destinationSelection addObject:destinationKeyCode];
+    }
+
+    self.selectedKeyCodes = destinationSelection;
+    self.keyboardView.selectedKeyCodes = destinationSelection;
+    [self selectKeyCode:targetAnchorKey modifierValue:self.previewModifierValue];
+    self.selectedKeyCodes = destinationSelection;
+    self.keyboardView.selectedKeyCodes = destinationSelection;
+    [self.keyboardView setNeedsDisplay:YES];
+    [self refreshKeyStates];
+    [self rebuildBindingRows];
+    [self.statusLabel setStringValue:moving ? @"Moved binding group. Save to apply." : @"Pasted binding group. Save to apply."];
+}
+
+- (void)keyboardViewDidFinishEditingShortLabel:(MacBookKeyboardView *)keyboardView
+{
+    [self refreshKeyStates];
+}
+
+- (void)keyboardView:(MacBookKeyboardView *)keyboardView didChangeShortLabel:(NSString *)label forAction:(NSString *)action
+{
+    if (action.length == 0) return;
+    NSMutableDictionary *customLabels = [[[NSUserDefaults standardUserDefaults] dictionaryForKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_LABELS] mutableCopy] ?: [NSMutableDictionary dictionary];
+    NSString *trimmedLabel = [label stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (trimmedLabel.length > 0) [customLabels setObject:trimmedLabel forKey:action];
+    else [customLabels removeObjectForKey:action];
+    [self.keyControl updateKeyboardHUDLabelSettingsWithStyle:self.keyControl.keyboardHUDLabelStyle
+                                              showsIncrements:self.keyControl.keyboardHUDShowsIncrements
+                                                 customLabels:customLabels];
+}
+
+- (void)keyboardView:(MacBookKeyboardView *)keyboardView didChangePresetLabel:(NSString *)label forPreset:(NSString *)presetValue
+{
+    if (presetValue.length == 0) return;
+    NSMutableDictionary *presetLabels = [[[NSUserDefaults standardUserDefaults] dictionaryForKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_PRESET_LABELS] mutableCopy] ?: [NSMutableDictionary dictionary];
+    NSString *trimmedLabel = [label stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (trimmedLabel.length > 0) [presetLabels setObject:trimmedLabel forKey:presetValue];
+    else [presetLabels removeObjectForKey:presetValue];
+    [self.keyControl updateKeyboardHUDPresetLabels:presetLabels];
 }
 
 - (void)loadKeyfile:(NSDictionary *)keyfile
@@ -795,15 +1394,16 @@
         NSString *action = [self primaryActionForAdjustments:adjustments];
         NSUInteger actionIndex = [self.actionKeys indexOfObject:action];
         NSPopUpButton *actionPopup;
-        if (actionIndex == NSNotFound) {
+        BOOL isKnownAction = action.length > 0 && [self.keyControl.adjustmentMapping objectForKey:action] != nil;
+        if (actionIndex == NSNotFound && !isKnownAction) {
             actionPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(actionX, 1, actionWidth, 26) pullsDown:NO];
             [actionPopup addItemWithTitle:@"Remap (edit in Table Editor)"];
             [actionPopup setEnabled:NO];
         } else {
-            actionPopup = VSCOCreateActionPopup(self.actionKeys, self.keyControl.adjustmentMapping, self.keyControl.commandCategories, action, NSMakeRect(actionX, 1, actionWidth, 26));
-            [actionPopup setTag:(NSInteger)bindingIndex];
-            [actionPopup setTarget:self];
-            [actionPopup setAction:@selector(bindingActionChanged:)];
+            actionPopup = VSCOCreateActionPopup(self.actionKeys, self.keyControl.adjustmentMapping,
+                                                self.keyControl.commandCategories, action,
+                                                NSMakeRect(actionX, 1, actionWidth, 26),
+                                                self, @selector(bindingActionChanged:), (NSInteger)bindingIndex);
         }
         [row addSubview:actionPopup];
 
@@ -858,8 +1458,15 @@
 - (void)refreshKeyStates
 {
     NSMutableDictionary *typesByKey = [NSMutableDictionary dictionary];
+    NSMutableDictionary *labelsByKey = [NSMutableDictionary dictionary];
+    NSMutableDictionary *detailsByKey = [NSMutableDictionary dictionary];
+    NSDictionary *customLabels = [[NSUserDefaults standardUserDefaults] dictionaryForKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_LABELS] ?: @{};
+    NSDictionary *customPresetLabels = [[NSUserDefaults standardUserDefaults] dictionaryForKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_PRESET_LABELS] ?: @{};
+    BOOL shortNames = [self.keyControl.keyboardHUDLabelStyle isEqualToString:KEYBOARD_HUD_LABEL_STYLE_MOTIBODO];
     for (NSDictionary *binding in self.bindings) {
         NSString *code = [binding objectForKey:KEYFILE_KEY_NODENAME];
+        NSString *modifier = [binding objectForKey:KEYFILE_MODIFIERS_NODENAME] ?: @"0";
+        if (![modifier isEqualToString:self.previewModifierValue ?: @"0"]) continue;
         NSMutableDictionary *types = [typesByKey objectForKey:code];
         if (!types) {
             types = [@{@"left": @0, @"right": @0, @"discrete": @0, @"total": @0} mutableCopy];
@@ -868,7 +1475,9 @@
         [types setObject:@([[types objectForKey:@"total"] unsignedIntegerValue] + 1) forKey:@"total"];
 
         NSDictionary *adjustments = [binding objectForKey:KEYFILE_ADJUSTMENTS_NODENAME];
-        for (NSString *action in adjustments) {
+        NSMutableArray *actionTitles = [NSMutableArray array];
+        NSMutableArray *actionDetails = [NSMutableArray array];
+        for (NSString *action in [[adjustments allKeys] sortedArrayUsingSelector:@selector(compare:)]) {
             id rawValue = [adjustments objectForKey:action];
             NSScanner *scanner = [NSScanner scannerWithString:[rawValue description]];
             double value = 0;
@@ -876,10 +1485,27 @@
             BOOL slider = [self.keyControl.adjustmentLimits objectForKey:action] != nil;
             NSString *type = (slider && numeric) ? (value < 0 ? @"left" : (value > 0 ? @"right" : nil)) : @"discrete";
             if (type) [types setObject:@([[types objectForKey:type] unsignedIntegerValue] + 1) forKey:type];
+            NSString *title = shortNames
+                ? [self.keyControl shortLabelForAction:action customLabels:customLabels]
+                : ([self.keyControl.adjustmentMapping[action] description] ?: action);
+            NSString *presetValue = [action isEqualToString:@"_SetPreset"] ? [rawValue description] : @"";
+            NSString *subtitle = presetValue.length > 0
+                ? [self.keyControl presetLabelForValue:rawValue customLabels:customPresetLabels] : @"";
+            [actionTitles addObject:title];
+            [actionDetails addObject:@{@"action": action, @"title": title, @"subtitle": subtitle,
+                                       @"presetValue": presetValue,
+                                       @"amount": slider && numeric ? [rawValue description] : @""}];
+        }
+        if (actionTitles.count > 0) {
+            labelsByKey[code] = [actionTitles componentsJoinedByString:@" / "];
+            detailsByKey[code] = actionDetails;
         }
     }
     [self.keyboardView setAssignmentTypes:typesByKey];
+    [self.keyboardView setAssignmentLabels:labelsByKey];
+    [self.keyboardView setAssignmentDetails:detailsByKey];
     [self.keyboardView setNeedsDisplay:YES];
+    [self updateBindingTransferButtons];
 }
 
 - (void)keyboardViewDidSelectKeyCode:(NSString *)keyCode
@@ -887,15 +1513,28 @@
     [self selectKeyCode:keyCode modifierValue:nil];
 }
 
+- (void)keyboardView:(MacBookKeyboardView *)keyboardView didSelectKeyCodes:(NSSet *)keyCodes primaryKeyCode:(NSString *)keyCode
+{
+    self.selectedKeyCodes = keyCodes ?: [NSSet set];
+    [self selectKeyCode:keyCode modifierValue:self.previewModifierValue];
+    self.selectedKeyCodes = keyCodes ?: [NSSet set];
+    self.keyboardView.selectedKeyCodes = self.selectedKeyCodes;
+    [self.keyboardView setNeedsDisplay:YES];
+    [self updateBindingTransferButtons];
+}
+
 - (void)selectKeyCode:(NSString *)keyCode modifierValue:(NSString *)modifierValue
 {
     self.selectedKeyCode = keyCode;
-    self.selectedModifierValue = modifierValue;
+    self.selectedKeyCodes = keyCode ? [NSSet setWithObject:keyCode] : [NSSet set];
+    self.selectedModifierValue = modifierValue ?: self.previewModifierValue ?: @"0";
     [self.keyboardView setSelectedKeyCode:keyCode];
+    self.keyboardView.selectedKeyCodes = self.selectedKeyCodes;
     [self.keyboardView setNeedsDisplay:YES];
     NSString *keyName = [self displayLabelForKeyCode:self.selectedKeyCode];
     [self.selectedKeyLabel setStringValue:[NSString stringWithFormat:@"%@ - keycode %@", keyName, self.selectedKeyCode]];
     [self rebuildBindingRows];
+    [self updateBindingTransferButtons];
     [self.statusLabel setStringValue:@""];
 }
 
@@ -1031,10 +1670,12 @@
     return [NSNumber numberWithDouble:number];
 }
 
-- (void)bindingActionChanged:(NSPopUpButton *)sender
+- (void)bindingActionChanged:(id)sender
 {
     NSInteger index = [sender tag];
-    NSString *newAction = [[sender selectedItem] representedObject];
+    NSString *newAction = [sender isKindOfClass:[NSMenuItem class]]
+        ? [(NSMenuItem *)sender representedObject]
+        : [[sender selectedItem] representedObject];
     if (index < 0 || index >= (NSInteger)self.bindings.count || ![self.actionKeys containsObject:newAction]) return;
 
     NSMutableDictionary *binding = [self.bindings objectAtIndex:(NSUInteger)index];

@@ -160,7 +160,7 @@
     NSArray *categories = @[@{@"category": @"Actions", @"items": commands}];
 
     for (NSString *actionKey in [actionKeys subarrayWithRange:NSMakeRange(2, 6)]) {
-        NSPopUpButton *popup = VSCOCreateActionPopup(actionKeys, actionNames, categories, actionKey, NSZeroRect);
+        NSPopUpButton *popup = VSCOCreateActionPopup(actionKeys, actionNames, categories, actionKey, NSZeroRect, nil, nil, 0);
         XCTAssertEqual(popup.numberOfItems, (NSInteger)2);
         XCTAssertEqualObjects(popup.titleOfSelectedItem, actionNames[actionKey]);
         XCTAssertEqualObjects(popup.selectedItem.representedObject, actionKey);

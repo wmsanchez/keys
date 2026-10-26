@@ -47,10 +47,10 @@
 
 @property (retain) NSMenuItem *toggleMenuItem;
 @property (retain) NSMenuItem *keyboardHUDMenuItem;
-@property (retain) NSMenuItem *keyboardHUDShortLabelsMenuItem;
 @property (retain) KeyboardHUDWindowController *keyboardHUDWindowController;
 @property (assign) BOOL keyboardHUDEnabled;
-@property (assign) BOOL keyboardHUDUsesShortLabels;
+@property (assign) BOOL keyboardHUDShowsIncrements;
+@property (retain) NSString *keyboardHUDLabelStyle;
 
 @property (retain) NSString *activeKeyFile;
 @property (readonly, retain) NSString *physicalKeyboardLayoutIdentifier;
@@ -79,6 +79,10 @@
 @property (retain) NSDictionary *adjustmentMapping;
 @property (retain) NSDictionary *adjustmentLimits;
 @property (retain) NSArray *commandCategories;
+@property (retain) NSArray *allCommandCategories;
+@property (retain) NSSet *hiddenCommandIdentifiers;
+@property (retain) NSTimer *pluginSettingsTimer;
+@property (assign) BOOL pluginSettingsRequestInProgress;
 @property (retain) NSArray *availableDevelopPresets;
 
 @property (retain) NSNumberFormatter *numFormatter;
@@ -93,6 +97,10 @@
 - (void)importKeyFile:(NSString *)keyFileUrl;
 
 - (void)quitApplication;
+- (NSString *)shortLabelForAction:(NSString *)action customLabels:(NSDictionary *)customLabels;
+- (NSString *)presetLabelForValue:(id)value customLabels:(NSDictionary *)customLabels;
+- (void)updateKeyboardHUDLabelSettingsWithStyle:(NSString *)style showsIncrements:(BOOL)showsIncrements customLabels:(NSDictionary *)customLabels;
+- (void)updateKeyboardHUDPresetLabels:(NSDictionary *)presetLabels;
 
 - (void)makeLRActive;
 - (BOOL)isLRRunning;
@@ -101,6 +109,7 @@
 - (NSArray *)physicalKeyboardLayoutOptions;
 - (NSDictionary *)physicalKeyboardLayoutDefinition;
 - (void)selectPhysicalKeyboardLayout:(NSString *)layoutIdentifier;
+- (void)refreshPluginSettings:(NSTimer *)timer;
 
 - (NSString *)getKeynameForVirtual:(NSString *)virtKey;
 - (NSString *)getNormalNameForAdjustment:(NSString*)adjustment;

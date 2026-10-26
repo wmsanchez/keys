@@ -48,6 +48,12 @@
 
 #define DEFAULTS_ACTIVE_KEYFILE @"active_keyfile"
 #define DEFAULTS_KEYBOARD_HUD_SHORT_LABELS @"keyboard_hud_short_labels"
+#define DEFAULTS_KEYBOARD_HUD_LABEL_STYLE @"keyboard_hud_label_style"
+#define DEFAULTS_KEYBOARD_HUD_SHOW_INCREMENTS @"keyboard_hud_show_increments"
+#define DEFAULTS_KEYBOARD_HUD_CUSTOM_LABELS @"keyboard_hud_custom_labels"
+#define DEFAULTS_KEYBOARD_HUD_CUSTOM_PRESET_LABELS @"keyboard_hud_custom_preset_labels"
+#define KEYBOARD_HUD_LABEL_STYLE_STANDARD @"standard"
+#define KEYBOARD_HUD_LABEL_STYLE_MOTIBODO @"motibodo"
 #define DEFAULTS_PHYSICAL_KEYBOARD_LAYOUT @"physical_keyboard_layout"
 #define KEYBOARD_LAYOUT_MACBOOK_ISO @"macbook-pro-iso-azerty-qwerty-caps"
 #define KEYBOARD_LAYOUT_APPLE_MAGIC_ANSI @"apple-magic-ansi-qwerty"
@@ -56,6 +62,7 @@
 
 #define SERVER_UPDATE_ENDPOINT @"http://127.0.0.1:49657/Update/"
 #define SERVER_PRESETS_ENDPOINT @"http://127.0.0.1:49657/Presets/"
+#define SERVER_SETTINGS_ENDPOINT @"http://127.0.0.1:49657/Settings/"
 
 #define LIGHTROOM_BUNDLE_LR3 @"com.adobe.Lightroom3"
 #define LIGHTROOM_BUNDLE_LR4 @"com.adobe.Lightroom4"

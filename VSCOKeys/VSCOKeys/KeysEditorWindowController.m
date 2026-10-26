@@ -187,30 +187,28 @@ static NSString * const kBindAdjDict = @"bAdjDict";
                          @"SHIFT+CTRL+OPT", @"SHIFT+CTRL+CMD", @"SHIFT+OPT+CMD",
                          @"CTRL+OPT+CMD", @"SHIFT+CTRL+OPT+CMD"];
 
-    // ── Categorized action menu template ─────────────────────────────────────
-    // Built once from CommandCategories.json; cloned per-row in dataCellForTableColumn.
-    NSArray *cats = self.keyControl.commandCategories;
-    if (cats) {
-        NSMenu *tmpl = [[NSMenu alloc] initWithTitle:@""];
-        [tmpl setAutoenablesItems:NO];
-        for (NSDictionary *cat in cats) {
-            NSString *catName = [cat objectForKey:@"category"];
-            NSArray *catItems = [cat objectForKey:@"items"];
-            NSMenuItem *catItem = [[NSMenuItem alloc] initWithTitle:catName action:nil keyEquivalent:@""];
-            NSMenu *sub = [[NSMenu alloc] initWithTitle:catName];
-            [sub setAutoenablesItems:NO];
-            for (NSDictionary *cmdDict in catItems) {
-                NSString *cid   = [cmdDict objectForKey:@"id"];
-                NSString *cname = [cmdDict objectForKey:@"name"];
-                NSMenuItem *mi  = [[NSMenuItem alloc] initWithTitle:cname action:nil keyEquivalent:@""];
-                [mi setRepresentedObject:cid];
-                [sub addItem:mi];
-            }
-            [catItem setSubmenu:sub];
-            [tmpl addItem:catItem];
+    [self reloadActionCatalog];
+}
+
+- (void)reloadActionCatalog
+{
+    NSMenu *template = [[NSMenu alloc] initWithTitle:@""];
+    [template setAutoenablesItems:NO];
+    for (NSDictionary *category in self.keyControl.commandCategories) {
+        NSString *categoryName = [category objectForKey:@"category"] ?: @"Other";
+        NSMenuItem *categoryItem = [[NSMenuItem alloc] initWithTitle:categoryName action:nil keyEquivalent:@""];
+        NSMenu *submenu = [[NSMenu alloc] initWithTitle:categoryName];
+        [submenu setAutoenablesItems:NO];
+        for (NSDictionary *command in [category objectForKey:@"items"]) {
+            NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:[command objectForKey:@"name"] ?: [command objectForKey:@"id"] action:nil keyEquivalent:@""];
+            [item setRepresentedObject:[command objectForKey:@"id"]];
+            [submenu addItem:item];
         }
-        self.actionMenuTemplate = tmpl;
+        [categoryItem setSubmenu:submenu];
+        [template addItem:categoryItem];
     }
+    self.actionMenuTemplate = template;
+    [self.tableView reloadData];
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

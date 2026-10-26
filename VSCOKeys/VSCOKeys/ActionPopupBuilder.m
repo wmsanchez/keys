@@ -1,6 +1,6 @@
 #import "ActionPopupBuilder.h"
 
-NSPopUpButton *VSCOCreateActionPopup(NSArray *actionKeys, NSDictionary *actionNames, NSArray *commandCategories, NSString *selectedAction, NSRect frame)
+NSPopUpButton *VSCOCreateActionPopup(NSArray *actionKeys, NSDictionary *actionNames, NSArray *commandCategories, NSString *selectedAction, NSRect frame, id target, SEL action, NSInteger tag)
 {
     NSPopUpButton *popup = [[NSPopUpButton alloc] initWithFrame:frame pullsDown:NO];
     [popup removeAllItems];
@@ -23,7 +23,9 @@ NSPopUpButton *VSCOCreateActionPopup(NSArray *actionKeys, NSDictionary *actionNa
             if (![actionKeys containsObject:actionKey] || [addedActionKeys containsObject:actionKey]) continue;
 
             NSString *title = [command objectForKey:@"name"] ?: [actionNames objectForKey:actionKey] ?: actionKey;
-            NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:title action:nil keyEquivalent:@""];
+            NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:title action:action keyEquivalent:@""];
+            [item setTarget:target];
+            [item setTag:tag];
             [item setRepresentedObject:actionKey];
             [submenu addItem:item];
             [addedActionKeys addObject:actionKey];
@@ -44,7 +46,9 @@ NSPopUpButton *VSCOCreateActionPopup(NSArray *actionKeys, NSDictionary *actionNa
         [submenu setAutoenablesItems:NO];
         for (NSString *actionKey in uncategorizedActionKeys) {
             NSString *title = [actionNames objectForKey:actionKey] ?: actionKey;
-            NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:title action:nil keyEquivalent:@""];
+            NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:title action:action keyEquivalent:@""];
+            [item setTarget:target];
+            [item setTag:tag];
             [item setRepresentedObject:actionKey];
             [submenu addItem:item];
         }

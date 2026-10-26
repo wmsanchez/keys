@@ -48,8 +48,14 @@
 @property (retain) NSDictionary *keyMapping;
 @property (retain) NSDictionary *bindingsByModifier;
 @property (retain) NSDictionary *assignmentTypesByModifier;
+@property (retain) NSDictionary *assignmentDetailsByModifier;
+@property (retain) NSDictionary *adjustmentMapping;
+@property (retain) NSArray *bindings;
+@property (retain) NSDictionary *customLabels;
+@property (retain) NSDictionary *customPresetLabels;
+@property (retain) NSString *labelStyle;
 @property (assign) NSUInteger activeModifierMask;
-@property (assign) BOOL usesShortLabels;
+@property (assign) BOOL showsIncrementAmounts;
 - (void)fadeActionLabel:(NSTimer *)timer;
 - (void)applyModifierLayer;
 - (NSString *)labelForAction:(NSString *)action value:(id)value adjustmentMapping:(NSDictionary *)mapping;
@@ -59,7 +65,9 @@
 @implementation KeyboardHUDWindowController
 
 @synthesize keyboardView, actionLabel, modifierLayerLabel, fadeTimer, keyMapping;
-@synthesize bindingsByModifier, assignmentTypesByModifier, activeModifierMask, usesShortLabels;
+@synthesize bindingsByModifier, assignmentTypesByModifier, activeModifierMask;
+@synthesize assignmentDetailsByModifier, adjustmentMapping, customLabels, customPresetLabels;
+@synthesize labelStyle, showsIncrementAmounts;
 
 - (id)initWithKeyMapping:(NSDictionary *)mapping
 {
@@ -169,8 +177,9 @@
 
 - (NSString *)labelForAction:(NSString *)action value:(id)value adjustmentMapping:(NSDictionary *)mapping
 {
+    if ([action isEqualToString:@"_SetPreset"] && self.keyboardView.usesMotibodoLabels) return @"Preset";
     NSString *title = [mapping objectForKey:action] ?: action;
-    if (self.usesShortLabels) {
+    if (self.keyboardView.usesMotibodoLabels) {
         static NSDictionary *shortNames;
         if (!shortNames) {
             shortNames = @{
@@ -182,7 +191,7 @@
                 @"ResetParametricDarks": @"Rst Dark"
             };
         }
-        title = [shortNames objectForKey:action];
+        title = [self.customLabels objectForKey:action] ?: [shortNames objectForKey:action];
         if (!title) {
             NSArray *words = [[mapping objectForKey:action] componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
             NSString *firstWord = [words filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString *word, NSDictionary *bindings) {
@@ -193,19 +202,16 @@
         }
     }
 
-    if ([value respondsToSelector:@selector(doubleValue)] && ![action hasPrefix:@"Reset"] &&
-        ![action hasPrefix:@"Mask"] && ![action hasPrefix:@"Quick"] && ![action hasPrefix:@"_Set"]) {
-        NSString *amount = [value description];
-        if ([amount length] > 0) title = [NSString stringWithFormat:@"%@ %@", title, amount];
-    }
     return title;
 }
 
-- (void)setBindings:(NSArray *)bindings adjustmentMapping:(NSDictionary *)adjustmentMapping usesShortLabels:(BOOL)shortLabels
+- (void)setBindings:(NSArray *)bindings adjustmentMapping:(NSDictionary *)adjustmentMapping
 {
-    self.usesShortLabels = shortLabels;
+    self.bindings = bindings ?: @[];
+    self.adjustmentMapping = adjustmentMapping;
     NSMutableDictionary *labelsByModifier = [NSMutableDictionary dictionary];
     NSMutableDictionary *typesByModifier = [NSMutableDictionary dictionary];
+    NSMutableDictionary *detailsByModifier = [NSMutableDictionary dictionary];
 
     for (NSDictionary *binding in bindings) {
         NSString *keyCode = [[binding objectForKey:@"key"] description];
@@ -214,8 +220,21 @@
         if (!keyCode || ![adjustments isKindOfClass:[NSDictionary class]]) continue;
 
         NSMutableArray *actionTitles = [NSMutableArray array];
+        NSMutableArray *actionDetails = [NSMutableArray array];
         for (NSString *action in [[adjustments allKeys] sortedArrayUsingSelector:@selector(compare:)]) {
-            [actionTitles addObject:[self labelForAction:action value:[adjustments objectForKey:action] adjustmentMapping:adjustmentMapping]];
+            id value = [adjustments objectForKey:action];
+            NSString *title = [self labelForAction:action value:value adjustmentMapping:adjustmentMapping];
+            [actionTitles addObject:title];
+            double amountValue = 0;
+            NSScanner *amountScanner = [NSScanner scannerWithString:[value description]];
+            BOOL numericAmount = [amountScanner scanDouble:&amountValue] && [amountScanner isAtEnd];
+            NSString *presetValue = [action isEqualToString:@"_SetPreset"] ? [value description] : nil;
+            NSString *displayTitle = presetValue ? @"Preset" : title;
+            NSString *subtitle = presetValue ? [self presetLabelForValue:value customLabels:self.customPresetLabels] : @"";
+            if (presetValue && !self.keyboardView.usesMotibodoLabels) displayTitle = title;
+            [actionDetails addObject:@{@"action": action, @"title": displayTitle,
+                                       @"subtitle": subtitle, @"presetValue": presetValue ?: @"",
+                                       @"amount": numericAmount ? [value description] : @""}];
         }
         NSString *label = [actionTitles componentsJoinedByString:@" / "];
         NSMutableDictionary *labels = [labelsByModifier objectForKey:modifier];
@@ -225,6 +244,18 @@
         }
         NSString *existingLabel = [labels objectForKey:keyCode];
         [labels setObject:existingLabel ? [NSString stringWithFormat:@"%@ / %@", existingLabel, label] : label forKey:keyCode];
+
+        NSMutableDictionary *details = [detailsByModifier objectForKey:modifier];
+        if (!details) {
+            details = [NSMutableDictionary dictionary];
+            [detailsByModifier setObject:details forKey:modifier];
+        }
+        NSMutableArray *existingDetails = [details objectForKey:keyCode];
+        if (!existingDetails) {
+            existingDetails = [NSMutableArray array];
+            [details setObject:existingDetails forKey:keyCode];
+        }
+        [existingDetails addObjectsFromArray:actionDetails];
 
         NSMutableDictionary *types = [typesByModifier objectForKey:modifier];
         if (!types) {
@@ -249,7 +280,28 @@
 
     self.bindingsByModifier = labelsByModifier;
     self.assignmentTypesByModifier = typesByModifier;
+    self.assignmentDetailsByModifier = detailsByModifier;
     [self applyModifierLayer];
+}
+
+- (void)setLabelStyle:(NSString *)style showsIncrementAmounts:(BOOL)showsIncrementAmounts customLabels:(NSDictionary *)customLabels customPresetLabels:(NSDictionary *)customPresetLabels
+{
+    self.labelStyle = style;
+    self.showsIncrementAmounts = showsIncrementAmounts;
+    self.customLabels = customLabels ?: @{};
+    self.customPresetLabels = customPresetLabels ?: @{};
+    self.keyboardView.usesMotibodoLabels = [style isEqualToString:KEYBOARD_HUD_LABEL_STYLE_MOTIBODO];
+    self.keyboardView.showsIncrementAmounts = showsIncrementAmounts;
+    [self setBindings:self.bindings adjustmentMapping:self.adjustmentMapping ?: @{}];
+}
+
+- (NSString *)presetLabelForValue:(id)value customLabels:(NSDictionary *)customLabels
+{
+    NSString *presetValue = [value description];
+    NSString *customLabel = [[customLabels objectForKey:presetValue] description];
+    if (customLabel.length > 0) return customLabel;
+    NSString *displayName = [presetValue lastPathComponent];
+    return displayName.length > 0 ? displayName : presetValue;
 }
 
 - (NSString *)modifierLayerTitleForMask:(NSUInteger)mask
@@ -273,6 +325,7 @@
     NSString *modifier = [NSString stringWithFormat:@"%lu", (unsigned long)self.activeModifierMask];
     [self.keyboardView setAssignmentLabels:[self.bindingsByModifier objectForKey:modifier] ?: @{}];
     [self.keyboardView setAssignmentTypes:[self.assignmentTypesByModifier objectForKey:modifier] ?: @{}];
+    [self.keyboardView setAssignmentDetails:[self.assignmentDetailsByModifier objectForKey:modifier] ?: @{}];
     [self.modifierLayerLabel setStringValue:[NSString stringWithFormat:@"%@ LAYER", [self modifierLayerTitleForMask:self.activeModifierMask].uppercaseString]];
     [self.keyboardView setNeedsDisplay:YES];
 }

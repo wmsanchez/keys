@@ -1858,6 +1858,34 @@
         "name": "Detail enable/disable"
       },
       {
+        "id": "DenoiseAmount",
+        "name": "Set Denoise Amount (1-100)"
+      },
+      {
+        "id": "EnhanceDenoiseOn",
+        "name": "Enable Denoise"
+      },
+      {
+        "id": "EnhanceDenoiseOff",
+        "name": "Disable Denoise"
+      },
+      {
+        "id": "EnhanceRawDetailsOn",
+        "name": "Enable Raw Details"
+      },
+      {
+        "id": "EnhanceRawDetailsOff",
+        "name": "Disable Raw Details"
+      },
+      {
+        "id": "EnhanceSuperResOn",
+        "name": "Enable Super Resolution"
+      },
+      {
+        "id": "EnhanceSuperResOff",
+        "name": "Disable Super Resolution"
+      },
+      {
         "id": "Sharpness",
         "name": "Sharpness"
       },

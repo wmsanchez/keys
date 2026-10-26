@@ -34,6 +34,7 @@
 #import "QuickWindowController.h"
 #import "KeyboardHUDWindowController.h"
 #import "KeyboardLayoutEditorController.h"
+#import "KeysEditorWindowController.h"
 #import "MainWindowController.h"
 
 #import "NSData+Cryption.h"
@@ -72,8 +73,9 @@
 @synthesize statusBarIconError;
 
 @synthesize toggleMenuItem;
-@synthesize keyboardHUDMenuItem, keyboardHUDShortLabelsMenuItem, keyboardHUDWindowController;
-@synthesize keyboardHUDEnabled, keyboardHUDUsesShortLabels;
+@synthesize keyboardHUDMenuItem, keyboardHUDWindowController;
+@synthesize keyboardHUDEnabled;
+@synthesize keyboardHUDShowsIncrements, keyboardHUDLabelStyle;
 
 @synthesize activeKeyFile;
 @synthesize physicalKeyboardLayoutIdentifier;
@@ -103,6 +105,7 @@
 @synthesize adjustmentMapping;
 @synthesize adjustmentLimits;
 @synthesize commandCategories;
+@synthesize allCommandCategories, hiddenCommandIdentifiers, pluginSettingsTimer, pluginSettingsRequestInProgress;
 @synthesize availableDevelopPresets;
 
 @synthesize numFormatter;
@@ -120,10 +123,10 @@
     {
         self.authContinueTrial = NO;
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        if ([defaults objectForKey:DEFAULTS_KEYBOARD_HUD_SHORT_LABELS] == nil) {
-            [defaults setBool:YES forKey:DEFAULTS_KEYBOARD_HUD_SHORT_LABELS];
-        }
-        self.keyboardHUDUsesShortLabels = [defaults boolForKey:DEFAULTS_KEYBOARD_HUD_SHORT_LABELS];
+        NSString *savedLabelStyle = [defaults stringForKey:DEFAULTS_KEYBOARD_HUD_LABEL_STYLE];
+        self.keyboardHUDLabelStyle = [@[KEYBOARD_HUD_LABEL_STYLE_STANDARD, KEYBOARD_HUD_LABEL_STYLE_MOTIBODO] containsObject:savedLabelStyle]
+            ? savedLabelStyle : KEYBOARD_HUD_LABEL_STYLE_STANDARD;
+        self.keyboardHUDShowsIncrements = [defaults boolForKey:DEFAULTS_KEYBOARD_HUD_SHOW_INCREMENTS];
         NSString *savedLayout = [defaults stringForKey:DEFAULTS_PHYSICAL_KEYBOARD_LAYOUT];
         NSArray *layoutOptions = [self physicalKeyboardLayoutOptions];
         BOOL supportedLayout = [layoutOptions indexOfObjectPassingTest:^BOOL(NSDictionary *option, NSUInteger index, BOOL *stop) {
@@ -139,6 +142,13 @@
 
         [self initAppList];
         [self initMappings];
+                self.hiddenCommandIdentifiers = [NSSet set];
+                [self refreshPluginSettings:nil];
+                self.pluginSettingsTimer = [NSTimer scheduledTimerWithTimeInterval:3.0
+                                                                                                                                        target:self
+                                                                                                                                    selector:@selector(refreshPluginSettings:)
+                                                                                                                                    userInfo:nil
+                                                                                                                                     repeats:YES];
 
         self.lrVersion = [self getLRVersion];
 
@@ -410,9 +420,6 @@
     self.keyboardHUDMenuItem = [self addItem:@"Show Keyboard Overlay" toMenu:theMenu target:self selector:@selector(toggleKeyboardHUD:) object:NULL];
     self.keyboardHUDEnabled = self.keyboardHUDWindowController.window.isVisible;
     [self.keyboardHUDMenuItem setState:self.keyboardHUDEnabled ? NSOnState : NSOffState];
-    self.keyboardHUDShortLabelsMenuItem = [self addItem:@"Use Short Action Labels" toMenu:theMenu target:self selector:@selector(toggleKeyboardHUDShortLabels:) object:NULL];
-    [self.keyboardHUDShortLabelsMenuItem setState:self.keyboardHUDUsesShortLabels ? NSOnState : NSOffState];
-
     NSMenuItem *layoutItem = [[NSMenuItem alloc] initWithTitle:@"Physical Keyboard" action:nil keyEquivalent:@""];
     NSMenu *layoutMenu = [[NSMenu alloc] initWithTitle:@"Physical Keyboard"];
     for (NSDictionary *option in [self physicalKeyboardLayoutOptions]) {
@@ -475,14 +482,6 @@
     [self.keyboardHUDMenuItem setState:self.keyboardHUDEnabled ? NSOnState : NSOffState];
 }
 
-- (void)toggleKeyboardHUDShortLabels:(id)sender
-{
-    self.keyboardHUDUsesShortLabels = !self.keyboardHUDUsesShortLabels;
-    [[NSUserDefaults standardUserDefaults] setBool:self.keyboardHUDUsesShortLabels forKey:DEFAULTS_KEYBOARD_HUD_SHORT_LABELS];
-    [self.keyboardHUDShortLabelsMenuItem setState:self.keyboardHUDUsesShortLabels ? NSOnState : NSOffState];
-    [self refreshKeyboardHUDBindings];
-}
-
 - (NSArray *)physicalKeyboardLayoutOptions
 {
     return @[
@@ -530,8 +529,70 @@
     NSDictionary *keyfile = [self.keyfileList objectForKey:self.activeKeyFile];
     NSArray *bindings = [keyfile objectForKey:KEYFILE_KEYS_NODENAME];
     [self.keyboardHUDWindowController setBindings:bindings ?: @[]
-                               adjustmentMapping:self.adjustmentMapping ?: @{}
-                                   usesShortLabels:self.keyboardHUDUsesShortLabels];
+                               adjustmentMapping:self.adjustmentMapping ?: @{}];
+    NSDictionary *customLabels = [[NSUserDefaults standardUserDefaults] dictionaryForKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_LABELS] ?: @{};
+    NSDictionary *customPresetLabels = [[NSUserDefaults standardUserDefaults] dictionaryForKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_PRESET_LABELS] ?: @{};
+    [self.keyboardHUDWindowController setLabelStyle:self.keyboardHUDLabelStyle
+                               showsIncrementAmounts:self.keyboardHUDShowsIncrements
+                                       customLabels:customLabels
+                                 customPresetLabels:customPresetLabels];
+}
+
+- (NSString *)shortLabelForAction:(NSString *)action customLabels:(NSDictionary *)customLabels
+{
+    if ([action isEqualToString:@"_SetPreset"]) return @"Preset";
+    NSString *customLabel = [[customLabels objectForKey:action] description];
+    if (customLabel.length > 0) return customLabel;
+
+    static NSDictionary *shortNames;
+    if (!shortNames) {
+        shortNames = @{
+            @"Exposure2012": @"Exp", @"Contrast2012": @"Con", @"Highlights2012": @"Hi",
+            @"Shadows2012": @"Shd", @"Whites2012": @"Wht", @"Blacks2012": @"Blk",
+            @"Temperature": @"Tmp", @"Tint": @"Tint", @"Saturation": @"Sat",
+            @"Vibrance": @"Vib", @"Clarity2012": @"Clar", @"Texture": @"Tex",
+            @"straightenAngle": @"Angle", @"ResetCrop": @"Rst Crop",
+            @"ResetParametricDarks": @"Rst Dark"
+        };
+    }
+    NSString *title = [shortNames objectForKey:action];
+    if (title) return title;
+
+    NSString *mappedTitle = [[self.adjustmentMapping objectForKey:action] description] ?: action;
+    NSArray *words = [mappedTitle componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    NSString *firstWord = [words filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString *word, NSDictionary *bindings) {
+        return word.length > 0 && ![word hasPrefix:@"("];
+    }]].firstObject;
+    title = firstWord ?: action;
+    return title.length > 7 ? [title substringToIndex:7] : title;
+}
+
+- (NSString *)presetLabelForValue:(id)value customLabels:(NSDictionary *)customLabels
+{
+    NSString *presetValue = [value description];
+    NSString *customLabel = [[customLabels objectForKey:presetValue] description];
+    if (customLabel.length > 0) return customLabel;
+    NSString *displayName = [presetValue lastPathComponent];
+    return displayName.length > 0 ? displayName : presetValue;
+}
+
+- (void)updateKeyboardHUDLabelSettingsWithStyle:(NSString *)style showsIncrements:(BOOL)showsIncrements customLabels:(NSDictionary *)customLabels
+{
+    NSString *validStyle = [style isEqualToString:KEYBOARD_HUD_LABEL_STYLE_MOTIBODO]
+        ? KEYBOARD_HUD_LABEL_STYLE_MOTIBODO : KEYBOARD_HUD_LABEL_STYLE_STANDARD;
+    self.keyboardHUDLabelStyle = validStyle;
+    self.keyboardHUDShowsIncrements = showsIncrements;
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults setObject:validStyle forKey:DEFAULTS_KEYBOARD_HUD_LABEL_STYLE];
+    [defaults setBool:showsIncrements forKey:DEFAULTS_KEYBOARD_HUD_SHOW_INCREMENTS];
+    [defaults setObject:customLabels ?: @{} forKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_LABELS];
+    [self refreshKeyboardHUDBindings];
+}
+
+- (void)updateKeyboardHUDPresetLabels:(NSDictionary *)presetLabels
+{
+    [[NSUserDefaults standardUserDefaults] setObject:presetLabels ?: @{} forKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_PRESET_LABELS];
+    [self refreshKeyboardHUDBindings];
 }
 
 - (NSDictionary *)commandForKeyCode:(int)keyCode modifierFlags:(CGEventFlags)modifiers
@@ -1260,6 +1321,7 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
         if (catsData) {
             self.commandCategories = [NSJSONSerialization JSONObjectWithData:catsData options:0 error:nil];
             if (self.commandCategories) {
+                self.allCommandCategories = self.commandCategories;
                 // Merge all category command IDs and display names into adjustmentMapping
                 NSMutableDictionary *mergedAdj = [self.adjustmentMapping mutableCopy] ?: [NSMutableDictionary dictionary];
                 for (NSDictionary *cat in self.commandCategories) {
@@ -1276,6 +1338,45 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
             }
         }
     }
+}
+
+- (void)refreshPluginSettings:(NSTimer *)timer
+{
+    if (self.pluginSettingsRequestInProgress) return;
+    self.pluginSettingsRequestInProgress = YES;
+    [HttpRequest sendGetTo:SERVER_SETTINGS_ENDPOINT responded:^(NSURLConnection *connection, NSURLResponse *response, NSData *data, NSString *mimeType) {
+        self.pluginSettingsRequestInProgress = NO;
+        NSString *body = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        id settings = [body JSONValue];
+        NSDictionary *hiddenActions = [settings isKindOfClass:[NSDictionary class]] ? settings[@"hiddenActions"] : nil;
+        if (![hiddenActions isKindOfClass:[NSDictionary class]]) return;
+
+        NSMutableSet *hiddenIdentifiers = [NSMutableSet set];
+        for (id actionIdentifier in hiddenActions) {
+            if ([hiddenActions[actionIdentifier] boolValue]) [hiddenIdentifiers addObject:actionIdentifier];
+        }
+        if ([hiddenIdentifiers isEqualToSet:self.hiddenCommandIdentifiers ?: [NSSet set]]) return;
+
+        self.hiddenCommandIdentifiers = hiddenIdentifiers;
+        NSMutableArray *visibleCategories = [NSMutableArray array];
+        for (NSDictionary *category in self.allCommandCategories) {
+            NSMutableArray *visibleItems = [NSMutableArray array];
+            for (NSDictionary *item in [category objectForKey:@"items"]) {
+                if (![hiddenIdentifiers containsObject:[item objectForKey:@"id"]]) [visibleItems addObject:item];
+            }
+            if (visibleItems.count > 0) {
+                [visibleCategories addObject:@{
+                    @"category": [category objectForKey:@"category"] ?: @"Other",
+                    @"items": visibleItems
+                }];
+            }
+        }
+        self.commandCategories = visibleCategories;
+        [self.mainController.keyboardEditorController reloadActionCatalog];
+        [self.mainController.editorController reloadActionCatalog];
+    } failed:^(NSURLConnection *connection, NSError *error) {
+        self.pluginSettingsRequestInProgress = NO;
+    }];
 }
 
 - (NSString *)getKeynameForVirtual:(NSString *)virtKey

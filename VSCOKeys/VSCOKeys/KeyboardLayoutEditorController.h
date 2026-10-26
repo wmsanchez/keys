@@ -14,5 +14,6 @@
 - (void)startNewLayout;
 - (void)stopListeningForKeys;
 - (void)reloadPhysicalKeyboardLayout;
+- (void)reloadActionCatalog;
 
 @end
