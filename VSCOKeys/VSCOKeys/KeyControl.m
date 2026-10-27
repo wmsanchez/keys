@@ -541,6 +541,8 @@ static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGE
     if (self.keyboardHUDWindowController.window.isVisible) {
         [self.keyboardHUDWindowController hideHUD];
     } else {
+        CGFloat keyboardUnitScale = [self.mainController keyboardEditorPreviewUnitScale];
+        [self.keyboardHUDWindowController setKeyboardUnitScale:keyboardUnitScale];
         [self.keyboardHUDWindowController showHUD];
     }
     self.keyboardHUDEnabled = self.keyboardHUDWindowController.window.isVisible;
@@ -594,7 +596,8 @@ static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGE
     NSDictionary *keyfile = [self.keyfileList objectForKey:self.activeKeyFile];
     NSArray *bindings = [keyfile objectForKey:KEYFILE_KEYS_NODENAME];
     [self.keyboardHUDWindowController setBindings:bindings ?: @[]
-                               adjustmentMapping:self.adjustmentMapping ?: @{}];
+                               adjustmentMapping:self.adjustmentMapping ?: @{}
+                                adjustmentLimits:self.adjustmentLimits ?: @{}];
     NSDictionary *customLabels = [[NSUserDefaults standardUserDefaults] dictionaryForKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_LABELS] ?: @{};
     NSDictionary *customPresetLabels = [[NSUserDefaults standardUserDefaults] dictionaryForKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_PRESET_LABELS] ?: @{};
     [self.keyboardHUDWindowController setLabelStyle:self.keyboardHUDLabelStyle

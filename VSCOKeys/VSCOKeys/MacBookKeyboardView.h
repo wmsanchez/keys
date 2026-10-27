@@ -33,6 +33,8 @@
 @property (assign) CGFloat glowRemaining;
 @property (retain) NSTimer *glowTimer;
 - (void)setKeyboardLayoutDefinition:(NSDictionary *)layout;
+- (CGFloat)keyboardUnitScale;
+- (NSSize)canvasSizeForKeyboardUnitScale:(CGFloat)scale;
 - (NSRect)frameForKeyItem:(NSDictionary *)item;
 - (void)showCapturedKeyCode:(NSString *)keyCode hasBinding:(BOOL)hasBinding;
 - (void)showCapturedKeyCode:(NSString *)keyCode hasBinding:(BOOL)hasBinding actionTitle:(NSString *)actionTitle;

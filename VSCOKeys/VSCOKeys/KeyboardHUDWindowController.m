@@ -16,10 +16,56 @@
     return YES;
 }
 
+@end
+
+@protocol KeyboardHUDResizeHandleViewDelegate <NSObject>
+- (void)keyboardHUDResizeHandle:(NSView *)handle didRequestScaleFactor:(CGFloat)scaleFactor;
+@end
+
+@interface KeyboardHUDResizeHandleView : NSView
+@property (assign) id<KeyboardHUDResizeHandleViewDelegate> delegate;
+@property (assign) CGFloat scaleFactor;
+@property (assign) CGFloat startingWidth;
+@property (assign) CGFloat startingHeight;
+@property (assign) CGFloat startingScaleFactor;
+@property (assign) NSPoint startingMouseLocation;
+@end
+
+@implementation KeyboardHUDResizeHandleView
+
+- (BOOL)acceptsFirstMouse:(NSEvent *)event
+{
+    return YES;
+}
+
+- (void)mouseDown:(NSEvent *)event
+{
+    NSSize size = self.window.frame.size;
+    self.startingWidth = size.width;
+    self.startingHeight = size.height;
+    self.startingScaleFactor = self.scaleFactor;
+    self.startingMouseLocation = [NSEvent mouseLocation];
+}
+
+- (void)mouseDragged:(NSEvent *)event
+{
+    NSPoint location = [NSEvent mouseLocation];
+    CGFloat horizontalFactor = 1 + (location.x - self.startingMouseLocation.x) / self.startingWidth;
+    CGFloat verticalFactor = 1 - (location.y - self.startingMouseLocation.y) / self.startingHeight;
+    CGFloat factor = self.startingScaleFactor * (horizontalFactor + verticalFactor) / 2;
+    [self.delegate keyboardHUDResizeHandle:self didRequestScaleFactor:factor];
+}
+
 - (void)drawRect:(NSRect)dirtyRect
 {
-    [[NSColor colorWithCalibratedWhite:0.9 alpha:0.5] setFill];
-    [[NSBezierPath bezierPathWithRoundedRect:NSInsetRect(self.bounds, 18, 2) xRadius:2 yRadius:2] fill];
+    NSBezierPath *grip = [NSBezierPath bezierPath];
+    [grip setLineWidth:1.5];
+    [[NSColor colorWithCalibratedWhite:0.9 alpha:0.7] setStroke];
+    for (CGFloat inset = 4; inset <= 10; inset += 3) {
+        [grip moveToPoint:NSMakePoint(NSMaxX(self.bounds) - inset, NSMinY(self.bounds) + 2)];
+        [grip lineToPoint:NSMakePoint(NSMaxX(self.bounds) - 2, NSMinY(self.bounds) + inset)];
+    }
+    [grip stroke];
 }
 
 @end
@@ -27,44 +73,63 @@
 @interface KeyboardHUDContentView : NSView
 @property (retain) NSView *keyboardView;
 @property (retain) NSView *dragHandle;
+@property (retain) NSView *resizeHandle;
 @end
 
 @implementation KeyboardHUDContentView
 
+- (BOOL)mouseDownCanMoveWindow
+{
+    return YES;
+}
+
 - (NSView *)hitTest:(NSPoint)point
 {
+    if (NSPointInRect(point, self.resizeHandle.frame)) return self.resizeHandle;
     if (NSPointInRect(point, self.dragHandle.frame)) return self.dragHandle;
     NSPoint keyboardPoint = [self.keyboardView convertPoint:point fromView:self];
-    return [self.keyboardView hitTest:keyboardPoint];
+    for (NSDictionary *item in [(MacBookKeyboardView *)self.keyboardView keyItems]) {
+        if (item[@"code"] && NSPointInRect(keyboardPoint, [(MacBookKeyboardView *)self.keyboardView frameForKeyItem:item])) {
+            return self.keyboardView;
+        }
+    }
+    return self;
 }
 
 @end
 
-@interface KeyboardHUDWindowController ()
+@interface KeyboardHUDWindowController () <KeyboardHUDResizeHandleViewDelegate>
 @property (retain) MacBookKeyboardView *keyboardView;
 @property (retain) NSTextField *actionLabel;
 @property (retain) NSTextField *modifierLayerLabel;
+@property (retain) NSView *dragHandle;
+@property (retain) KeyboardHUDResizeHandleView *resizeHandle;
 @property (retain) NSTimer *fadeTimer;
 @property (retain) NSDictionary *keyMapping;
 @property (retain) NSDictionary *bindingsByModifier;
 @property (retain) NSDictionary *assignmentTypesByModifier;
 @property (retain) NSDictionary *assignmentDetailsByModifier;
 @property (retain) NSDictionary *adjustmentMapping;
+@property (retain) NSDictionary *adjustmentLimits;
 @property (retain) NSArray *bindings;
 @property (retain) NSDictionary *customLabels;
 @property (retain) NSDictionary *customPresetLabels;
 @property (retain) NSString *labelStyle;
 @property (assign) NSUInteger activeModifierMask;
 @property (assign) BOOL showsIncrementAmounts;
+@property (assign) CGFloat resizeFactor;
+@property (assign) NSSize baseContentSize;
 - (void)fadeActionLabel:(NSTimer *)timer;
 - (void)applyModifierLayer;
+- (void)applyHUDResizeFactor:(CGFloat)scaleFactor;
+- (void)keyboardHUDResizeHandle:(NSView *)handle didRequestScaleFactor:(CGFloat)scaleFactor;
 - (NSString *)labelForAction:(NSString *)action value:(id)value adjustmentMapping:(NSDictionary *)mapping;
 - (NSString *)modifierLayerTitleForMask:(NSUInteger)mask;
 @end
 
 @implementation KeyboardHUDWindowController
 
-@synthesize keyboardView, actionLabel, modifierLayerLabel, fadeTimer, keyMapping;
+@synthesize keyboardView, actionLabel, modifierLayerLabel, dragHandle, fadeTimer, keyMapping;
 @synthesize bindingsByModifier, assignmentTypesByModifier, activeModifierMask;
 @synthesize assignmentDetailsByModifier, adjustmentMapping, customLabels, customPresetLabels;
 @synthesize labelStyle, showsIncrementAmounts;
@@ -80,11 +145,13 @@
                                                     defer:NO];
     self = [super initWithWindow:panel];
     if (self) {
+        self.resizeFactor = 1;
         self.keyMapping = mapping;
         [panel setOpaque:NO];
         [panel setBackgroundColor:[NSColor clearColor]];
         [panel setHasShadow:NO];
         [panel setIgnoresMouseEvents:NO];
+        [panel setMovableByWindowBackground:YES];
         [panel setHidesOnDeactivate:NO];
         [panel setLevel:NSStatusWindowLevel];
         [panel setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces | NSWindowCollectionBehaviorFullScreenAuxiliary | NSWindowCollectionBehaviorStationary];
@@ -127,9 +194,15 @@
         [self.modifierLayerLabel setAutoresizingMask:NSViewWidthSizable | NSViewMinYMargin];
         [contentView addSubview:self.modifierLayerLabel];
 
-        NSView *dragHandle = [[KeyboardHUDDragHandleView alloc] initWithFrame:NSMakeRect(width - 64, height - 16, 48, 10)];
-        contentView.dragHandle = dragHandle;
-        [contentView addSubview:dragHandle];
+        self.dragHandle = [[KeyboardHUDDragHandleView alloc] initWithFrame:NSMakeRect(width - 30, height - 12, 24, 6)];
+        contentView.dragHandle = self.dragHandle;
+        [contentView addSubview:self.dragHandle];
+
+        self.resizeHandle = [[KeyboardHUDResizeHandleView alloc] initWithFrame:NSMakeRect(width - 24, 4, 20, 20)];
+        self.resizeHandle.delegate = self;
+        self.resizeHandle.scaleFactor = 1;
+        contentView.resizeHandle = self.resizeHandle;
+        [contentView addSubview:self.resizeHandle];
         [panel setContentView:contentView];
     }
     return self;
@@ -145,6 +218,62 @@
     [self.window setFrame:frame display:NO];
     [self.keyboardView setListeningForKeys:YES];
     [self.window orderFrontRegardless];
+}
+
+- (void)setKeyboardUnitScale:(CGFloat)scale
+{
+    if (scale <= 0) return;
+
+    self.resizeFactor = 1;
+    NSRect visibleFrame = [NSScreen mainScreen].visibleFrame;
+    NSSize keyboardSize = [self.keyboardView canvasSizeForKeyboardUnitScale:scale];
+    CGFloat horizontalFit = (NSWidth(visibleFrame) - 40) / (keyboardSize.width + 16);
+    CGFloat verticalFit = (NSHeight(visibleFrame) - 40) / (keyboardSize.height + 48);
+    CGFloat fitScale = fmin(1, fmin(horizontalFit, verticalFit));
+    if (fitScale <= 0) return;
+    keyboardSize = [self.keyboardView canvasSizeForKeyboardUnitScale:scale * fitScale];
+    CGFloat contentWidth = keyboardSize.width + 16;
+    CGFloat contentHeight = keyboardSize.height + 48;
+    self.baseContentSize = NSMakeSize(contentWidth, contentHeight);
+    [self applyHUDResizeFactor:self.resizeFactor];
+}
+
+- (void)applyHUDResizeFactor:(CGFloat)scaleFactor
+{
+    if (self.baseContentSize.width <= 0 || self.baseContentSize.height <= 0) return;
+
+    NSRect visibleFrame = [NSScreen mainScreen].visibleFrame;
+    CGFloat maxFactor = fmin((NSWidth(visibleFrame) - 40) / self.baseContentSize.width,
+                             (NSHeight(visibleFrame) - 40) / self.baseContentSize.height);
+    self.resizeFactor = fmax(0.55, fmin(scaleFactor, maxFactor));
+    CGFloat factor = self.resizeFactor;
+    CGFloat contentWidth = self.baseContentSize.width * factor;
+    CGFloat contentHeight = self.baseContentSize.height * factor;
+    NSRect windowFrame = self.window.frame;
+    CGFloat topEdge = NSMaxY(windowFrame);
+    [self.window setContentSize:NSMakeSize(contentWidth, contentHeight)];
+    windowFrame = self.window.frame;
+    windowFrame.origin.y = topEdge - NSHeight(windowFrame);
+    [self.window setFrame:windowFrame display:YES];
+
+    [self.keyboardView setFrame:NSMakeRect(8 * factor, 24 * factor,
+                                           (contentWidth - 16 * factor),
+                                           (contentHeight - 48 * factor))];
+    [self.keyboardView setAutoresizingMask:NSViewNotSizable];
+    [self.actionLabel setFrame:NSMakeRect(24 * factor, 4 * factor, contentWidth - 48 * factor, 20 * factor)];
+    [self.actionLabel setAutoresizingMask:NSViewNotSizable];
+    [self.modifierLayerLabel setFrame:NSMakeRect(24 * factor, contentHeight - 22 * factor,
+                                                 contentWidth - 48 * factor, 14 * factor)];
+    [self.modifierLayerLabel setAutoresizingMask:NSViewNotSizable];
+    [self.dragHandle setFrame:NSMakeRect(contentWidth - 30, contentHeight - 12, 24, 6)];
+    [self.resizeHandle setFrame:NSMakeRect(contentWidth - 24 * factor, 4 * factor,
+                                           20 * factor, 20 * factor)];
+    self.resizeHandle.scaleFactor = factor;
+}
+
+- (void)keyboardHUDResizeHandle:(NSView *)handle didRequestScaleFactor:(CGFloat)scaleFactor
+{
+    [self applyHUDResizeFactor:scaleFactor];
 }
 
 - (void)hideHUD
@@ -192,10 +321,11 @@
     return title;
 }
 
-- (void)setBindings:(NSArray *)bindings adjustmentMapping:(NSDictionary *)adjustmentMapping
+- (void)setBindings:(NSArray *)bindings adjustmentMapping:(NSDictionary *)adjustmentMapping adjustmentLimits:(NSDictionary *)adjustmentLimits
 {
     self.bindings = bindings ?: @[];
     self.adjustmentMapping = adjustmentMapping;
+    self.adjustmentLimits = adjustmentLimits ?: @{};
     NSMutableDictionary *labelsByModifier = [NSMutableDictionary dictionary];
     NSMutableDictionary *typesByModifier = [NSMutableDictionary dictionary];
     NSMutableDictionary *detailsByModifier = [NSMutableDictionary dictionary];
@@ -212,6 +342,7 @@
             id value = [adjustments objectForKey:action];
             NSString *title = [self labelForAction:action value:value adjustmentMapping:adjustmentMapping];
             [actionTitles addObject:title];
+            BOOL slider = [self.adjustmentLimits objectForKey:action] != nil;
             double amountValue = 0;
             NSScanner *amountScanner = [NSScanner scannerWithString:[value description]];
             BOOL numericAmount = [amountScanner scanDouble:&amountValue] && [amountScanner isAtEnd];
@@ -221,7 +352,7 @@
             if (presetValue && !self.keyboardView.usesMotibodoLabels) displayTitle = title;
             [actionDetails addObject:@{@"action": action, @"title": displayTitle,
                                        @"subtitle": subtitle, @"presetValue": presetValue ?: @"",
-                                       @"amount": numericAmount ? [value description] : @""}];
+                                       @"amount": slider && numericAmount ? [value description] : @""}];
         }
         NSString *label = [actionTitles componentsJoinedByString:@" / "];
         NSMutableDictionary *labels = [labelsByModifier objectForKey:modifier];
@@ -260,8 +391,11 @@
             double number = 0;
             NSScanner *scanner = [NSScanner scannerWithString:[value description]];
             BOOL numeric = [scanner scanDouble:&number] && [scanner isAtEnd];
-            NSString *direction = numeric && number != 0 ? (number < 0 ? @"left" : @"right") : @"discrete";
-            [keyTypes setObject:@([keyTypes[direction] unsignedIntegerValue] + 1) forKey:direction];
+            BOOL slider = [self.adjustmentLimits objectForKey:action] != nil;
+            NSString *direction = (slider && numeric)
+                ? (number < 0 ? @"left" : (number > 0 ? @"right" : nil))
+                : @"discrete";
+            if (direction) [keyTypes setObject:@([keyTypes[direction] unsignedIntegerValue] + 1) forKey:direction];
         }
     }
 
@@ -279,7 +413,8 @@
     self.customPresetLabels = customPresetLabels ?: @{};
     self.keyboardView.usesMotibodoLabels = [style isEqualToString:KEYBOARD_HUD_LABEL_STYLE_MOTIBODO];
     self.keyboardView.showsIncrementAmounts = showsIncrementAmounts;
-    [self setBindings:self.bindings adjustmentMapping:self.adjustmentMapping ?: @{}];
+        [self setBindings:self.bindings adjustmentMapping:self.adjustmentMapping ?: @{}
+            adjustmentLimits:self.adjustmentLimits ?: @{}];
 }
 
 - (NSString *)presetLabelForValue:(id)value customLabels:(NSDictionary *)customLabels

@@ -293,6 +293,25 @@
     [self layoutEditorViews];
 }
 
+- (CGFloat)keyboardPreviewUnitScale
+{
+    return [self.keyboardView keyboardUnitScale];
+}
+
+- (CGFloat)keyboardPreviewUnitScaleForRootViewSize:(NSSize)size
+{
+    CGFloat width = size.width;
+    CGFloat height = size.height;
+    BOOL compactWidth = width < 900;
+    CGFloat metadataY = height - (compactWidth ? 206 : 142);
+    CGFloat inspectorHeight = fmin(190, fmax(148, height * 0.3));
+    CGFloat keyboardHeight = fmax(0, metadataY - 8 - inspectorHeight - 4);
+    NSSize unitCanvasSize = [self.keyboardView canvasSizeForKeyboardUnitScale:1];
+    CGFloat horizontalScale = (width - 36) / (unitCanvasSize.width - 36);
+    CGFloat verticalScale = (keyboardHeight - 32) / (unitCanvasSize.height - 32);
+    return fmax(0, fmin(horizontalScale, verticalScale));
+}
+
 - (void)layoutEditorViews
 {
     CGFloat width = NSWidth(self.rootView.bounds);

@@ -226,4 +226,18 @@
     }
 }
 
+- (void)testKeyboardCanvasSizePreservesRequestedUnitScale
+{
+    MacBookKeyboardView *keyboardView = [[MacBookKeyboardView alloc] initWithFrame:NSMakeRect(0, 0, 825, 161)];
+    [keyboardView setKeyboardLayoutDefinition:[self keyboardLayoutNamed:@"AppleMagicANSIKeyboard"]];
+    CGFloat editorScale = [keyboardView keyboardUnitScale];
+
+    for (NSNumber *scaleFactor in @[@1, @0.5]) {
+        CGFloat expectedScale = editorScale * scaleFactor.doubleValue;
+        [keyboardView setFrameSize:[keyboardView canvasSizeForKeyboardUnitScale:expectedScale]];
+        XCTAssertEqualWithAccuracy([keyboardView keyboardUnitScale], expectedScale, 0.001);
+    }
+}
+
+
 @end

@@ -200,9 +200,7 @@
 {
     if (self.layoutWidthUnits <= 0 || self.layoutHeightUnits <= 0) return NSZeroRect;
 
-    CGFloat horizontalUnit = (NSWidth(self.bounds) - 36.0) / self.layoutWidthUnits;
-    CGFloat verticalUnit = (NSHeight(self.bounds) - 32.0) / self.layoutHeightUnits;
-    CGFloat unit = fmax(0, fmin(horizontalUnit, verticalUnit));
+    CGFloat unit = [self keyboardUnitScale];
     CGFloat x = NSMinX(self.bounds) + 18 + ([[item objectForKey:@"x"] doubleValue] - self.layoutMinX) * unit;
     CGFloat width = ([[item objectForKey:@"width"] doubleValue] - self.layoutKeyGapUnits) * unit;
     CGFloat heightScale = [[item objectForKey:@"height"] doubleValue];
@@ -212,6 +210,20 @@
     CGFloat rowY = [[item objectForKey:@"y"] doubleValue] + [[item objectForKey:@"dy"] doubleValue];
     CGFloat y = NSMinY(self.bounds) + 16 + (rowY - self.layoutMinY) * unit;
     return NSMakeRect(x, y, width, height);
+}
+
+- (CGFloat)keyboardUnitScale
+{
+    if (self.layoutWidthUnits <= 0 || self.layoutHeightUnits <= 0) return 0;
+    CGFloat horizontalUnit = (NSWidth(self.bounds) - 36.0) / self.layoutWidthUnits;
+    CGFloat verticalUnit = (NSHeight(self.bounds) - 32.0) / self.layoutHeightUnits;
+    return fmax(0, fmin(horizontalUnit, verticalUnit));
+}
+
+- (NSSize)canvasSizeForKeyboardUnitScale:(CGFloat)scale
+{
+    return NSMakeSize(self.layoutWidthUnits * scale + 36.0,
+                      self.layoutHeightUnits * scale + 32.0);
 }
 
 - (void)drawString:(NSString *)string inRect:(NSRect)rect fontSize:(CGFloat)size color:(NSColor *)color

@@ -42,6 +42,7 @@
 @interface MainWindowController ()
 @property (assign) NSRect keyboardEditorPreviousFrame;
 @property (assign) BOOL keyboardEditorWindowExpanded;
+- (NSRect)keyboardEditorExpandedFrameForFrame:(NSRect)frame;
 
 @end
 
@@ -740,19 +741,36 @@
     [self setupEditorController];
     if (!self.keyboardEditorWindowExpanded) {
         self.keyboardEditorPreviousFrame = [self.window frame];
-        NSScreen *screen = [self.window screen] ?: [NSScreen mainScreen];
-        NSRect visibleFrame = [screen visibleFrame];
-        NSRect expandedFrame = self.keyboardEditorPreviousFrame;
-        expandedFrame.size.width = fmin(1360, visibleFrame.size.width - 40);
-        expandedFrame.size.height = fmin(900, visibleFrame.size.height - 40);
-        expandedFrame.origin.x = fmin(expandedFrame.origin.x, NSMaxX(visibleFrame) - expandedFrame.size.width);
-        expandedFrame.origin.x = fmax(expandedFrame.origin.x, visibleFrame.origin.x);
-        expandedFrame.origin.y = NSMaxY(self.keyboardEditorPreviousFrame) - expandedFrame.size.height;
-        expandedFrame.origin.y = fmax(expandedFrame.origin.y, visibleFrame.origin.y);
+        NSRect expandedFrame = [self keyboardEditorExpandedFrameForFrame:self.keyboardEditorPreviousFrame];
         [self.window setFrame:expandedFrame display:YES animate:YES];
         self.keyboardEditorWindowExpanded = YES;
     }
     [self.tabv_tabs selectTabViewItemWithIdentifier:@"keyboard-edit"];
+}
+
+- (NSRect)keyboardEditorExpandedFrameForFrame:(NSRect)frame
+{
+    NSScreen *screen = [self.window screen] ?: [NSScreen mainScreen];
+    NSRect visibleFrame = [screen visibleFrame];
+    CGFloat topEdge = NSMaxY(frame);
+    frame.size.width = fmin(1360, visibleFrame.size.width - 40);
+    frame.size.height = fmin(900, visibleFrame.size.height - 40);
+    frame.origin.x = fmin(frame.origin.x, NSMaxX(visibleFrame) - frame.size.width);
+    frame.origin.x = fmax(frame.origin.x, visibleFrame.origin.x);
+    frame.origin.y = topEdge - frame.size.height;
+    frame.origin.y = fmax(frame.origin.y, visibleFrame.origin.y);
+    return frame;
+}
+
+- (CGFloat)keyboardEditorPreviewUnitScale
+{
+    [self setupEditorController];
+    NSRect currentWindowFrame = [self.window frame];
+    NSRect expandedFrame = [self keyboardEditorExpandedFrameForFrame:currentWindowFrame];
+    NSSize targetRootViewSize = self.tabv_tabs.bounds.size;
+    targetRootViewSize.width += expandedFrame.size.width - currentWindowFrame.size.width;
+    targetRootViewSize.height += expandedFrame.size.height - currentWindowFrame.size.height;
+    return [self.keyboardEditorController keyboardPreviewUnitScaleForRootViewSize:targetRootViewSize];
 }
 
 - (void)showTableEditor

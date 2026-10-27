@@ -89,6 +89,7 @@
 - (void)openEditorForKeyfile:(NSDictionary *)keyfile;
 - (void)openNewLayoutEditor;
 - (void)showKeyboardEditor;
+- (CGFloat)keyboardEditorPreviewUnitScale;
 - (void)showTableEditor;
 
 - (IBAction)viewActivateButtonClicked:(id)sender;

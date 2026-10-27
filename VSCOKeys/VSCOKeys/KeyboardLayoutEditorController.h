@@ -15,5 +15,7 @@
 - (void)stopListeningForKeys;
 - (void)reloadPhysicalKeyboardLayout;
 - (void)reloadActionCatalog;
+- (CGFloat)keyboardPreviewUnitScale;
+- (CGFloat)keyboardPreviewUnitScaleForRootViewSize:(NSSize)size;
 
 @end
