@@ -45,6 +45,19 @@ Known limitations are listed below. In particular, the existing tests are not a 
 3. Reject or clearly flag invalid, non-finite, or out-of-range typed values. Do not silently save values the table editor would clamp differently.
 4. Keep the text field and stepper synchronized and preserve sign/precision through edit, save, reload, and activation.
 
+### P0: Preserve MIDI2LR Command Semantics
+
+`CommandCategories.json` currently preserves category, ID, and display name, but not MIDI2LR's command `Type` or `Repeats`. `KeyControl` merges every category ID into the action catalog, and the binding editor can therefore offer a rotary repeat mapping as though it were a direct key action. The plugin then either needs an `ActionsTable` handler or falls through to generic `LrDevelopController.setValue` handling.
+
+Use this parity pass before porting or repairing a command family:
+
+1. Build a command manifest from MIDI2LR `Database.lua`: ID, `Type`, `Repeats`, group, and explanation. Join it with `CommandCategories.json`, `AdjustmentLimits.json`, and the IDs registered in `ActionsTable.lua`.
+2. Require every app-visible ID to have an explicit supported execution contract. Buttons dispatch without a user value; sliders use validated numeric values and limits; presets retain their string value; repeat mappings are hidden or rejected unless the keyboard UI has an explicit two-direction representation. Never pass an unsupported repeat ID to generic `setValue`.
+3. Keep Lightroom execution context per API family. For example, MIDI2LR wraps `quickDevelopAdjustImage` and `quickDevelopAdjustWhiteBalance` in `LrTasks.startAsyncTask` and leaves the current module unchanged. Do not infer a module switch or catalog write transaction from the fact that an action edits a photo.
+4. Add a focused regression check per contract: handler exists or command is deliberately unavailable, button values are boolean, slider values remain numeric, repeat mappings cannot be bound as direct commands, and selected-photo API calls use the required async boundary without changing modules unless their contract requires it.
+
+Confirmed Quick Develop findings: the step buttons registered through `quickDevAdjust` and `quickDevAdjustWB` share the MIDI2LR async contract; the helper now applies it to the whole family. MIDI2LR's `QuickDev*Adj` entries are `repeat` mappings to small increase/decrease actions, not standalone Lightroom actions. The app currently exposes these IDs without their repeat metadata, so they need to be excluded from direct-key binding until repeat semantics are modeled. The existing Objective-C test target has no usable automated gate yet; keep a lightweight Lua mock check for the Lightroom handler while the test-target blocker remains.
+
 ## Alpha Quality And Resilience
 
 1. Add explicit states for no selected key, no bindings, missing/unreadable geometry, no available actions, missing preset data, invalid values, duplicate bindings, and save failure.

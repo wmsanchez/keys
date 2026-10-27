@@ -17,6 +17,18 @@ local prefs = LrPrefs.prefsForPlugin()
 
 local CU = {}
 
+local function withTargetPhoto(action)
+  return function()
+    LrTasks.startAsyncTask(function()
+      local catalog = LrApplication.activeCatalog()
+      local target = catalog and catalog:getTargetPhoto()
+      if target then
+        action(target)
+      end
+    end)
+  end
+end
+
 -- Ensure correct module is active
 function CU.wrapFOM(F, ...)
   local args = { ... }
@@ -66,11 +78,9 @@ function CU.wrapForEachPhoto(actionName)
 end
 
 function CU.QuickCropAspect(aspect)
-  local cat = LrApplication.activeCatalog()
-  local target = cat and cat:getTargetPhoto()
-  if target then
+  return withTargetPhoto(function(target)
     target:quickDevelopCropAspect(aspect)
-  end
+  end)()
 end
 
 function CU.fChangeModule(modName)
@@ -210,23 +220,15 @@ function CU.fToggleTool1(toolName)
 end
 
 function CU.quickDevAdjust(param, step)
-  return function()
-    local cat = LrApplication.activeCatalog()
-    local target = cat and cat:getTargetPhoto()
-    if target then
-      target:quickDevelopAdjustImage(param, step)
-    end
-  end
+  return withTargetPhoto(function(target)
+    target:quickDevelopAdjustImage(param, step)
+  end)
 end
 
 function CU.quickDevAdjustWB(param, step)
-  return function()
-    local cat = LrApplication.activeCatalog()
-    local target = cat and cat:getTargetPhoto()
-    if target then
-      target:quickDevelopAdjustWhiteBalance(param, step)
-    end
-  end
+  return withTargetPhoto(function(target)
+    target:quickDevelopAdjustWhiteBalance(param, step)
+  end)
 end
 
 function CU.UpdatePointCurve(curveSettings)

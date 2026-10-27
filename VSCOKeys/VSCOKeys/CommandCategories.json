@@ -932,7 +932,12 @@
       },
       {
         "id": "PasteSettingsFromPrevious",
-        "name": "Paste Settings from Previous"
+        "name": "Paste Settings from Previous",
+        "shortcut": {
+          "menuTitle": "Paste Settings from Previous",
+          "fallbackKey": "v",
+          "fallbackModifiers": ["command", "option"]
+        }
       },
       {
         "id": "VirtualCopy",

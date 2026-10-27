@@ -92,6 +92,84 @@ static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGE
     return found;
 }
 
+static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CGKeyCode *keyCode,
+                                 CGEventFlags *eventFlags, NSUInteger depth)
+{
+    if (!element || depth > 12) return NO;
+
+    CFTypeRef titleValue = NULL;
+    AXError titleError = AXUIElementCopyAttributeValue(element, kAXTitleAttribute, &titleValue);
+    BOOL matchesTitle = titleError == kAXErrorSuccess && titleValue &&
+        CFGetTypeID(titleValue) == CFStringGetTypeID() &&
+        [(__bridge NSString *)titleValue isEqualToString:menuTitle];
+    if (titleValue) CFRelease(titleValue);
+
+    if (matchesTitle) {
+        CFTypeRef virtualKeyValue = NULL;
+        CFTypeRef modifierValue = NULL;
+        CGKeyCode resolvedKeyCode = 0;
+        CGEventFlags resolvedFlags = 0;
+        BOOL hasKeyCode = NO;
+
+        if (AXUIElementCopyAttributeValue(element, kAXMenuItemCmdVirtualKeyAttribute, &virtualKeyValue) == kAXErrorSuccess &&
+            virtualKeyValue && CFGetTypeID(virtualKeyValue) == CFNumberGetTypeID()) {
+            int virtualKey = 0;
+            hasKeyCode = CFNumberGetValue((CFNumberRef)virtualKeyValue, kCFNumberIntType, &virtualKey);
+            resolvedKeyCode = (CGKeyCode)virtualKey;
+        }
+        if (AXUIElementCopyAttributeValue(element, kAXMenuItemCmdModifiersAttribute, &modifierValue) == kAXErrorSuccess &&
+            modifierValue && CFGetTypeID(modifierValue) == CFNumberGetTypeID()) {
+            int modifiers = 0;
+            CFNumberGetValue((CFNumberRef)modifierValue, kCFNumberIntType, &modifiers);
+            if (modifiers & kAXMenuItemModifierShift) resolvedFlags |= kCGEventFlagMaskShift;
+            if (modifiers & kAXMenuItemModifierOption) resolvedFlags |= kCGEventFlagMaskAlternate;
+            if (modifiers & kAXMenuItemModifierControl) resolvedFlags |= kCGEventFlagMaskControl;
+            if (!(modifiers & kAXMenuItemModifierNoCommand)) resolvedFlags |= kCGEventFlagMaskCommand;
+        }
+        if (virtualKeyValue) CFRelease(virtualKeyValue);
+        if (modifierValue) CFRelease(modifierValue);
+
+        if (hasKeyCode) {
+            *keyCode = resolvedKeyCode;
+            *eventFlags = resolvedFlags;
+            return YES;
+        }
+
+        CFTypeRef characterValue = NULL;
+        if (AXUIElementCopyAttributeValue(element, kAXMenuItemCmdCharAttribute, &characterValue) == kAXErrorSuccess &&
+            characterValue && CFGetTypeID(characterValue) == CFStringGetTypeID()) {
+            CGEventFlags characterFlags = 0;
+            BOOL foundCharacter = VSCOKeyCodeForCharacter((__bridge NSString *)characterValue, &resolvedKeyCode, &characterFlags);
+            if (characterValue) CFRelease(characterValue);
+            if (foundCharacter) {
+                *keyCode = resolvedKeyCode;
+                *eventFlags = resolvedFlags | characterFlags;
+                return YES;
+            }
+        } else if (characterValue) {
+            CFRelease(characterValue);
+        }
+    }
+
+    CFTypeRef childrenValue = NULL;
+    if (AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, &childrenValue) != kAXErrorSuccess ||
+        !childrenValue || CFGetTypeID(childrenValue) != CFArrayGetTypeID()) {
+        if (childrenValue) CFRelease(childrenValue);
+        return NO;
+    }
+
+    CFArrayRef children = (CFArrayRef)childrenValue;
+    for (CFIndex index = 0; index < CFArrayGetCount(children); index++) {
+        AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(children, index);
+        if (VSCOFindMenuShortcut(child, menuTitle, keyCode, eventFlags, depth + 1)) {
+            CFRelease(childrenValue);
+            return YES;
+        }
+    }
+    CFRelease(childrenValue);
+    return NO;
+}
+
 @interface KeyControl ()
 @property (retain) NSString *physicalKeyboardLayoutIdentifier;
 @property (retain) NSString *brushIncreaseKey;
@@ -102,9 +180,6 @@ static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGE
 @property (assign) CGKeyCode brushDecreaseKeyCode;
 @property (assign) CGEventFlags brushDecreaseEventFlags;
 @property (assign) BOOL brushDecreaseKeyCodeValid;
-@property (assign) CGKeyCode pastePreviousKeyCode;
-@property (assign) CGEventFlags pastePreviousEventFlags;
-@property (assign) BOOL pastePreviousKeyCodeValid;
 - (void)toggleKeyboardHUD:(id)sender;
 - (void)setKeyboardHUDVisible:(BOOL)visible;
 - (void)setKeyboardHUDVisibleForCapsLock:(NSNumber *)enabled;
@@ -119,8 +194,8 @@ static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGE
 - (NSUInteger)modifierMaskForEventFlags:(CGEventFlags)flags;
 - (void)updateShortcutKeyCodes:(NSDictionary *)shortcuts;
 - (void)postShortcutWithKeyCode:(CGKeyCode)keyCode flags:(CGEventFlags)eventFlags;
+- (BOOL)executeShortcutFallbackForAction:(NSString *)action;
 - (void)sendBrushSizeChange:(double)delta;
-- (void)sendPasteSettingsFromPrevious;
 @end
 
 @implementation KeyControl
@@ -199,7 +274,7 @@ static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGE
             return [[option objectForKey:@"id"] isEqualToString:savedLayout];
         }] != NSNotFound;
         self.physicalKeyboardLayoutIdentifier = supportedLayout ? savedLayout : KEYBOARD_LAYOUT_MACBOOK_ISO;
-        [self updateShortcutKeyCodes:@{@"increase": @"]", @"decrease": @"[", @"pastePrevious": @"v"}];
+        [self updateShortcutKeyCodes:@{@"increase": @"]", @"decrease": @"["}];
 
         self.keyfileDirectory = [[NSFileManager defaultManager] applicationSupportDirectory];
 
@@ -1016,8 +1091,6 @@ static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGE
         self.brushDecreaseKey = decreaseKey;
         self.brushDecreaseKeyCodeValid = VSCOKeyCodeForCharacter(decreaseKey, &_brushDecreaseKeyCode, &_brushDecreaseEventFlags);
     }
-    NSString *pastePreviousKey = shortcuts[@"pastePrevious"];
-    self.pastePreviousKeyCodeValid = VSCOKeyCodeForCharacter(pastePreviousKey, &_pastePreviousKeyCode, &_pastePreviousEventFlags);
 }
 
 - (void)sendBrushSizeChange:(double)delta
@@ -1034,16 +1107,6 @@ static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGE
     }
 
     [self postShortcutWithKeyCode:keyCode flags:eventFlags];
-}
-
-- (void)sendPasteSettingsFromPrevious
-{
-    if (!self.pastePreviousKeyCodeValid) {
-        DualLog(@"Could not resolve Lightroom Paste Settings from Previous shortcut.");
-        return;
-    }
-    CGEventFlags flags = self.pastePreviousEventFlags | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand;
-    [self postShortcutWithKeyCode:self.pastePreviousKeyCode flags:flags];
 }
 
 - (void)postShortcutWithKeyCode:(CGKeyCode)keyCode flags:(CGEventFlags)eventFlags
@@ -1067,6 +1130,65 @@ static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGE
     CGEventPostToPid((pid_t)lightroom.processIdentifier, keyUp);
     CFRelease(keyDown);
     CFRelease(keyUp);
+}
+
+- (BOOL)executeShortcutFallbackForAction:(NSString *)action
+{
+    for (NSDictionary *category in self.allCommandCategories ?: self.commandCategories) {
+        for (NSDictionary *item in [category objectForKey:@"items"]) {
+            if (![[item objectForKey:@"id"] isEqualToString:action]) continue;
+            id shortcutValue = [item objectForKey:@"shortcut"];
+            if (!shortcutValue) return NO;
+            if (![shortcutValue isKindOfClass:[NSDictionary class]]) {
+                DualLog(@"Invalid shortcut metadata for %@.", action);
+                return YES;
+            }
+            NSDictionary *shortcut = shortcutValue;
+            NSString *menuTitle = [shortcut objectForKey:@"menuTitle"];
+            if (![menuTitle isKindOfClass:[NSString class]] || menuTitle.length == 0) {
+                DualLog(@"Missing Lightroom menu title for shortcut action %@.", action);
+                return YES;
+            }
+
+            NSString *fallbackKey = [shortcut objectForKey:@"fallbackKey"];
+            NSArray *fallbackModifiers = [shortcut objectForKey:@"fallbackModifiers"];
+            CGEventFlags fallbackFlags = 0;
+            if ([fallbackModifiers isKindOfClass:[NSArray class]]) {
+                for (id modifier in fallbackModifiers) {
+                    if (![modifier isKindOfClass:[NSString class]]) continue;
+                    if ([modifier isEqualToString:@"command"]) fallbackFlags |= kCGEventFlagMaskCommand;
+                    else if ([modifier isEqualToString:@"option"]) fallbackFlags |= kCGEventFlagMaskAlternate;
+                    else if ([modifier isEqualToString:@"shift"]) fallbackFlags |= kCGEventFlagMaskShift;
+                    else if ([modifier isEqualToString:@"control"]) fallbackFlags |= kCGEventFlagMaskControl;
+                }
+            }
+            CGKeyCode keyCode = 0;
+            CGEventFlags eventFlags = 0;
+            if ([fallbackKey isKindOfClass:[NSString class]] &&
+                VSCOKeyCodeForCharacter(fallbackKey, &keyCode, &eventFlags)) {
+                [self postShortcutWithKeyCode:keyCode flags:fallbackFlags | eventFlags];
+                DualLog(@"Used configured shortcut fallback for %@.", action);
+                return YES;
+            }
+
+            NSRunningApplication *lightroom = [self getLRRunningInstance];
+            if (!lightroom) return YES;
+            AXUIElementRef application = AXUIElementCreateApplication(lightroom.processIdentifier);
+            AXUIElementRef menuBar = NULL;
+            BOOL found = NO;
+            if (AXUIElementCopyAttributeValue(application, kAXMenuBarAttribute, (CFTypeRef *)&menuBar) == kAXErrorSuccess && menuBar) {
+                found = VSCOFindMenuShortcut(menuBar, menuTitle, &keyCode, &eventFlags, 0);
+                CFRelease(menuBar);
+            }
+            CFRelease(application);
+            if (found) {
+                [self postShortcutWithKeyCode:keyCode flags:eventFlags];
+                DualLog(@"Used resolved Lightroom menu shortcut for %@.", action);
+            } else DualLog(@"Could not resolve Lightroom menu or fallback shortcut for %@.", action);
+            return YES;
+        }
+    }
+    return NO;
 }
 
 - (void)initAppList
@@ -1502,7 +1624,7 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
         [self performSelectorOnMainThread:@selector(updateShortcutKeyCodes:)
                        withObject:@{@"increase": increaseShortcut,
                             @"decrease": decreaseShortcut,
-                            @"pastePrevious": @"v"}
+                            }
                             waitUntilDone:YES];
         NSDictionary *hiddenActions = settings[@"hiddenActions"];
         if (![hiddenActions isKindOfClass:[NSDictionary class]]) return;
@@ -1779,9 +1901,10 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
             [appSelf sendBrushSizeChange:[[brushSizeChange description] doubleValue]];
             [adjustments removeObjectForKey:@"ChangeBrushSize"];
         }
-        if (type == kCGEventKeyDown && [adjustments objectForKey:@"PasteSettingsFromPrevious"]) {
-            [appSelf sendPasteSettingsFromPrevious];
-            [adjustments removeObjectForKey:@"PasteSettingsFromPrevious"];
+        if (type == kCGEventKeyDown) {
+            for (NSString *action in [adjustments allKeys]) {
+                if ([appSelf executeShortcutFallbackForAction:action]) [adjustments removeObjectForKey:action];
+            }
         }
 
         if (remap)
