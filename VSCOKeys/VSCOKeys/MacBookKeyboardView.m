@@ -296,6 +296,70 @@
     return colors[category];
 }
 
++ (NSString *)symbolNameForAction:(NSString *)action
+{
+    static NSDictionary *symbols;
+    if (!symbols) {
+        symbols = @{
+            @"ShoVwdevelop_before_after_horiz": @"rectangle.split.2x1",
+            @"ShoVwdevelop_before_after_vert": @"rectangle.split.1x2",
+            @"Next": @"arrow.right",
+            @"Prev": @"arrow.left",
+            @"LRCopy": @"doc.on.doc",
+            @"LRPaste": @"doc.on.clipboard",
+            @"PasteSettingsFromPrevious": @"doc.on.clipboard",
+            @"AutoTone": @"wand.and.stars",
+            @"WhiteBalanceAuto": @"eyedropper",
+            @"VirtualCopy": @"plus.square.on.square",
+            @"ResetAll": @"arrow.counterclockwise",
+            @"ResetLast": @"arrow.counterclockwise",
+            @"Undo": @"arrow.uturn.backward",
+            @"Redo": @"arrow.uturn.forward",
+            @"MaskNewBrush": @"paintbrush.pointed.fill",
+            @"CropOverlay": @"crop",
+            @"straightenAngle" : @"crop.rotate",
+            @"EnhanceDenoiseOn": @"sparkles",
+            @"QuickDevCropAspect3x4": @"rectangle.portrait",
+
+
+        };
+    }
+    return symbols[action];
+}
+
++ (NSString *)symbolNameForAction:(NSString *)action amount:(NSString *)amount
+{
+    static NSDictionary *directionalSymbols;
+    static NSDictionary *directionalCommands;
+    if (!directionalSymbols) {
+        directionalSymbols = @{
+            @"Temperature": @{@"negative": @"thermometer.low", @"positive": @"thermometer.high"},
+            @"Exposure2012": @{@"negative": @"sun.min", @"positive": @"sun.max"},
+            @"Tint": @{@"negative": @"drop.halffull", @"positive": @"drop.fill"}
+        };
+        directionalCommands = @{
+            @"IncrementLastDevelopParameter": @"plus",
+            @"DecrementLastDevelopParameter": @"minus",
+            @"SliderIncrease": @"plus",
+            @"SliderDecrease": @"minus",
+            @"FineIncrease": @"plus",
+            @"FineDecrease": @"minus"
+        };
+    }
+
+    NSDictionary *variants = directionalSymbols[action];
+    if (variants && amount.length > 0) {
+        NSScanner *scanner = [NSScanner scannerWithString:amount];
+        double value = 0;
+        if ([scanner scanDouble:&value] && [scanner isAtEnd]) {
+            if (value < 0) return variants[@"negative"];
+            if (value > 0) return variants[@"positive"];
+        }
+    }
+
+    return directionalCommands[action] ?: [self symbolNameForAction:action];
+}
+
 - (void)drawRect:(NSRect)dirtyRect
 {
     NSRect keyBounds = NSZeroRect;
@@ -399,6 +463,20 @@
                 if (subtitle.length > 0 && !editingPresetLabel) {
                     NSRect subtitleRect = NSMakeRect(NSMinX(keyRect) + 4, NSMinY(keyRect) + 15, NSWidth(keyRect) - 8, 12);
                     [self drawString:subtitle inRect:subtitleRect fontSize:8 color:textColor];
+                }
+                NSString *symbolName = assignmentDetailsForKey.count == 1
+                    ? [[self class] symbolNameForAction:firstDetail[@"action"] amount:amount] : nil;
+                if (symbolName && subtitle.length == 0) {
+                    CGFloat symbolSize = 24;
+                    NSImage *symbol = [NSImage imageWithSystemSymbolName:symbolName accessibilityDescription:actionTitle];
+                    NSImageSymbolConfiguration *sizeConfiguration = [NSImageSymbolConfiguration configurationWithPointSize:symbolSize
+                                                                                                                      weight:NSFontWeightRegular];
+                    NSImageSymbolConfiguration *colorConfiguration = [NSImageSymbolConfiguration configurationWithHierarchicalColor:textColor];
+                    NSImageSymbolConfiguration *configuration = [sizeConfiguration configurationByApplyingConfiguration:colorConfiguration];
+                    symbol = [symbol imageWithSymbolConfiguration:configuration];
+                    [symbol drawInRect:NSMakeRect(NSMidX(keyRect) - symbolSize / 2,
+                                                  NSMidY(keyRect) - symbolSize / 2,
+                                                  symbolSize, symbolSize)];
                 }
                 NSRect keyLabelRect = NSMakeRect(NSMinX(keyRect) + 4, NSMinY(keyRect) + 2, NSWidth(keyRect) * 0.55, 13);
                 [self drawString:label ?: @"" inRect:keyLabelRect fontSize:8 color:textColor];

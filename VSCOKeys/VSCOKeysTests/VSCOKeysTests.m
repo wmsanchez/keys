@@ -53,6 +53,47 @@
     }
 }
 
+- (void)testKeyboardActionSymbols
+{
+    NSDictionary *symbolsByAction = @{
+        @"ShoVwdevelop_before_after_horiz": @"rectangle.split.2x1",
+        @"ShoVwdevelop_before_after_vert": @"rectangle.split.1x2",
+        @"Next": @"arrow.right",
+        @"Prev": @"arrow.left",
+        @"LRCopy": @"doc.on.doc",
+        @"LRPaste": @"doc.on.clipboard",
+        @"PasteSettingsFromPrevious": @"doc.on.clipboard",
+        @"AutoTone": @"wand.and.stars",
+        @"WhiteBalanceAuto": @"eyedropper",
+        @"VirtualCopy": @"plus.square.on.square",
+        @"ResetAll": @"arrow.counterclockwise",
+        @"ResetLast": @"arrow.counterclockwise",
+        @"Undo": @"arrow.uturn.backward",
+        @"Redo": @"arrow.uturn.forward"
+    };
+    [symbolsByAction enumerateKeysAndObjectsUsingBlock:^(NSString *action, NSString *symbolName, BOOL *stop) {
+        XCTAssertEqualObjects([MacBookKeyboardView symbolNameForAction:action], symbolName);
+        XCTAssertNotNil([NSImage imageWithSystemSymbolName:symbolName accessibilityDescription:nil]);
+    }];
+    XCTAssertNil([MacBookKeyboardView symbolNameForAction:@"Exposure2012"]);
+
+    NSArray *directionalCases = @[
+        @{@"action": @"Temperature", @"amount": @"-0.1", @"symbol": @"thermometer.low"},
+        @{@"action": @"Temperature", @"amount": @"0.1", @"symbol": @"thermometer.high"},
+        @{@"action": @"IncrementLastDevelopParameter", @"amount": @"", @"symbol": @"plus"},
+        @{@"action": @"DecrementLastDevelopParameter", @"amount": @"", @"symbol": @"minus"},
+        @{@"action": @"SliderIncrease", @"amount": @"", @"symbol": @"plus"},
+        @{@"action": @"SliderDecrease", @"amount": @"", @"symbol": @"minus"},
+        @{@"action": @"CropOverlay", @"amount": @"", @"symbol": @"crop"}
+    ];
+    for (NSDictionary *testCase in directionalCases) {
+        NSString *symbolName = testCase[@"symbol"];
+        XCTAssertEqualObjects([MacBookKeyboardView symbolNameForAction:testCase[@"action"] amount:testCase[@"amount"]], symbolName);
+        XCTAssertNotNil([NSImage imageWithSystemSymbolName:symbolName accessibilityDescription:nil]);
+    }
+    XCTAssertNil([MacBookKeyboardView symbolNameForAction:@"Temperature" amount:@"0"]);
+}
+
 - (void)testKeyfileRejectsDuplicateKeyAndModifier
 {
     NSDictionary *keyfile = @{

@@ -17,6 +17,8 @@
 @interface MacBookKeyboardView : NSView
 + (NSString *)colorCategoryForAction:(NSString *)action isAdjustment:(BOOL)isAdjustment;
 + (NSColor *)colorForCategory:(NSString *)category;
++ (NSString *)symbolNameForAction:(NSString *)action;
++ (NSString *)symbolNameForAction:(NSString *)action amount:(NSString *)amount;
 @property (retain) NSArray *keyItems;
 @property (retain) NSDictionary *keyMapping;
 @property (retain) NSDictionary *assignmentTypes;
