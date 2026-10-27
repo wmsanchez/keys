@@ -106,6 +106,8 @@ static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGE
 @property (assign) CGEventFlags pastePreviousEventFlags;
 @property (assign) BOOL pastePreviousKeyCodeValid;
 - (void)toggleKeyboardHUD:(id)sender;
+- (void)setKeyboardHUDVisible:(BOOL)visible;
+- (void)setKeyboardHUDVisibleForCapsLock:(NSNumber *)enabled;
 - (void)toggleKeyboardHUDShortLabels:(id)sender;
 - (void)selectPhysicalKeyboardLayoutFromMenu:(id)sender;
 - (void)selectPhysicalKeyboardLayout:(NSString *)layoutIdentifier;
@@ -533,17 +535,27 @@ static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGE
 
 - (void)toggleKeyboardHUD:(id)sender
 {
+    [self setKeyboardHUDVisible:!self.keyboardHUDWindowController.window.isVisible];
+}
+
+- (void)setKeyboardHUDVisibleForCapsLock:(NSNumber *)enabled
+{
+    [self setKeyboardHUDVisible:enabled.boolValue];
+}
+
+- (void)setKeyboardHUDVisible:(BOOL)visible
+{
     if (!self.keyboardHUDWindowController) {
         self.keyboardHUDWindowController = [[KeyboardHUDWindowController alloc] initWithKeyMapping:self.keyMapping];
     }
     [self.keyboardHUDWindowController setKeyboardLayoutDefinition:[self physicalKeyboardLayoutDefinition]];
     [self refreshKeyboardHUDBindings];
-    if (self.keyboardHUDWindowController.window.isVisible) {
-        [self.keyboardHUDWindowController hideHUD];
-    } else {
+    if (visible && !self.keyboardHUDWindowController.window.isVisible) {
         CGFloat keyboardUnitScale = [self.mainController keyboardEditorPreviewUnitScale];
         [self.keyboardHUDWindowController setKeyboardUnitScale:keyboardUnitScale];
         [self.keyboardHUDWindowController showHUD];
+    } else if (!visible && self.keyboardHUDWindowController.window.isVisible) {
+        [self.keyboardHUDWindowController hideHUD];
     }
     self.keyboardHUDEnabled = self.keyboardHUDWindowController.window.isVisible;
     [self.keyboardHUDMenuItem setState:self.keyboardHUDEnabled ? NSOnState : NSOffState];
@@ -1701,6 +1713,18 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 
     int keyCode = (int)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
     CGEventFlags modifiers = CGEventGetFlags(event);
+    BOOL isLightroomForeground = [appSelf checkIsLRInForeground];
+    if (type == kCGEventFlagsChanged && keyCode == kVK_CapsLock && isLightroomForeground) {
+        NSNumber *capsLockEnabled = @((modifiers & kCGEventFlagMaskAlphaShift) != 0);
+        [appSelf performSelectorOnMainThread:@selector(setKeyboardHUDVisibleForCapsLock:)
+                                  withObject:capsLockEnabled
+                               waitUntilDone:NO];
+        return NULL;
+    }
+    if (isLightroomForeground && (modifiers & kCGEventFlagMaskAlphaShift)) {
+        modifiers &= ~kCGEventFlagMaskAlphaShift;
+        CGEventSetFlags(event, modifiers);
+    }
     NSDictionary *matchedCommand = [appSelf commandForKeyCode:keyCode modifierFlags:modifiers];
     if (type == kCGEventFlagsChanged && appSelf.keyboardHUDEnabled) {
         NSDictionary *eventInfo = @{@"modifierMask": @([appSelf modifierMaskForEventFlags:modifiers])};
