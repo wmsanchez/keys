@@ -40,6 +40,19 @@
     [super tearDown];
 }
 
+- (void)testKeyboardKeyColorCategories
+{
+    XCTAssertEqualObjects([MacBookKeyboardView colorCategoryForAction:@"Exposure2012" isAdjustment:YES], @"adjustment");
+    XCTAssertEqualObjects([MacBookKeyboardView colorCategoryForAction:@"SaturationAdjustmentRed" isAdjustment:YES], @"color");
+    XCTAssertEqualObjects([MacBookKeyboardView colorCategoryForAction:@"MaskSubBack" isAdjustment:NO], @"tool");
+    XCTAssertEqualObjects([MacBookKeyboardView colorCategoryForAction:@"_SetPreset" isAdjustment:NO], @"preset");
+    XCTAssertEqualObjects([MacBookKeyboardView colorCategoryForAction:@"ResetCrop" isAdjustment:NO], @"reset");
+    XCTAssertEqualObjects([MacBookKeyboardView colorCategoryForAction:@"_RemapKey" isAdjustment:NO], @"other");
+    for (NSString *category in @[@"adjustment", @"color", @"tool", @"preset", @"reset", @"other", @"mixed"]) {
+        XCTAssertNotNil([MacBookKeyboardView colorForCategory:category]);
+    }
+}
+
 - (void)testKeyfileRejectsDuplicateKeyAndModifier
 {
     NSDictionary *keyfile = @{

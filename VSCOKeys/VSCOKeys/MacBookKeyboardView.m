@@ -259,6 +259,43 @@
     return [NSBezierPath bezierPathWithRoundedRect:frame xRadius:5 yRadius:5];
 }
 
++ (NSString *)colorCategoryForAction:(NSString *)action isAdjustment:(BOOL)isAdjustment
+{
+    NSString *identifier = action.lowercaseString ?: @"";
+    if ([identifier isEqualToString:@"_setpreset"]) return @"preset";
+    if ([identifier hasPrefix:@"reset"] || [identifier isEqualToString:@"undo"] ||
+        [identifier isEqualToString:@"redo"] || [identifier isEqualToString:@"redoundo"]) return @"reset";
+    if ([identifier containsString:@"hueadjustment"] || [identifier containsString:@"saturationadjustment"] ||
+        [identifier containsString:@"luminanceadjustment"] || [identifier containsString:@"graymixer"] ||
+        [identifier containsString:@"splittoning"] || [identifier containsString:@"colorgrade"] ||
+        [identifier containsString:@"shadowtint"] || [identifier hasSuffix:@"hue"] ||
+        [identifier hasSuffix:@"saturation"]) return @"color";
+    if ([identifier containsString:@"crop"] || [identifier containsString:@"brush"] ||
+        [identifier containsString:@"gradient"] || [identifier containsString:@"mask"] ||
+        [identifier containsString:@"spot"] || [identifier containsString:@"heal"] ||
+        [identifier containsString:@"clone"] || [identifier containsString:@"redeye"] ||
+        [identifier containsString:@"transform"] || [identifier containsString:@"lens"] ||
+        [identifier containsString:@"straighten"]) return @"tool";
+    return isAdjustment ? @"adjustment" : @"other";
+}
+
++ (NSColor *)colorForCategory:(NSString *)category
+{
+    static NSDictionary *colors;
+    if (!colors) {
+        colors = @{
+            @"adjustment": [NSColor colorWithCalibratedRed:0.616 green:0.847 blue:0.749 alpha:1],
+            @"color": [NSColor colorWithCalibratedRed:0.953 green:0.627 blue:0.290 alpha:1],
+            @"tool": [NSColor colorWithCalibratedRed:0.957 green:0.847 blue:0.231 alpha:1],
+            @"preset": [NSColor colorWithCalibratedRed:0.490 green:0.780 blue:0.918 alpha:1],
+            @"reset": [NSColor colorWithCalibratedRed:0.910 green:0.357 blue:0.314 alpha:1],
+            @"other": [NSColor colorWithCalibratedRed:0.741 green:0.725 blue:0.910 alpha:1],
+            @"mixed": [NSColor colorWithCalibratedRed:0.729 green:0.741 blue:0.765 alpha:1]
+        };
+    }
+    return colors[category];
+}
+
 - (void)drawRect:(NSRect)dirtyRect
 {
     NSRect keyBounds = NSZeroRect;
@@ -295,11 +332,11 @@
         [[NSColor colorWithCalibratedWhite:0.02 alpha:0.75] setFill];
         [[self pathForKeyItem:item frame:shadowRect] fill];
 
-        NSColor *keyColor = discreteCount > 0
+        NSColor *keyColor = [[self class] colorForCategory:types[@"colorCategory"]] ?: (discreteCount > 0
             ? [NSColor colorWithCalibratedRed:0.96 green:0.79 blue:0.43 alpha:1]
             : (assigned
                 ? [NSColor colorWithCalibratedRed:0.77 green:0.91 blue:0.83 alpha:1]
-                : [NSColor colorWithCalibratedWhite:0.31 alpha:1]);
+                : [NSColor colorWithCalibratedWhite:0.31 alpha:1]));
         if (glowing && !self.capturedKeyHasBinding) {
             keyColor = [NSColor colorWithCalibratedRed:0.38 green:0.88 blue:0.66 alpha:0.95];
         }

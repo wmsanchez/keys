@@ -1,6 +1,6 @@
 # Experimental Keyboard Editor: Alpha Readiness Plan
 
-Status checked: 2026-10-26
+Status checked: 2026-10-27
 
 This plan defines the work required to call the visual keyboard editor alpha-ready. The editor remains an optional front end to the existing `.keysjson` model; the original table editor stays available. VIA is a UX reference only. No firmware, device communication, or VIA runtime is in scope.
 
@@ -52,7 +52,7 @@ Known limitations are listed below. In particular, the existing tests are not a 
 3. Make the editor responsive to the actual visible screen size. Several controls currently use fixed coordinates sized for a wide/tall window and can clip when the screen-constrained window is smaller.
 4. Keep the keyboard geometry and keycode identity separate from printed legends. Verify the specific AZERTY/QWERTY-modified key legends against the physical keyboard; keep saved identity based on virtual keycode.
 5. Ensure keyboard focus order and accessibility labels cover every key and every per-binding control. Preserve a visible focus/selection state and keyboard operability.
-6. Keep colors provisional until the product color semantics are decided. Direction triangles should only represent numeric adjustment direction; discrete actions should have a distinct non-directional treatment.
+6. Use semantic key colors consistently in the editor and HUD. Develop adjustments are mint (`#9DD8BF`), color adjustments orange (`#F3A04A`), editing tools yellow (`#F4D83B`), presets blue (`#7DC7EA`), reset/undo actions red (`#E85B50`), and other commands lavender (`#BDB9E8`). A key with assignments from multiple families uses neutral gray (`#BABDC3`). Unassigned keys remain charcoal. Direction triangles continue to mean numeric adjustment direction only; selection and capture continue to use borders and glow rather than replacing category color. Keep a visible legend in the editor.
 
 ## Verification Work
 

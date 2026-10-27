@@ -338,11 +338,13 @@
 
         NSMutableArray *actionTitles = [NSMutableArray array];
         NSMutableArray *actionDetails = [NSMutableArray array];
+        NSMutableSet *actionColorCategories = [NSMutableSet set];
         for (NSString *action in [[adjustments allKeys] sortedArrayUsingSelector:@selector(compare:)]) {
             id value = [adjustments objectForKey:action];
             NSString *title = [self labelForAction:action value:value adjustmentMapping:adjustmentMapping];
             [actionTitles addObject:title];
             BOOL slider = [self.adjustmentLimits objectForKey:action] != nil;
+            [actionColorCategories addObject:[MacBookKeyboardView colorCategoryForAction:action isAdjustment:slider]];
             double amountValue = 0;
             NSScanner *amountScanner = [NSScanner scannerWithString:[value description]];
             BOOL numericAmount = [amountScanner scanDouble:&amountValue] && [amountScanner isAtEnd];
@@ -396,6 +398,21 @@
                 ? (number < 0 ? @"left" : (number > 0 ? @"right" : nil))
                 : @"discrete";
             if (direction) [keyTypes setObject:@([keyTypes[direction] unsignedIntegerValue] + 1) forKey:direction];
+        }
+        NSMutableSet *keyColorCategories = [keyTypes objectForKey:@"colorCategories"];
+        if (!keyColorCategories) {
+            keyColorCategories = [NSMutableSet set];
+            [keyTypes setObject:keyColorCategories forKey:@"colorCategories"];
+        }
+        [keyColorCategories unionSet:actionColorCategories];
+    }
+
+    for (NSDictionary *modifierTypes in [typesByModifier allValues]) {
+        for (NSMutableDictionary *keyTypes in [modifierTypes allValues]) {
+            NSSet *categories = [keyTypes objectForKey:@"colorCategories"];
+            if (categories.count == 1) [keyTypes setObject:[categories anyObject] forKey:@"colorCategory"];
+            else if (categories.count > 1) [keyTypes setObject:@"mixed" forKey:@"colorCategory"];
+            [keyTypes removeObjectForKey:@"colorCategories"];
         }
     }
 

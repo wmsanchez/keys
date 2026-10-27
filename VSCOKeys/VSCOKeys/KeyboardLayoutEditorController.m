@@ -169,6 +169,19 @@
     [self.rootView addSubview:self.titleLabel];
 
     self.hintLabel = [self labelWithFrame:NSZeroRect text:@"Select a key or capture a physical key to edit its bindings." size:11];
+    NSMutableAttributedString *colorLegend = [[NSMutableAttributedString alloc] init];
+    NSArray *legendItems = @[@[@"Adj", @"adjustment"], @[@"Color", @"color"], @[@"Tool", @"tool"],
+                             @[@"Preset", @"preset"], @[@"Reset", @"reset"], @[@"Other", @"other"],
+                             @[@"Mixed", @"mixed"]];
+    for (NSUInteger index = 0; index < legendItems.count; index++) {
+        if (index > 0) [colorLegend appendAttributedString:[[NSAttributedString alloc] initWithString:@"  "]];
+        NSArray *item = legendItems[index];
+        [colorLegend appendAttributedString:[[NSAttributedString alloc] initWithString:item[0]
+            attributes:@{NSFontAttributeName: [NSFont systemFontOfSize:9 weight:NSFontWeightSemibold],
+                         NSForegroundColorAttributeName: [MacBookKeyboardView colorForCategory:item[1]]}]];
+    }
+    [self.hintLabel setAttributedStringValue:colorLegend];
+    [self.hintLabel setToolTip:@"Key color categories. Select a key or capture a physical key to edit its bindings."];
     [self.rootView addSubview:self.hintLabel];
     self.tableEditorButton = [self buttonWithFrame:NSZeroRect title:@"Table Editor" action:@selector(tableEditorClicked:)];
     [self.rootView addSubview:self.tableEditorButton];
@@ -333,7 +346,8 @@
     [self.titleLabel setFrame:NSMakeRect(padding, titleY, fmax(60, NSMinX(self.duplicateButton.frame) - padding - 12), 24)];
 
     if (compactWidth) {
-        [self.hintLabel setHidden:YES];
+        [self.hintLabel setHidden:NO];
+        [self.hintLabel setFrame:NSMakeRect(324, optionsY + 4, fmax(80, right - 324), 18)];
         [self.keyboardLabel setFrame:NSMakeRect(padding, optionsY + 4, 65, 18)];
         [self.physicalKeyboardPopup setFrame:NSMakeRect(82, optionsY, fmin(230, width - 100), 26)];
         [self.listenForKeysSwitch setFrame:NSMakeRect(padding, captureY + 1, 135, 24)];
@@ -938,6 +952,12 @@
             BOOL slider = [self.keyControl.adjustmentLimits objectForKey:action] != nil;
             NSString *type = (slider && numeric) ? (value < 0 ? @"left" : (value > 0 ? @"right" : nil)) : @"discrete";
             if (type) [types setObject:@([[types objectForKey:type] unsignedIntegerValue] + 1) forKey:type];
+            NSMutableSet *colorCategories = [types objectForKey:@"colorCategories"];
+            if (!colorCategories) {
+                colorCategories = [NSMutableSet set];
+                [types setObject:colorCategories forKey:@"colorCategories"];
+            }
+            [colorCategories addObject:[MacBookKeyboardView colorCategoryForAction:action isAdjustment:slider]];
             NSString *title = shortNames
                 ? [self.keyControl shortLabelForAction:action customLabels:customLabels]
                 : ([self.keyControl.adjustmentMapping[action] description] ?: action);
@@ -953,6 +973,12 @@
             labelsByKey[code] = [actionTitles componentsJoinedByString:@" / "];
             detailsByKey[code] = actionDetails;
         }
+    }
+    for (NSMutableDictionary *types in [typesByKey allValues]) {
+        NSSet *categories = [types objectForKey:@"colorCategories"];
+        if (categories.count == 1) [types setObject:[categories anyObject] forKey:@"colorCategory"];
+        else if (categories.count > 1) [types setObject:@"mixed" forKey:@"colorCategory"];
+        [types removeObjectForKey:@"colorCategories"];
     }
     [self.keyboardView setAssignmentTypes:typesByKey];
     [self.keyboardView setAssignmentLabels:labelsByKey];
