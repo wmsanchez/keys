@@ -26,6 +26,7 @@
 #import "VSCOKeysTests.h"
 #import "ActionPopupBuilder.h"
 #import "KeyfileValidator.h"
+#import "MacBookKeyboardView.h"
 
 @implementation VSCOKeysTests
 
@@ -165,6 +166,63 @@
         XCTAssertEqualObjects(popup.titleOfSelectedItem, actionNames[actionKey]);
         XCTAssertEqualObjects(popup.selectedItem.representedObject, actionKey);
         XCTAssertEqual(popup.menu.itemArray[1].submenu.numberOfItems, (NSInteger)actionKeys.count);
+    }
+}
+
+- (NSDictionary *)keyboardLayoutNamed:(NSString *)name
+{
+    NSString *path = [[NSBundle bundleForClass:[self class]] pathForResource:name ofType:@"json"];
+    NSData *data = path ? [NSData dataWithContentsOfFile:path] : nil;
+    NSError *error = nil;
+    NSDictionary *layout = data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:&error] : nil;
+    XCTAssertNotNil(layout, @"Could not load keyboard layout %@: %@", name, error);
+    return layout;
+}
+
+- (NSDictionary *)keyWithCode:(NSString *)code inKeyboardView:(MacBookKeyboardView *)keyboardView
+{
+    for (NSDictionary *item in keyboardView.keyItems) {
+        if ([item[@"code"] isEqualToString:code]) return item;
+    }
+    return nil;
+}
+
+- (void)testKeyboardArrowGeometryMatchesAcrossLayoutsAndScales
+{
+    NSArray *layoutNames = @[@"AppleMagicANSIKeyboard", @"MacBookISOKeyboard"];
+    CGFloat expectedGapRatio = 0.12 / 0.66;
+
+    for (NSString *layoutName in layoutNames) {
+        MacBookKeyboardView *keyboardView = [[MacBookKeyboardView alloc] initWithFrame:NSMakeRect(0, 0, 1000, 700)];
+        [keyboardView setKeyboardLayoutDefinition:[self keyboardLayoutNamed:layoutName]];
+
+        NSDictionary *leftKey = [self keyWithCode:@"123" inKeyboardView:keyboardView];
+        NSDictionary *downKey = [self keyWithCode:@"125" inKeyboardView:keyboardView];
+        NSDictionary *rightKey = [self keyWithCode:@"124" inKeyboardView:keyboardView];
+        NSDictionary *upKey = [self keyWithCode:@"126" inKeyboardView:keyboardView];
+        XCTAssertNotNil(leftKey);
+        XCTAssertNotNil(downKey);
+        XCTAssertNotNil(rightKey);
+        XCTAssertNotNil(upKey);
+
+        NSRect leftFrame = [keyboardView frameForKeyItem:leftKey];
+        NSRect downFrame = [keyboardView frameForKeyItem:downKey];
+        NSRect rightFrame = [keyboardView frameForKeyItem:rightKey];
+        NSRect upFrame = [keyboardView frameForKeyItem:upKey];
+        CGFloat leftGap = NSMinX(downFrame) - NSMaxX(leftFrame);
+        CGFloat rightGap = NSMinX(rightFrame) - NSMaxX(downFrame);
+        XCTAssertEqualWithAccuracy(leftGap, rightGap, 0.01);
+        XCTAssertEqualWithAccuracy(NSMidX(upFrame), NSMidX(downFrame), 0.01);
+        XCTAssertGreaterThan(NSMinY(upFrame), NSMaxY(downFrame));
+
+        CGFloat normalizedGap = leftGap / NSWidth(leftFrame);
+        XCTAssertEqualWithAccuracy(normalizedGap, expectedGapRatio, 0.001);
+
+        [keyboardView setFrameSize:NSMakeSize(700, 500)];
+        leftFrame = [keyboardView frameForKeyItem:leftKey];
+        downFrame = [keyboardView frameForKeyItem:downKey];
+        normalizedGap = (NSMinX(downFrame) - NSMaxX(leftFrame)) / NSWidth(leftFrame);
+        XCTAssertEqualWithAccuracy(normalizedGap, expectedGapRatio, 0.001);
     }
 }
 

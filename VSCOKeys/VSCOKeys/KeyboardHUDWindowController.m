@@ -96,22 +96,9 @@
         [contentView layer].cornerRadius = 18;
         [contentView layer].masksToBounds = YES;
 
-        NSString *layoutPath = [[NSBundle mainBundle] pathForResource:@"MacBookISOKeyboard" ofType:@"json"];
-        NSData *layoutData = [NSData dataWithContentsOfFile:layoutPath];
-        NSDictionary *layout = layoutData ? [NSJSONSerialization JSONObjectWithData:layoutData options:0 error:nil] : nil;
-        NSMutableArray *keyItems = [NSMutableArray array];
-        for (NSDictionary *row in [layout objectForKey:@"rows"]) {
-            for (NSDictionary *item in [row objectForKey:@"keys"]) {
-                NSMutableDictionary *keyItem = [item mutableCopy];
-                [keyItem setObject:[row objectForKey:@"y"] forKey:@"y"];
-                [keyItems addObject:keyItem];
-            }
-        }
-
         self.keyboardView = [[MacBookKeyboardView alloc] initWithFrame:NSMakeRect(0, 0, width, 600)];
         contentView.keyboardView = self.keyboardView;
         [self.keyboardView setAutoresizingMask:NSViewWidthSizable | NSViewMinYMargin];
-        [self.keyboardView setKeyItems:keyItems];
         [self.keyboardView setKeyMapping:self.keyMapping];
         [self.keyboardView setAssignmentTypes:@{}];
         [self.keyboardView setListeningForKeys:YES];

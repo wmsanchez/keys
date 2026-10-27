@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		A10000000000000000000011 /* KeyboardLayoutEditorController.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* KeyboardLayoutEditorController.m */; };
+		A10000000000000000000033 /* MacBookKeyboardView.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000034 /* MacBookKeyboardView.m */; };
+		A10000000000000000000035 /* MacBookKeyboardView.m in Test Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000034 /* MacBookKeyboardView.m */; };
+		A10000000000000000000036 /* MacBookISOKeyboard.json in Test Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* MacBookISOKeyboard.json */; };
+		A10000000000000000000037 /* AppleMagicANSIKeyboard.json in Test Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002D /* AppleMagicANSIKeyboard.json */; };
 		A10000000000000000000012 /* MacBookISOKeyboard.json in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* MacBookISOKeyboard.json */; };
 		A1000000000000000000002C /* AppleMagicANSIKeyboard.json in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002D /* AppleMagicANSIKeyboard.json */; };
 		A10000000000000000000020 /* KeyfileValidator.m in App Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* KeyfileValidator.m */; };
@@ -157,6 +161,7 @@
 		A10000000000000000000029 /* KeyboardHUDWindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyboardHUDWindowController.h; sourceTree = "<group>"; };
 		A1000000000000000000002A /* KeyboardHUDWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KeyboardHUDWindowController.m; sourceTree = "<group>"; };
 		A1000000000000000000002B /* MacBookKeyboardView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MacBookKeyboardView.h; sourceTree = "<group>"; };
+		A10000000000000000000034 /* MacBookKeyboardView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MacBookKeyboardView.m; sourceTree = "<group>"; };
 		400F69DE212ED64AD13963A2 /* KeysEditorWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KeysEditorWindowController.h; sourceTree = "<group>"; };
 		2E68913A8EF9D27B81A08F67 /* KeysEditorWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = KeysEditorWindowController.m; sourceTree = "<group>"; };
 		301A0DC516260A4A00878103 /* ExceptionHandling.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ExceptionHandling.framework; path = System/Library/Frameworks/ExceptionHandling.framework; sourceTree = SDKROOT; };
@@ -404,7 +409,6 @@
 				A10000000000000000000027 /* ActionPopupBuilder.h */,
 				A10000000000000000000029 /* KeyboardHUDWindowController.h */,
 				A1000000000000000000002A /* KeyboardHUDWindowController.m */,
-				A1000000000000000000002B /* MacBookKeyboardView.h */,
 				304A7B8915994DF700DB7327 /* AppDelegate.h */,
 				304A7B8A15994DF700DB7327 /* AppDelegate.m */,
 				304A7B7E15994DF700DB7327 /* Supporting Files */,
@@ -587,6 +591,8 @@
 				3098C65E15C9DBA400ECCA65 /* RowColumnTableView.m */,
 				307B9E2415ABAD170056728A /* DropView.h */,
 				307B9E2515ABAD170056728A /* DropView.m */,
+				A1000000000000000000002B /* MacBookKeyboardView.h */,
+				A10000000000000000000034 /* MacBookKeyboardView.m */,
 				308B5D4215D4486A00A0DA88 /* QuickView.h */,
 				308B5D4315D4486A00A0DA88 /* QuickView.m */,
 				30881F9515D07253001A7EF3 /* LicenseWindow.h */,
@@ -780,6 +786,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				304A7B9F15994DF800DB7327 /* InfoPlist.strings in Resources */,
+				A10000000000000000000036 /* MacBookISOKeyboard.json in Test Resources */,
+				A10000000000000000000037 /* AppleMagicANSIKeyboard.json in Test Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -858,6 +866,7 @@
 				307EE03115BDF3AB00EC0284 /* AboutWindowController.m in Sources */,
 				2C8EE356B3EAF54B86A3B9A9 /* KeysEditorWindowController.m in Sources */,
 				A10000000000000000000011 /* KeyboardLayoutEditorController.m in Sources */,
+				A10000000000000000000033 /* MacBookKeyboardView.m in Sources */,
 				307EE03815BDFE4400EC0284 /* MainWindowController.m in Sources */,
 				307BFF5715BF8224005F514E /* KeyfileDescriptionTextTransformer.m in Sources */,
 				307B4D0615C1FB8E009F79AA /* RSVerticallyCenteredTextFieldCell.m in Sources */,
@@ -886,6 +895,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				304A7BA215994DF800DB7327 /* VSCOKeysTests.m in Sources */,
+				A10000000000000000000035 /* MacBookKeyboardView.m in Test Sources */,
 				A10000000000000000000021 /* KeyfileValidator.m in Test Sources */,
 				A10000000000000000000025 /* ActionPopupBuilder.m in Test Sources */,
 			);
