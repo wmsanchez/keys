@@ -25,6 +25,7 @@
 
 #import "KeyControl.h"
 #import "KeyfileValidator.h"
+#import "VSCOKeyCodeLookup.h"
 #import "AppDelegate.h"
 
 #import "SBJson.h"
@@ -50,46 +51,7 @@ static const int64_t kVSCOInjectedKeyEventMarker = 0x5653434f;
 
 static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGEventFlags *eventFlags)
 {
-    if (character.length != 1 || !keyCode || !eventFlags) return NO;
-
-    TISInputSourceRef source = TISCopyCurrentKeyboardInputSource();
-    CFDataRef layoutData = source ? TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) : NULL;
-    if (!layoutData) {
-        if (source) CFRelease(source);
-        source = TISCopyCurrentKeyboardLayoutInputSource();
-        layoutData = source ? TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) : NULL;
-    }
-    if (!layoutData || !source) {
-        if (source) CFRelease(source);
-        return NO;
-    }
-
-    const UCKeyboardLayout *layout = (const UCKeyboardLayout *)CFDataGetBytePtr(layoutData);
-    UniChar target = [character characterAtIndex:0];
-    const UInt32 modifierStates[] = {0, 2, 8, 10};
-    BOOL found = NO;
-    if (layout) {
-        for (UInt16 code = 0; code <= 0xFF && !found; code++) {
-            for (NSUInteger index = 0; index < sizeof(modifierStates) / sizeof(modifierStates[0]); index++) {
-                UInt32 deadKeyState = 0;
-                UniChar translatedCharacter = 0;
-                UniCharCount characterCount = 0;
-                OSStatus result = UCKeyTranslate(layout, code, kUCKeyActionDown, modifierStates[index],
-                                                 LMGetKbdLast(), kUCKeyTranslateNoDeadKeysBit,
-                                                 &deadKeyState, 1, &characterCount, &translatedCharacter);
-                if (result == noErr && characterCount == 1 && translatedCharacter == target) {
-                    *keyCode = code;
-                    *eventFlags = 0;
-                    if (modifierStates[index] & 2) *eventFlags |= kCGEventFlagMaskShift;
-                    if (modifierStates[index] & 8) *eventFlags |= kCGEventFlagMaskAlternate;
-                    found = YES;
-                    break;
-                }
-            }
-        }
-    }
-    CFRelease(source);
-    return found;
+    return VSCOResolveKeyCodeForCharacter(character, keyCode, eventFlags);
 }
 
 static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CGKeyCode *keyCode,
@@ -1820,6 +1782,8 @@ void printKeyDebug(CGEventType type, CGEventFlags modifiers, int keyCode)
 
 CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon)
 {
+    @try
+    {
     KeyControl *appSelf = (__bridge KeyControl *)refcon;
 
     // handle kill-event cases
@@ -1929,6 +1893,20 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
     }
 
     return event;
+    }
+    @catch (NSException *exception)
+    {
+        @try
+        {
+            DualLog(@"Event tap exception: %@", exception);
+            DualLog(@"Event tap stack: %@", [NSThread callStackSymbols]);
+        }
+        @catch (NSException *logException)
+        {
+            NSLog(@"VSCOKeys: event tap log failed: %@", logException);
+        }
+        return event;
+    }
 }
 
 // suppress false positive on event-tap create
@@ -1949,8 +1927,7 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 
     if (!self.eventTap) {
         DualLog(@"Couldn't create event tap!");
-
-        exit(0);
+        return;
     }
 
     runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, self.eventTap, 0);
