@@ -27,6 +27,7 @@
 #import "ActionPopupBuilder.h"
 #import "KeyfileValidator.h"
 #import "MacBookKeyboardView.h"
+#import "VSCOKeyCodeLookup.h"
 
 @implementation VSCOKeysTests
 
@@ -278,6 +279,21 @@
         normalizedGap = (NSMinX(downFrame) - NSMaxX(leftFrame)) / NSWidth(leftFrame);
         XCTAssertEqualWithAccuracy(normalizedGap, expectedGapRatio, 0.001);
     }
+}
+
+- (void)testKeyCodeLookupDoesNotTrapOffMainThread
+{
+    XCTestExpectation *done = [self expectationWithDescription:@"background key-code lookups"];
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        for (NSInteger i = 0; i < 50; i++) {
+            CGKeyCode keyCode = 0;
+            CGEventFlags eventFlags = 0;
+            VSCOResolveKeyCodeForCharacter(@"v", &keyCode, &eventFlags);
+            VSCOResolveKeyCodeForCharacter(@"]", &keyCode, &eventFlags);
+        }
+        [done fulfill];
+    });
+    [self waitForExpectations:@[done] timeout:5];
 }
 
 - (void)testKeyboardCanvasSizePreservesRequestedUnitScale

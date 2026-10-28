@@ -18,6 +18,9 @@
 		A10000000000000000000021 /* KeyfileValidator.m in Test Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* KeyfileValidator.m */; };
 		A10000000000000000000024 /* ActionPopupBuilder.m in App Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000026 /* ActionPopupBuilder.m */; };
 		A10000000000000000000025 /* ActionPopupBuilder.m in Test Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000026 /* ActionPopupBuilder.m */; };
+		A10000000000000000000042 /* VSCOKeyCodeLookup.m in App Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000041 /* VSCOKeyCodeLookup.m */; };
+		A10000000000000000000043 /* VSCOKeyCodeLookup.m in Test Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000041 /* VSCOKeyCodeLookup.m */; };
+		A10000000000000000000044 /* Carbon.framework in Test Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000032 /* Carbon.framework */; };
 		A10000000000000000000028 /* KeyboardHUDWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002A /* KeyboardHUDWindowController.m */; };
 		2C8EE356B3EAF54B86A3B9A9 /* KeysEditorWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 2E68913A8EF9D27B81A08F67 /* KeysEditorWindowController.m */; };
 		301A0DC616260A4A00878103 /* ExceptionHandling.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 301A0DC516260A4A00878103 /* ExceptionHandling.framework */; };
@@ -157,6 +160,8 @@
 		A10000000000000000000022 /* KeyfileValidator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KeyfileValidator.m; sourceTree = "<group>"; };
 		A10000000000000000000023 /* KeyfileValidator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyfileValidator.h; sourceTree = "<group>"; };
 		A10000000000000000000026 /* ActionPopupBuilder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ActionPopupBuilder.m; sourceTree = "<group>"; };
+		A10000000000000000000040 /* VSCOKeyCodeLookup.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VSCOKeyCodeLookup.h; sourceTree = "<group>"; };
+		A10000000000000000000041 /* VSCOKeyCodeLookup.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VSCOKeyCodeLookup.m; sourceTree = "<group>"; };
 		A10000000000000000000027 /* ActionPopupBuilder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ActionPopupBuilder.h; sourceTree = "<group>"; };
 		A10000000000000000000029 /* KeyboardHUDWindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyboardHUDWindowController.h; sourceTree = "<group>"; };
 		A1000000000000000000002A /* KeyboardHUDWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KeyboardHUDWindowController.m; sourceTree = "<group>"; };
@@ -329,6 +334,7 @@
 			files = (
 				304A7B9615994DF800DB7327 /* XCTest.framework in Frameworks */,
 				304A7B9715994DF800DB7327 /* Cocoa.framework in Frameworks */,
+				A10000000000000000000044 /* Carbon.framework in Test Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -407,6 +413,8 @@
 				A10000000000000000000023 /* KeyfileValidator.h */,
 				A10000000000000000000026 /* ActionPopupBuilder.m */,
 				A10000000000000000000027 /* ActionPopupBuilder.h */,
+				A10000000000000000000040 /* VSCOKeyCodeLookup.h */,
+				A10000000000000000000041 /* VSCOKeyCodeLookup.m */,
 				A10000000000000000000029 /* KeyboardHUDWindowController.h */,
 				A1000000000000000000002A /* KeyboardHUDWindowController.m */,
 				304A7B8915994DF700DB7327 /* AppDelegate.h */,
@@ -886,6 +894,7 @@
 				302D5E5E161B6A8D009FB177 /* NSString+MD5.m in Sources */,
 				A10000000000000000000020 /* KeyfileValidator.m in App Sources */,
 				A10000000000000000000024 /* ActionPopupBuilder.m in App Sources */,
+				A10000000000000000000042 /* VSCOKeyCodeLookup.m in App Sources */,
 				A10000000000000000000028 /* KeyboardHUDWindowController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -898,6 +907,7 @@
 				A10000000000000000000035 /* MacBookKeyboardView.m in Test Sources */,
 				A10000000000000000000021 /* KeyfileValidator.m in Test Sources */,
 				A10000000000000000000025 /* ActionPopupBuilder.m in Test Sources */,
+				A10000000000000000000043 /* VSCOKeyCodeLookup.m in Test Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
