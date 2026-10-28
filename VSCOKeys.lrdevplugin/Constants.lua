@@ -25,7 +25,9 @@ end
 TIMEOUT_TIME = 30 -- seconds
 
 CLIENT_WAIT_FOR_SERVER_TIME = 1 -- seconds
-CLIENT_UPDATE_TIME = 0.1 -- seconds
+CLIENT_POLL_WAIT = 25 -- seconds -- must match halfway_server POLL_WAIT_SECONDS
+CLIENT_HTTP_TIMEOUT = 30 -- seconds -- must exceed CLIENT_POLL_WAIT
+CLIENT_ERROR_BACKOFF_TIME = 1.0 -- seconds -- used only when a poll request fails
 SERVER_UPDATE_TIME = 0.1 -- seconds
 
 AUTHENTICATION_IS_ON = false
