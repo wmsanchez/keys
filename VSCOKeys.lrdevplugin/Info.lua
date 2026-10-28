@@ -39,11 +39,48 @@ return {
   -- Add the menu item to the File menu.
 
   LrExportMenuItems = {
-    title = "Activate Keys LR3",
-    file = "ActivateKeys.lua",
+    {
+      title = "Activate Keys LR3",
+      file = "ActivateKeys.lua",
+    },
+    {
+      title = "VSCO Keys Settings...",
+      file = "Options.lua",
+    },
+    {
+      title = "Update Photo Filter Metadata...",
+      file = "UpdatePhotoMetadataMenu.lua",
+      enabledWhen = 'photosAvailable',
+    },
+    {
+      title = "Wipe Photo Filter Metadata...",
+      file = "WipePhotoMetadataMenu.lua",
+      enabledWhen = 'photosAvailable',
+    },
   },
 
-  VERSION = { major=1, minor=0, revision=7, build=0, },
+  LrLibraryMenuItems = {
+    {
+      title = "Update Photo Filter Metadata...",
+      file = "UpdatePhotoMetadataMenu.lua",
+      enabledWhen = 'photosAvailable',
+    },
+    {
+      title = "Wipe Photo Filter Metadata...",
+      file = "WipePhotoMetadataMenu.lua",
+      enabledWhen = 'photosAvailable',
+    },
+  },
+
+  -- Add the Metadata Definition File for custom photo metadata
+  LrMetadataProvider = 'PhotoMetadataDefinition.lua',
+
+  -- Add the Metadata Tagset Factory
+  LrMetadataTagsetFactory = {
+    'PhotoMetadataTagset.lua',
+  },
+
+  VERSION = { major=1, minor=0, revision=9, build=0, },
 
 }
 
