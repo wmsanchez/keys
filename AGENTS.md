@@ -81,6 +81,9 @@ When making changes to this project:
 ### Modifying Keyboard Layouts
 
 1. Use the in-app layout editor (Settings → Layouts → Edit Layout)
+   - Two editor modes: Table (spreadsheet) and Visual (interactive keyboard)
+   - Visual editor shows color-coded keys by action type
+   - Click any key to view/edit its bindings
 2. Or manually edit `.keysjson` files in `~/Library/Application Support/VSCOKeys/`
 3. Reference `Layout/keymap.json` for key code mappings
 4. Build and test
