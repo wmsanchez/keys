@@ -51,6 +51,7 @@
 @property (assign) BOOL keyboardHUDEnabled;
 @property (assign) BOOL keyboardHUDShowsIncrements;
 @property (retain) NSString *keyboardHUDLabelStyle;
+@property (assign) CGFloat keyboardHUDOpacity;
 
 @property (retain) NSString *activeKeyFile;
 @property (readonly, retain) NSString *physicalKeyboardLayoutIdentifier;
@@ -101,6 +102,7 @@
 - (NSString *)presetLabelForValue:(id)value customLabels:(NSDictionary *)customLabels;
 - (void)updateKeyboardHUDLabelSettingsWithStyle:(NSString *)style showsIncrements:(BOOL)showsIncrements customLabels:(NSDictionary *)customLabels;
 - (void)updateKeyboardHUDPresetLabels:(NSDictionary *)presetLabels;
+- (void)updateKeyboardHUDOpacity:(CGFloat)opacity;
 
 - (void)makeLRActive;
 - (BOOL)isLRRunning;

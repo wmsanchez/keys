@@ -52,6 +52,7 @@
 #define DEFAULTS_KEYBOARD_HUD_SHOW_INCREMENTS @"keyboard_hud_show_increments"
 #define DEFAULTS_KEYBOARD_HUD_CUSTOM_LABELS @"keyboard_hud_custom_labels"
 #define DEFAULTS_KEYBOARD_HUD_CUSTOM_PRESET_LABELS @"keyboard_hud_custom_preset_labels"
+#define DEFAULTS_KEYBOARD_HUD_OPACITY @"keyboard_hud_opacity"
 #define KEYBOARD_HUD_LABEL_STYLE_STANDARD @"standard"
 #define KEYBOARD_HUD_LABEL_STYLE_MOTIBODO @"motibodo"
 #define DEFAULTS_PHYSICAL_KEYBOARD_LAYOUT @"physical_keyboard_layout"

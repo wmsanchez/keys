@@ -104,6 +104,7 @@
 @property (retain) NSTextField *modifierLayerLabel;
 @property (retain) NSView *dragHandle;
 @property (retain) KeyboardHUDResizeHandleView *resizeHandle;
+@property (retain) KeyboardHUDContentView *contentView;
 @property (retain) NSTimer *fadeTimer;
 @property (retain) NSDictionary *keyMapping;
 @property (retain) NSDictionary *bindingsByModifier;
@@ -118,6 +119,7 @@
 @property (assign) NSUInteger activeModifierMask;
 @property (assign) BOOL showsIncrementAmounts;
 @property (assign) CGFloat resizeFactor;
+@property (assign) CGFloat hudOpacity;
 @property (assign) NSSize baseContentSize;
 - (void)fadeActionLabel:(NSTimer *)timer;
 - (void)applyModifierLayer;
@@ -132,7 +134,7 @@
 @synthesize keyboardView, actionLabel, modifierLayerLabel, dragHandle, fadeTimer, keyMapping;
 @synthesize bindingsByModifier, assignmentTypesByModifier, activeModifierMask;
 @synthesize assignmentDetailsByModifier, adjustmentMapping, customLabels, customPresetLabels;
-@synthesize labelStyle, showsIncrementAmounts;
+@synthesize labelStyle, showsIncrementAmounts, contentView, hudOpacity;
 
 - (id)initWithKeyMapping:(NSDictionary *)mapping
 {
@@ -158,6 +160,7 @@
         [panel setReleasedWhenClosed:NO];
 
         KeyboardHUDContentView *contentView = [[KeyboardHUDContentView alloc] initWithFrame:NSMakeRect(0, 0, width, height)];
+        self.contentView = contentView;
         [contentView setWantsLayer:YES];
         [contentView layer].backgroundColor = [NSColor colorWithCalibratedWhite:0.08 alpha:0.82].CGColor;
         [contentView layer].cornerRadius = 18;
@@ -218,6 +221,8 @@
     [self.window setFrame:frame display:NO];
     [self.keyboardView setListeningForKeys:YES];
     [self.window orderFrontRegardless];
+    if (self.hudOpacity == 0) self.hudOpacity = 0.82;
+    [self setHUDOpacity:self.hudOpacity];
 }
 
 - (void)setKeyboardUnitScale:(CGFloat)scale
@@ -509,6 +514,14 @@
         [context setDuration:0.45];
         [[self.actionLabel animator] setAlphaValue:0];
     } completionHandler:nil];
+}
+
+- (void)setHUDOpacity:(CGFloat)opacity
+{
+    self.hudOpacity = opacity;
+    if (self.contentView) {
+        [self.contentView setAlphaValue:opacity];
+    }
 }
 
 - (void)dealloc

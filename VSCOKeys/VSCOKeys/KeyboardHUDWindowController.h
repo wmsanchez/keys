@@ -11,5 +11,6 @@
 - (void)setLabelStyle:(NSString *)style showsIncrementAmounts:(BOOL)showsIncrementAmounts customLabels:(NSDictionary *)customLabels customPresetLabels:(NSDictionary *)customPresetLabels;
 - (void)updateModifierMask:(NSUInteger)modifierMask;
 - (void)showKeyCode:(NSString *)keyCode actionTitle:(NSString *)actionTitle modifierMask:(NSUInteger)modifierMask;
+- (void)setHUDOpacity:(CGFloat)opacity;
 
 @end

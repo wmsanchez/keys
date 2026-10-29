@@ -22,6 +22,7 @@ DerivedData/
 
 # Build output
 Build/
+VSCOKeys.lrdevplugin/apps/
 
 # Logs
 *.log
