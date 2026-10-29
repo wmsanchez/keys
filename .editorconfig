@@ -1,0 +1,63 @@
+# EditorConfig for VSCO Keys
+# https://editorconfig.org
+
+# Default settings
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Objective-C source files (matching existing code style)
+[*.{h,m,mm}]
+indent_style = tab
+indent_size = 4
+max_line_length = 120
+
+# Lua files (matching existing code style)
+[*.lua]
+indent_style = space
+indent_size = 2
+
+# Python files
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 88
+
+# JSON files
+[*.json]
+indent_style = space
+indent_size = 2
+
+# Markdown files
+[*.md]
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = false
+
+# Shell scripts
+[*.sh]
+indent_style = space
+indent_size = 2
+
+# Makefile
+[Makefile]
+indent_style = tab
+
+# Xcode project files (keep tabs)
+[*.pbxproj]
+indent_style = tab
+indent_size = 4
+
+# XML files
+[*.xml]
+indent_style = space
+indent_size = 2
+
+# XIB files (keep original formatting)
+[*.xib]
+indent_style = space
+indent_size = 2
