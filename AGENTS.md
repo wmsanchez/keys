@@ -99,6 +99,31 @@ When making changes to this project:
 3. Implement the command in appropriate Lua files
 4. Build and test
 
+### Working with Photo Filter Metadata
+
+The plugin includes custom metadata fields for filtering photos by develop settings:
+
+**Key Files:**
+- `PhotoMetadataDefinition.lua` - Defines custom metadata fields
+- `PhotoMetadataTagset.lua` - Metadata tagset for library view
+- `UpdatePhotoMetadata.lua` - Calculates and updates metadata
+- `UpdatePhotoMetadataMenu.lua` - Menu handler for update
+- `WipePhotoMetadataMenu.lua` - Menu handler for wipe
+
+**Adding a New Metadata Field:**
+1. Add field definition to `PhotoMetadataDefinition.lua`
+2. Add calculation logic to `UpdatePhotoMetadata.lua`
+3. Add to metadata write transaction in `UpdatePhotoMetadata.lua`
+4. Add to wipe transaction in `UpdatePhotoMetadata.lua`
+5. Update schema version if needed
+6. Build and test
+
+**Testing Metadata Updates:**
+1. Select photos in Lightroom Library module
+2. Run Library → Plugin Extras → Update Photo Filter Metadata
+3. Verify metadata appears in Library grid columns
+4. Test filtering/sorting by new field
+
 ## Testing Checklist
 
 Before considering a change complete:

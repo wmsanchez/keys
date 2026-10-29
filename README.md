@@ -139,6 +139,30 @@ You can also inspect or edit `.keysjson` files directly. Reference parameter nam
 - [`VSCOKeys/VSCOKeys/AdjustmentMapping.json`](VSCOKeys/VSCOKeys/AdjustmentMapping.json)
 - [`VSCOKeys/VSCOKeys/AdjustmentLimits.json`](VSCOKeys/VSCOKeys/AdjustmentLimits.json)
 
+## Photo Filter Metadata
+
+The plugin includes a custom metadata system for filtering photos by their develop settings.
+
+### Custom Metadata Fields
+
+- **Precise Aspect Ratio** - Standardized aspect ratio (e.g., "3:2", "16:9", "other")
+- **Base Color Profile** - Camera calibration profile (e.g., "Adobe Standard", "Camera Neutral")
+- **LUT Color Profile** - Applied Look/Profile name (e.g., "VSCO A6", "VSCO M5")
+- **Look Amount** - Look intensity (e.g., "75", "100")
+
+### Using Photo Filter Metadata
+
+1. Select photos in Lightroom Library module
+2. Go to **Library → Plugin Extras → Update Photo Filter Metadata**
+3. Wait for metadata calculation to complete
+4. View custom metadata columns in Library grid
+5. Filter or sort photos by custom metadata fields
+
+To remove custom metadata:
+- Go to **Library → Plugin Extras → Wipe Photo Filter Metadata**
+
+For details on metadata calculation and architecture, see [ARCHITECTURE.md](ARCHITECTURE.md#photo-filter-metadata).
+
 ## Architecture Overview
 
 VSCO Keys uses a client-server architecture:

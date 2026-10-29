@@ -127,6 +127,35 @@ Reference files for parameter names and limits:
 - `VSCOKeys/VSCOKeys/AdjustmentMapping.json` - Maps UI names to Lightroom parameters
 - `VSCOKeys/VSCOKeys/AdjustmentLimits.json` - Defines slider min/max values
 
+### Photo Filter Metadata Development
+
+The plugin includes a custom metadata system for filtering photos by their develop settings:
+
+**Custom Metadata Fields:**
+- **aspectRatio** - Precise aspect ratio (e.g., "3:2", "16:9", "other")
+- **baseColorProfile** - Camera calibration profile
+- **lutColorProfile** - Applied Look/Profile name
+- **lookAmount** - Look intensity
+
+**Key Files:**
+- `PhotoMetadataDefinition.lua` - Defines custom metadata fields
+- `PhotoMetadataTagset.lua` - Metadata tagset for library view
+- `UpdatePhotoMetadata.lua` - Calculates and updates metadata
+- `UpdatePhotoMetadataMenu.lua` - Menu handler for update
+- `WipePhotoMetadataMenu.lua` - Menu handler for wipe
+
+**Testing Metadata Updates:**
+1. Select photos in Lightroom Library module
+2. Go to Library → Plugin Extras → Update Photo Filter Metadata
+3. Wait for metadata calculation to complete
+4. View custom metadata columns in Library grid
+5. Filter/sort by custom metadata fields
+
+**Menu Integration:**
+The metadata features are in Lightroom's Library menu:
+- Library → Plugin Extras → Update Photo Filter Metadata...
+- Library → Plugin Extras → Wipe Photo Filter Metadata...
+
 ## Build Scripts
 
 ### Tools/compileLrplugin.sh
