@@ -4050,6 +4050,14 @@
       {
         "id": "CropOverlay",
         "name": "Show Crop"
+      },
+      {
+        "id": "CropZoomIn",
+        "name": "Crop Zoom In (%)"
+      },
+      {
+        "id": "CropZoomOut",
+        "name": "Crop Zoom Out (%)"
       }
     ]
   },

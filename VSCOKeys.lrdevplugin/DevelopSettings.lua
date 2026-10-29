@@ -126,4 +126,9 @@ set.DefringeGreenHueHi = {name = "Green Defringe Hue Hi", min = 0, max = 100}
 set.ChromaticAberrationB = {name = "Blue Chromatic Aberration", maxVersion = 3, min = -100, max = 100}
 set.ChromaticAberrationR = {name = "Red Chromatic Aberration", maxVersion = 3, min = -100, max = 100}
 
+set.CropTop = {name = "Crop Top", min = 0, max = 1}
+set.CropBottom = {name = "Crop Bottom", min = 0, max = 1}
+set.CropLeft = {name = "Crop Left", min = 0, max = 1}
+set.CropRight = {name = "Crop Right", min = 0, max = 1}
+
 return set

@@ -33,6 +33,7 @@ LrFunctionContext.callWithContext('vscoKeysOptions', function(context)
   local savedHiddenActions = savedSettings.hiddenActions
   local hiddenActions = type(savedHiddenActions) == 'table' and savedHiddenActions or prefs.hiddenActions or {}
   properties.denoiseAmount = tostring(savedSettings.denoiseAmount or prefs.denoiseAmount or 50)
+  properties.cropZoomPercent = tostring(savedSettings.cropZoomPercent or prefs.cropZoomPercent or 10)
   properties.actionSearch = ''
   properties.groupsExpanded = true
 
@@ -140,6 +141,16 @@ end
           f:static_text {
             title = 'Used by the Enable Denoise command. Enter a value from 1 to 100.',
           },
+          f:row {
+            f:static_text { title = 'Crop Zoom Step (%)', width = 190 },
+            f:edit_field {
+              value = LrView.bind('cropZoomPercent'),
+              width_in_chars = 8,
+            },
+          },
+          f:static_text {
+            title = 'Zoom percentage for Crop Zoom In/Out. E.g., 10 = 10% change per step. Used when no parameter is sent.',
+          },
         },
       },
       f:tab_view_item {
@@ -196,6 +207,12 @@ end
     LrDialogs.message('Default Denoise Amount must be a number from 1 to 100.', 'Invalid setting', 'warning')
     return
   end
+
+  local cropZoomPercent = tonumber(properties.cropZoomPercent)
+  if not cropZoomPercent or cropZoomPercent < 1 or cropZoomPercent > 100 then
+    LrDialogs.message('Crop Zoom Step must be a number from 1 to 100.', 'Invalid setting', 'warning')
+    return
+  end
   denoiseAmount = math.floor(denoiseAmount + 0.5)
 
   local nextHiddenActions = {}
@@ -206,9 +223,11 @@ end
   end
 
   prefs.denoiseAmount = denoiseAmount
+  prefs.cropZoomPercent = cropZoomPercent
   prefs.hiddenActions = nextHiddenActions
   local settings = {
     denoiseAmount = denoiseAmount,
+    cropZoomPercent = cropZoomPercent,
     hiddenActions = nextHiddenActions,
   }
   local settingsSaved, settingsError = PluginSettings.save(settings)

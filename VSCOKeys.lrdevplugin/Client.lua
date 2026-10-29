@@ -55,6 +55,7 @@ function Client:loop()
   local storedHiddenActions = storedSettings.hiddenActions
   local settingsPayload = {
     denoiseAmount = tonumber(storedSettings.denoiseAmount) or tonumber(prefs.denoiseAmount) or 50,
+    cropZoomPercent = tonumber(storedSettings.cropZoomPercent) or tonumber(prefs.cropZoomPercent) or 10,
     hiddenActions = type(storedHiddenActions) == 'table' and storedHiddenActions or prefs.hiddenActions or {},
     brushIncreaseKey = LOC("$$$/AgDevelop/Localized/BrushIncreaseKey=]"),
     brushDecreaseKey = LOC("$$$/AgDevelop/Localized/BrushDecreaseKey=["),
@@ -62,6 +63,7 @@ function Client:loop()
   if not next(storedSettings) then
     PluginSettings.save {
       denoiseAmount = settingsPayload.denoiseAmount,
+      cropZoomPercent = settingsPayload.cropZoomPercent,
       hiddenActions = settingsPayload.hiddenActions,
     }
   end
@@ -223,6 +225,9 @@ function Client:loop()
             local ok, err
             if k == 'DenoiseAmount' then
               ok, err = pcall(action, v)
+            elseif k == 'CropZoomIn' or k == 'CropZoomOut' then
+              local actionFn = action(v)
+              ok, err = pcall(actionFn)
             else
               ok, err = pcall(action)
             end

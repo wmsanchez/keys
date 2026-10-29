@@ -83,6 +83,144 @@ function CU.QuickCropAspect(aspect)
   end)()
 end
 
+function CU.CropZoomIn(percentage)
+  return function()
+    local zoomPercent = tonumber(percentage) or tonumber(prefs.cropZoomPercent) or 10
+    local zoomFactor = 1 - (zoomPercent / 100)
+
+    LrTasks.startAsyncTask(function()
+      if LrApplicationView.getCurrentModuleName() ~= 'develop' then
+        LrApplicationView.switchToModule('develop')
+        LrTasks.yield()
+      end
+
+      local cropTop = LrDevelopController.getValue('CropTop')
+      local cropBottom = LrDevelopController.getValue('CropBottom')
+      local cropLeft = LrDevelopController.getValue('CropLeft')
+      local cropRight = LrDevelopController.getValue('CropRight')
+
+      if cropTop == nil or cropBottom == nil or cropLeft == nil or cropRight == nil then
+        return
+      end
+
+      local centerX = (cropLeft + cropRight) / 2
+      local centerY = (cropTop + cropBottom) / 2
+
+      local currentWidth = cropRight - cropLeft
+      local currentHeight = cropBottom - cropTop
+      local aspectRatio = currentWidth / currentHeight
+
+      local desiredHalfWidth = currentWidth / 2 * zoomFactor
+      local desiredHalfHeight = currentHeight / 2 * zoomFactor
+
+      local maxHalfWidthFromLeft = centerX
+      local maxHalfWidthFromRight = 1 - centerX
+      local maxHalfWidth = math.min(maxHalfWidthFromLeft, maxHalfWidthFromRight)
+
+      local maxHalfHeightFromTop = centerY
+      local maxHalfHeightFromBottom = 1 - centerY
+      local maxHalfHeight = math.min(maxHalfHeightFromTop, maxHalfHeightFromBottom)
+
+      local maxHalfWidthByHeight = maxHalfHeight * aspectRatio
+      local maxHalfHeightByWidth = maxHalfWidth / aspectRatio
+
+      local maxPossibleHalfWidth = math.min(maxHalfWidth, maxHalfWidthByHeight)
+      local maxPossibleHalfHeight = maxPossibleHalfWidth / aspectRatio
+
+      local finalHalfWidth = math.min(desiredHalfWidth, maxPossibleHalfWidth)
+      local finalHalfHeight = finalHalfWidth / aspectRatio
+
+      local newLeft = centerX - finalHalfWidth
+      local newRight = centerX + finalHalfWidth
+      local newTop = centerY - finalHalfHeight
+      local newBottom = centerY + finalHalfHeight
+
+      newLeft = math.max(0, newLeft)
+      newRight = math.min(1, newRight)
+      newTop = math.max(0, newTop)
+      newBottom = math.min(1, newBottom)
+
+      if newLeft >= newRight or newTop >= newBottom then
+        return
+      end
+
+      LrDevelopController.setValue('CropLeft', newLeft)
+      LrDevelopController.setValue('CropRight', newRight)
+      LrDevelopController.setValue('CropTop', newTop)
+      LrDevelopController.setValue('CropBottom', newBottom)
+    end)
+  end
+end
+
+function CU.CropZoomOut(percentage)
+  return function()
+    local zoomPercent = tonumber(percentage) or tonumber(prefs.cropZoomPercent) or 10
+    local zoomFactor = 1 + (zoomPercent / 100)
+
+    LrTasks.startAsyncTask(function()
+      if LrApplicationView.getCurrentModuleName() ~= 'develop' then
+        LrApplicationView.switchToModule('develop')
+        LrTasks.yield()
+      end
+
+      local cropTop = LrDevelopController.getValue('CropTop')
+      local cropBottom = LrDevelopController.getValue('CropBottom')
+      local cropLeft = LrDevelopController.getValue('CropLeft')
+      local cropRight = LrDevelopController.getValue('CropRight')
+
+      if cropTop == nil or cropBottom == nil or cropLeft == nil or cropRight == nil then
+        return
+      end
+
+      local centerX = (cropLeft + cropRight) / 2
+      local centerY = (cropTop + cropBottom) / 2
+
+      local currentWidth = cropRight - cropLeft
+      local currentHeight = cropBottom - cropTop
+      local aspectRatio = currentWidth / currentHeight
+
+      local desiredHalfWidth = currentWidth / 2 * zoomFactor
+      local desiredHalfHeight = currentHeight / 2 * zoomFactor
+
+      local maxHalfWidthFromLeft = centerX
+      local maxHalfWidthFromRight = 1 - centerX
+      local maxHalfWidth = math.min(maxHalfWidthFromLeft, maxHalfWidthFromRight)
+
+      local maxHalfHeightFromTop = centerY
+      local maxHalfHeightFromBottom = 1 - centerY
+      local maxHalfHeight = math.min(maxHalfHeightFromTop, maxHalfHeightFromBottom)
+
+      local maxHalfWidthByHeight = maxHalfHeight * aspectRatio
+      local maxHalfHeightByWidth = maxHalfWidth / aspectRatio
+
+      local maxPossibleHalfWidth = math.min(maxHalfWidth, maxHalfWidthByHeight)
+      local maxPossibleHalfHeight = maxPossibleHalfWidth / aspectRatio
+
+      local finalHalfWidth = math.min(desiredHalfWidth, maxPossibleHalfWidth)
+      local finalHalfHeight = finalHalfWidth / aspectRatio
+
+      local newLeft = centerX - finalHalfWidth
+      local newRight = centerX + finalHalfWidth
+      local newTop = centerY - finalHalfHeight
+      local newBottom = centerY + finalHalfHeight
+
+      newLeft = math.max(0, newLeft)
+      newRight = math.min(1, newRight)
+      newTop = math.max(0, newTop)
+      newBottom = math.min(1, newBottom)
+
+      if newLeft >= newRight or newTop >= newBottom then
+        return
+      end
+
+      LrDevelopController.setValue('CropLeft', newLeft)
+      LrDevelopController.setValue('CropRight', newRight)
+      LrDevelopController.setValue('CropTop', newTop)
+      LrDevelopController.setValue('CropBottom', newBottom)
+    end)
+  end
+end
+
 function CU.fChangeModule(modName)
   return function()
     if LrApplicationView.getCurrentModuleName() ~= modName then
@@ -553,6 +691,8 @@ local ACTIONS = {
   ResetAllLuminanceAdjustment = CU.ResetAllLuminanceAdjustment,
   ResetAllSaturationAdjustment = CU.ResetAllSaturationAdjustment,
   ResetCrop = CU.wrapFOM(LrDevelopController.resetCrop),
+  CropZoomIn = CU.CropZoomIn,
+  CropZoomOut = CU.CropZoomOut,
   ResetHealing = CU.wrapFOM(LrDevelopController.resetHealing),
   ResetLast = function() CU.execFOM(LrDevelopController.resetToDefault,LastParam) end,
   ResetRedeye = CU.wrapFOM(LrDevelopController.resetRedeye),
