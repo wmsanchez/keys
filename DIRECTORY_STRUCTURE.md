@@ -141,7 +141,6 @@ Build/
 ```
 Tools/
 ├── compileLrplugin.sh          # Compiles plugin to Build/ directory
-├── InstallAppOnOSX.sh           # Installs app to /Applications/ for testing
 ├── BuildInstallerOnOSX.sh       # Creates installer package
 ├── VSCOKeys.xml                 # Installer configuration
 ├── custom-en.lng                # Custom language file for installer
@@ -150,8 +149,7 @@ Tools/
 
 ### Key Scripts
 
-- **compileLrplugin.sh** - Called by Xcode build phase, syncs `.lrdevplugin` to `Build/VSCOKeys.lrplugin`
-- **InstallAppOnOSX.sh** - Called by Xcode build phase (Debug only), installs app to `/Applications/`
+- **compileLrplugin.sh** - Called by Xcode build phase, syncs `.lrdevplugin` to `Build/VSCOKeys.lrplugin` and copies app to plugin's `apps/` directory for auto-launch
 
 ## Layout/ - Keyboard Layouts
 
@@ -194,8 +192,7 @@ These directories are created by the application and are not tracked in git:
 ```
 ~/Library/Application Support/VSCOKeys/          # User layouts and settings
 ~/Library/Application Support/VSCOKeys Backups/ # Automatic backups
-/Applications/VSCOKeys.app                        # Installed application
-~/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/ # Installed plugin
+~/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/ # Installed plugin (includes apps/VSCOKeys.app for auto-launch)
 ```
 
 ## .gitignore

@@ -26,8 +26,7 @@ keys/
 │   ├── VSCOKeys.app           # Built macOS app
 │   └── VSCOKeys.lrplugin      # Compiled plugin bundle
 ├── Tools/                       # Build and installation scripts
-│   ├── compileLrplugin.sh      # Compiles plugin to Build/
-│   └── InstallAppOnOSX.sh      # Installs app to /Applications/
+│   └── compileLrplugin.sh      # Compiles plugin to Build/
 ├── Layout/                      # Keyboard layout definitions
 ├── Resources/                   # Presets and documentation
 └── README.md                    # User-facing documentation
@@ -50,28 +49,23 @@ keys/
   - `Build/VSCOKeys.lrplugin` - Compiled plugin bundle
 
 - **Runtime locations (not in repo):**
-  - `/Applications/VSCOKeys.app` - Where the app runs
-  - `~/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin` - Where Lightroom loads the plugin
+  - `~/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin` - Where Lightroom loads the plugin (includes apps/VSCOKeys.app for auto-launch)
 
 ### Building the Project
 
 The Xcode project has build phases that automate the workflow:
 
 1. **Compile macOS app** - Standard Xcode build
-2. **Build Lightroom plugin** - Runs `Tools/compileLrplugin.sh` (copies `.lrdevplugin` to `Build/VSCOKeys.lrplugin`)
-3. **Install app for testing** - Runs `Tools/InstallAppOnOSX.sh` (copies `Build/VSCOKeys.app` to `/Applications/`)
+2. **Build Lightroom plugin** - Runs `Tools/compileLrplugin.sh` (copies `.lrdevplugin` to `Build/VSCOKeys.lrplugin` and copies app to plugin's `apps/` directory for auto-launch)
 
 #### Build Commands
 
 From the repository root:
 
 ```bash
-# Build everything (Debug config installs to /Applications/)
+# Build everything (Debug config)
 cd VSCOKeys
 xcodebuild -scheme VSCOKeys -configuration Debug build
-
-# Build without auto-installing to /Applications/
-VSCO_KEYS_AUTO_INSTALL=NO xcodebuild -scheme VSCOKeys -configuration Debug build
 ```
 
 #### One-Line Rebuild & Test
@@ -82,18 +76,10 @@ For rapid iteration:
 cd VSCOKeys && \
 xcodebuild -scheme VSCOKeys -configuration Debug build && \
 rsync -a --delete --exclude='*.log' --exclude='skey.key' ../Build/VSCOKeys.lrplugin/ \
-  "$HOME/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/" && \
-open -a /Applications/VSCOKeys.app
+  "$HOME/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/"
 ```
 
 ### Installing to Runtime Locations
-
-#### macOS App
-
-The Debug build automatically installs to `/Applications/VSCOKeys.app` via `Tools/InstallAppOnOSX.sh`. This script:
-- Kills any running VSCOKeys process
-- Backs up `~/Library/Application Support/VSCOKeys` to `~/Library/Application Support/VSCOKeys Backups/`
-- Replaces `/Applications/VSCOKeys.app` with the new build
 
 #### Lightroom Plugin
 
@@ -105,23 +91,22 @@ rsync -a --delete --exclude='*.log' --exclude='skey.key' \
   "$HOME/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/"
 ```
 
-**Important:** Restart Adobe Lightroom Classic after syncing to reload the plugin.
+**Important:** Restart Adobe Lightroom Classic after syncing to reload the plugin. The plugin will auto-launch VSCOKeys.app from its `apps/` directory when Lightroom starts.
 
 ### Testing Changes
 
 1. Make changes to source files in `VSCOKeys/` or `VSCOKeys.lrdevplugin/`
 2. Build the project (which compiles both app and plugin)
 3. Sync the plugin to Lightroom's Modules directory
-4. Restart Lightroom Classic
-5. Launch VSCOKeys.app (or restart if already running)
-6. Test your changes
+4. Restart Lightroom Classic (this will auto-launch VSCOKeys.app from the plugin's `apps/` directory)
+5. Test your changes
 
 ### Layout Editor Development
 
 Layout files (`.keysjson`) are stored in:
 - `~/Library/Application Support/VSCOKeys/` (runtime location)
 
-The in-app layout editor modifies these files directly. The Debug build workflow backs up this entire directory before installing new app versions.
+The in-app layout editor modifies these files directly.
 
 Reference files for parameter names and limits:
 - `VSCOKeys/VSCOKeys/AdjustmentMapping.json` - Maps UI names to Lightroom parameters
@@ -163,17 +148,9 @@ The metadata features are in Lightroom's Library menu:
 Compiles the Lightroom plugin:
 1. Copies `CommandCategories.json` from app source to plugin source
 2. Creates `Build/VSCOKeys.lrplugin/`
-3. Syncs `VSCOKeys.lrdevplugin/` to `Build/VSCOKeys.lrplugin/` (excluding logs and keys)
-4. If Lightroom plugin directory exists, syncs to it as well
-
-### Tools/InstallAppOnOSX.sh
-
-Installs the macOS app for testing:
-- Only runs for Debug configuration (skips Release and CI)
-- Respects `VSCO_KEYS_AUTO_INSTALL` environment variable
-- Kills running VSCOKeys process
-- Backs up user data in `~/Library/Application Support/VSCOKeys/`
-- Replaces `/Applications/VSCOKeys.app` with new build
+3. Copies `Build/VSCOKeys.app` to `VSCOKeys.lrdevplugin/apps/` for auto-launch
+4. Syncs `VSCOKeys.lrdevplugin/` to `Build/VSCOKeys.lrplugin/` (excluding logs and keys)
+5. If Lightroom plugin directory exists, syncs to it as well
 
 ## Git Workflow
 

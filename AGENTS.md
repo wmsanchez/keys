@@ -7,32 +7,22 @@ This document contains project-specific commands and workflows for AI agents wor
 ### Build Commands
 
 ```bash
-# Full rebuild (recommended - builds app, compiles plugin, syncs to Lightroom)
+# Primary command - builds app + plugin, syncs to Lightroom (use this for most development)
 make rebuild
 
-# Build app only (Debug - stages in Build/)
-make build
+# Single-component commands (use when you only changed one part)
+make build              # Build app only
+make compile-plugin     # Compile plugin only (copies app from Build/)
 
-# Build app and install to /Applications (for testing as installed app)
-make build-install
+# Utility commands
+make open-app           # Launch app from Build/
+make clean              # Clean Xcode build artifacts
+make test               # Run plugin server tests
 
-# Build app only (Release - stages in Build/)
-make build-release
-
-# Clean build artifacts
-make clean
-
-# Compile plugin only (copies app from Build/, syncs to Lightroom)
-make compile-plugin
-
-# Sync plugin to Lightroom (without recompiling)
-make install-plugin
-
-# Launch app from Build/
-make open-app
-
-# Show all commands
-make help
+# Less common commands
+make build-release      # Build app (Release) for distribution
+make install-plugin     # Sync plugin to Lightroom (without recompiling)
+make help               # Show all commands with usage context
 ```
 
 ### Manual Plugin Compilation
@@ -52,8 +42,9 @@ When making changes to this project:
    - Changes to `CommandCategories.json` affect both (synced by build script)
 
 2. **Build and test:**
-   - Run the one-line rebuild command to build, sync, and launch
+   - Run `make rebuild` to build app + plugin and sync to Lightroom
    - Restart Lightroom Classic after plugin changes
+   - The plugin will auto-launch VSCOKeys.app when Lightroom starts
    - Test keyboard shortcuts and layout editor
 
 3. **Verify before committing:**
@@ -74,8 +65,8 @@ When making changes to this project:
 - Staged plugin: `Build/VSCOKeys.lrplugin/`
 
 ### Runtime (not in repo)
-- Installed app: `/Applications/VSCOKeys.app`
-- Installed plugin: `~/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/`
+- Plugin with app bundle: `~/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/`
+  - Auto-launch app: `VSCOKeys.lrplugin/apps/VSCOKeys.app`
 - User layouts: `~/Library/Application Support/VSCOKeys/`
 
 ## Common Tasks
@@ -132,8 +123,8 @@ Before considering a change complete:
 
 - [ ] Build completes without errors
 - [ ] Plugin syncs to Lightroom Modules directory
-- [ ] App installs to /Applications (for Debug builds)
 - [ ] Lightroom Classic recognizes the plugin after restart
+- [ ] App auto-launches when Lightroom starts
 - [ ] App launches and menu bar icon appears
 - [ ] Keyboard shortcuts work as expected
 - [ ] Layout editor (if relevant) functions correctly
@@ -172,24 +163,22 @@ VSCOKeys requires Accessibility permissions:
 - **Never commit files from `Build/`** - All build artifacts are gitignored
 - **Always restart Lightroom** after plugin changes
 - **Both app and plugin must be in sync** - They communicate via HTTP
-- **Debug builds auto-install** - Release builds do not (controlled by `InstallAppOnOSX.sh`)
-- **User data is backed up** - Debug builds backup `~/Library/Application Support/VSCOKeys/` before installing
+- **App is auto-launched by plugin** - The plugin copies the app to its `apps/` directory and launches it when Lightroom starts
+- **No /Applications installation** - The app is never installed to /Applications; it only lives in Build/ and the plugin's apps/ directory
 
 ## Project-Specific Patterns
 
 ### Xcode Build Phases
 
-The Xcode project has three custom build phases:
+The Xcode project has one custom build phase:
 
 1. **Build Lightroom plugin** - Runs `Tools/compileLrplugin.sh`
-2. **Install app for testing** - Runs `Tools/InstallAppOnOSX.sh` (Debug only)
-3. **Empty script** - Placeholder for future use
 
 ### Auto-Launch VSCOKeys App
 
 The plugin automatically launches the VSCOKeys app when Lightroom starts:
 
-- The build script (`Tools/compileLrplugin.sh`) copies the built `VSCOKeys.app` to `VSCOKeys.lrdevplugin/apps/`
+- The build script (`Tools/compileLrplugin.sh`) copies the built `VSCOKeys.app` from `Build/` to `VSCOKeys.lrdevplugin/apps/`
 - The plugin's `Init.lua` checks for an `apps/` directory and opens all `.app` files inside it
 - This happens during plugin initialization when Lightroom launches
 - The `apps/` directory is gitignored (see `.gitignore`) since it contains build artifacts
