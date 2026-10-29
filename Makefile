@@ -66,7 +66,7 @@ sync-plugin:
 		exit 1; \
 	fi
 	rsync -a --delete --exclude='*.log' --exclude='skey.key' \
-		$(LR_PLUGIN_BUILD)/ $(LR_PLUGIN_INSTALLED)/
+		$(LR_PLUGIN_BUILD)/ "$(LR_PLUGIN_INSTALLED)/"
 	@echo "Plugin synced to $(LR_PLUGIN_INSTALLED)"
 	@echo "Restart Lightroom Classic to reload the plugin"
 
@@ -76,7 +76,7 @@ rebuild:
 	cd VSCOKeys && xcodebuild -scheme $(XCODE_SCHEME) -configuration $(XCODE_CONFIG) build
 	@echo "Syncing plugin to Lightroom..."
 	rsync -a --delete --exclude='*.log' --exclude='skey.key' \
-		$(LR_PLUGIN_BUILD)/ $(LR_PLUGIN_INSTALLED)/
+		$(LR_PLUGIN_BUILD)/ "$(LR_PLUGIN_INSTALLED)/"
 	@echo "Launching VSCOKeys.app..."
 	open -a $(APP_INSTALLED)
 	@echo "Done! Restart Lightroom Classic if needed"

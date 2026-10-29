@@ -177,7 +177,7 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
 @synthesize toggleMenuItem;
 @synthesize keyboardHUDMenuItem, keyboardHUDWindowController;
 @synthesize keyboardHUDEnabled;
-@synthesize keyboardHUDShowsIncrements, keyboardHUDLabelStyle;
+@synthesize keyboardHUDShowsIncrements, keyboardHUDLabelStyle, keyboardHUDOpacity;
 
 @synthesize activeKeyFile;
 @synthesize physicalKeyboardLayoutIdentifier;
@@ -230,6 +230,8 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
         self.keyboardHUDLabelStyle = [@[KEYBOARD_HUD_LABEL_STYLE_STANDARD, KEYBOARD_HUD_LABEL_STYLE_MOTIBODO] containsObject:savedLabelStyle]
             ? savedLabelStyle : KEYBOARD_HUD_LABEL_STYLE_STANDARD;
         self.keyboardHUDShowsIncrements = [defaults boolForKey:DEFAULTS_KEYBOARD_HUD_SHOW_INCREMENTS];
+        self.keyboardHUDOpacity = [defaults floatForKey:DEFAULTS_KEYBOARD_HUD_OPACITY];
+        if (self.keyboardHUDOpacity == 0) self.keyboardHUDOpacity = 0.82;
         NSString *savedLayout = [defaults stringForKey:DEFAULTS_PHYSICAL_KEYBOARD_LAYOUT];
         NSArray *layoutOptions = [self physicalKeyboardLayoutOptions];
         BOOL supportedLayout = [layoutOptions indexOfObjectPassingTest:^BOOL(NSDictionary *option, NSUInteger index, BOOL *stop) {
@@ -653,6 +655,7 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
                                showsIncrementAmounts:self.keyboardHUDShowsIncrements
                                        customLabels:customLabels
                                  customPresetLabels:customPresetLabels];
+    [self.keyboardHUDWindowController setHUDOpacity:self.keyboardHUDOpacity];
 }
 
 - (NSString *)shortLabelForAction:(NSString *)action customLabels:(NSDictionary *)customLabels
@@ -710,6 +713,13 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
 {
     [[NSUserDefaults standardUserDefaults] setObject:presetLabels ?: @{} forKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_PRESET_LABELS];
     [self refreshKeyboardHUDBindings];
+}
+
+- (void)updateKeyboardHUDOpacity:(CGFloat)opacity
+{
+    self.keyboardHUDOpacity = opacity;
+    [[NSUserDefaults standardUserDefaults] setFloat:opacity forKey:DEFAULTS_KEYBOARD_HUD_OPACITY];
+    [self.keyboardHUDWindowController setHUDOpacity:opacity];
 }
 
 - (NSDictionary *)commandForKeyCode:(int)keyCode modifierFlags:(CGEventFlags)modifiers
