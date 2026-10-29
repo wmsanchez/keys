@@ -149,6 +149,28 @@ cat ~/Library/Application Support/Adobe/Lightroom/Modules/VSCOKeys.lrplugin/*.lo
 log stream --predicate 'process == "VSCOKeys"' --level debug
 ```
 
+### Check Crash Logs
+
+```bash
+# View detailed crash logs (includes stack traces, system info, thread info)
+ls -la ~/Documents/VSCOKeysLogs/
+
+# View the most recent crash log
+cat ~/Documents/VSCOKeysLogs/VSCOKeysErrorLog_*.log | tail -1 | xargs cat
+
+# View signal crash logs (SIGSEGV, SIGABRT, etc.)
+cat ~/Documents/VSCOKeysLogs/VSCOKeysCrash_*.log
+```
+
+**Crash Log Contents:**
+- Exception name and reason (for NSException crashes)
+- Signal type and fault address (for signal crashes)
+- System information: macOS version, hardware model, memory, CPU count
+- App version and build number
+- Thread information: active threads, CPU usage
+- Stack traces with symbolication (function names and offsets)
+- CPU register state at crash (RIP, RSP, RBP, etc.)
+
 ### Verify Plugin Installation
 
 ```bash

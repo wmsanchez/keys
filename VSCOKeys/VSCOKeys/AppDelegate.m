@@ -34,6 +34,11 @@
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <execinfo.h>
+#include <dlfcn.h>
+#include <sys/sysctl.h>
+#include <mach/mach.h>
+#include <mach/thread_info.h>
 
 @implementation AppDelegate
 
@@ -45,6 +50,7 @@
 
 NSString *traceFilePath = NULL;
 static _Atomic int32_t UncaughtExceptionHandlingInProgress = 0;
+static char crashReportBuffer[16384];
 
 static NSLock *DualLogLock(void)
 {
@@ -54,6 +60,123 @@ static NSLock *DualLogLock(void)
         lock = [[NSLock alloc] init];
     });
     return lock;
+}
+
+static void AppendCrashInfo(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    size_t len = strlen(crashReportBuffer);
+    vsnprintf(crashReportBuffer + len, sizeof(crashReportBuffer) - len, format, args);
+    va_end(args);
+}
+
+static void CaptureSystemInfo(void)
+{
+    AppendCrashInfo("=== System Information ===\n");
+
+    NSProcessInfo *processInfo = [NSProcessInfo processInfo];
+    NSOperatingSystemVersion version = [processInfo operatingSystemVersion];
+    AppendCrashInfo("macOS Version: %ld.%ld.%ld\n",
+                    (long)version.majorVersion, (long)version.minorVersion, (long)version.patchVersion);
+
+    char hostName[256];
+    if (gethostname(hostName, sizeof(hostName)) == 0) {
+        AppendCrashInfo("Hostname: %s\n", hostName);
+    }
+
+    AppendCrashInfo("Process ID: %d\n", getpid());
+    AppendCrashInfo("Parent PID: %d\n", getppid());
+
+    NSString *bundleVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+    NSString *buildVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
+    AppendCrashInfo("App Version: %s (Build %s)\n",
+                    [bundleVersion UTF8String] ?: "unknown",
+                    [buildVersion UTF8String] ?: "unknown");
+
+    int mib[2];
+    size_t len;
+    char model[256];
+
+    mib[0] = CTL_HW;
+    mib[1] = HW_MODEL;
+    len = sizeof(model);
+    if (sysctl(mib, 2, model, &len, NULL, 0) == 0) {
+        AppendCrashInfo("Hardware Model: %s\n", model);
+    }
+
+    int64_t memsize;
+    len = sizeof(memsize);
+    mib[1] = HW_MEMSIZE;
+    if (sysctl(mib, 2, &memsize, &len, NULL, 0) == 0) {
+        AppendCrashInfo("Memory: %.2f GB\n", memsize / (1024.0 * 1024.0 * 1024.0));
+    }
+
+    int ncpu;
+    len = sizeof(ncpu);
+    mib[1] = HW_NCPU;
+    if (sysctl(mib, 2, &ncpu, &len, NULL, 0) == 0) {
+        AppendCrashInfo("CPU Count: %d\n", ncpu);
+    }
+
+    AppendCrashInfo("\n");
+}
+
+static void CaptureStackTrace(void)
+{
+    AppendCrashInfo("=== Stack Trace ===\n");
+
+    void *callstack[128];
+    int frames = backtrace(callstack, 128);
+    if (frames > 0) {
+        char **symbols = backtrace_symbols(callstack, frames);
+        if (symbols) {
+            for (int i = 0; i < frames; i++) {
+                Dl_info info;
+                if (dladdr(callstack[i], &info) && info.dli_sname) {
+                    AppendCrashInfo("%d %s (%s+0x%lx)\n", i,
+                                    symbols[i],
+                                    info.dli_sname,
+                                    (unsigned long)((char *)callstack[i] - (char *)info.dli_saddr));
+                } else {
+                    AppendCrashInfo("%d %s\n", i, symbols[i]);
+                }
+            }
+            free(symbols);
+        }
+    } else {
+        AppendCrashInfo("Unable to capture stack trace\n");
+    }
+    AppendCrashInfo("\n");
+}
+
+static void CaptureThreadInfo(void)
+{
+    AppendCrashInfo("=== Thread Information ===\n");
+
+    task_t task = mach_task_self();
+    thread_act_array_t thread_list;
+    mach_msg_type_number_t thread_count;
+
+    if (task_threads(task, &thread_list, &thread_count) == KERN_SUCCESS) {
+        AppendCrashInfo("Active Threads: %d\n", thread_count);
+
+        for (mach_msg_type_number_t i = 0; i < thread_count; i++) {
+            thread_basic_info_data_t basic_info;
+            mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
+
+            if (thread_info(thread_list[i], THREAD_BASIC_INFO,
+                           (thread_info_t)&basic_info, &count) == KERN_SUCCESS) {
+                AppendCrashInfo("Thread %d: cpu_usage=%.1f%%, sleep_time=%d\n",
+                                i, basic_info.cpu_usage / 10.0, basic_info.sleep_time);
+            }
+        }
+
+        vm_deallocate(task, (vm_address_t)thread_list, thread_count * sizeof(thread_act_t));
+    } else {
+        AppendCrashInfo("Unable to get thread list\n");
+    }
+    AppendCrashInfo("\n");
 }
 
 // NSAlert/NSWindow must be created and presented on the main thread. Exceptions can be
@@ -100,11 +223,26 @@ void uncaughtExceptionHandler(NSException *exception)
 
     @try
     {
+        memset(crashReportBuffer, 0, sizeof(crashReportBuffer));
+
+        AppendCrashInfo("=== Uncaught Exception ===\n");
+        AppendCrashInfo("Time: %s\n", [[NSDate date] description].UTF8String);
+        AppendCrashInfo("Exception Name: %s\n", [exception name].UTF8String);
+        AppendCrashInfo("Exception Reason: %s\n", [exception reason].UTF8String);
+        AppendCrashInfo("\n");
+
+        CaptureSystemInfo();
+        CaptureThreadInfo();
+        CaptureStackTrace();
+
         DualLog(@"CRASH: %@", exception);
 
         NSArray *callstack = [NSThread callStackSymbols];
-
-        DualLog(@"Stack Trace: %@", callstack);
+        AppendCrashInfo("=== NSThread Call Stack ===\n");
+        for (NSString *frame in callstack) {
+            AppendCrashInfo("%s\n", [frame UTF8String]);
+        }
+        AppendCrashInfo("\n");
 
         NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 
@@ -125,12 +263,7 @@ void uncaughtExceptionHandler(NSException *exception)
 
             filePath = [logDir stringByAppendingPathComponent:[NSString stringWithFormat:@"VSCOKeysErrorLog_%@.log",filestamp]];
 
-            NSMutableString *fileContents = [[NSMutableString alloc] init];
-
-            [fileContents appendFormat:@"%@\n", [NSDate date]];
-            [fileContents appendFormat:@"%@\n", [[NSHost currentHost] name]];
-            [fileContents appendFormat:@"Exception: %@\n\n", exception];
-            [fileContents appendFormat:@"%@\n\n", callstack];
+            NSString *fileContents = [NSString stringWithUTF8String:crashReportBuffer];
 
             NSError *error = nil;
             [fileContents writeToFile:filePath atomically:YES encoding:NSUTF8StringEncoding error:&error];
@@ -151,11 +284,85 @@ void uncaughtExceptionHandler(NSException *exception)
     _exit(1);
 }
 
-static void FatalSignalHandler(int signo)
+static void FatalSignalHandler(int signo, siginfo_t *info, void *context)
 {
-    static const char message[] = "VSCOKeys: fatal signal\n";
-    ssize_t ignored __attribute__((unused)) = write(STDERR_FILENO, message, sizeof(message) - 1);
-    (void)signo;
+    static const char *signal_names[] = {
+        "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL", "SIGTRAP",
+        "SIGABRT", "SIGEMT", "SIGFPE", "SIGKILL", "SIGBUS",
+        "SIGSEGV", "SIGSYS", "SIGPIPE", "SIGALRM", "SIGTERM",
+        "SIGURG", "SIGSTOP", "SIGTSTP", "SIGCONT", "SIGCHLD",
+        "SIGTTIN", "SIGTTOU", "SIGIO", "SIGXCPU", "SIGXFSZ",
+        "SIGVTALRM", "SIGPROF", "SIGWINCH", "SIGINFO", "SIGUSR1",
+        "SIGUSR2"
+    };
+
+    const char *signame = (signo >= 1 && signo <= 31) ? signal_names[signo - 1] : "UNKNOWN";
+
+    memset(crashReportBuffer, 0, sizeof(crashReportBuffer));
+    AppendCrashInfo("=== Fatal Signal ===\n");
+    AppendCrashInfo("Signal: %s (%d)\n", signame, signo);
+    AppendCrashInfo("Time: %s\n", [[NSDate date] description].UTF8String);
+
+    if (info) {
+        AppendCrashInfo("Fault Address: %p\n", info->si_addr);
+        AppendCrashInfo("Signal Code: %d\n", info->si_code);
+    }
+
+    AppendCrashInfo("\n");
+
+    CaptureSystemInfo();
+
+    AppendCrashInfo("=== Register State ===\n");
+    ucontext_t *uc = (ucontext_t *)context;
+    if (uc) {
+#if defined(__x86_64__)
+        AppendCrashInfo("RIP: 0x%llx\n", uc->uc_mcontext->__ss.__rip);
+        AppendCrashInfo("RSP: 0x%llx\n", uc->uc_mcontext->__ss.__rsp);
+        AppendCrashInfo("RBP: 0x%llx\n", uc->uc_mcontext->__ss.__rbp);
+        AppendCrashInfo("RAX: 0x%llx\n", uc->uc_mcontext->__ss.__rax);
+        AppendCrashInfo("RBX: 0x%llx\n", uc->uc_mcontext->__ss.__rbx);
+        AppendCrashInfo("RCX: 0x%llx\n", uc->uc_mcontext->__ss.__rcx);
+        AppendCrashInfo("RDX: 0x%llx\n", uc->uc_mcontext->__ss.__rdx);
+#elif defined(__arm64__)
+        AppendCrashInfo("PC: 0x%llx\n", uc->uc_mcontext->__ss.__pc);
+        AppendCrashInfo("SP: 0x%llx\n", uc->uc_mcontext->__ss.__sp);
+        AppendCrashInfo("FP: 0x%llx\n", uc->uc_mcontext->__ss.__fp);
+        AppendCrashInfo("LR: 0x%llx\n", uc->uc_mcontext->__ss.__lr);
+#endif
+    }
+    AppendCrashInfo("\n");
+
+    CaptureStackTrace();
+
+    AppendCrashInfo("=== Stack Trace (Signal Handler) ===\n");
+    void *callstack[128];
+    int frames = backtrace(callstack, 128);
+    if (frames > 0) {
+        char **symbols = backtrace_symbols(callstack, frames);
+        if (symbols) {
+            for (int i = 0; i < frames; i++) {
+                AppendCrashInfo("%d %s\n", i, symbols[i]);
+            }
+            free(symbols);
+        }
+    }
+    AppendCrashInfo("\n");
+
+    static const char message[] = "VSCOKeys: fatal signal - writing crash report\n";
+    write(STDERR_FILENO, message, sizeof(message) - 1);
+
+    NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    if (dirs && dirs.count >= 1) {
+        NSString *logDir = [((NSString *)[dirs objectAtIndex:0]) stringByAppendingPathComponent:@"VSCOKeysLogs"];
+        NSString *filePath = [logDir stringByAppendingPathComponent:[NSString stringWithFormat:@"VSCOKeysCrash_%ld.log", (long)[[NSDate date] timeIntervalSince1970]]];
+
+        NSString *fileContents = [NSString stringWithUTF8String:crashReportBuffer];
+        [fileContents writeToFile:filePath atomically:YES encoding:NSUTF8StringEncoding error:nil];
+
+        write(STDERR_FILENO, filePath.UTF8String, filePath.length);
+        write(STDERR_FILENO, "\n", 1);
+    }
+
     _exit(128 + (signo & 0x7f));
 }
 
@@ -163,8 +370,8 @@ static void InstallFatalSignalHandlers(void)
 {
     struct sigaction action;
     memset(&action, 0, sizeof(action));
-    action.sa_handler = FatalSignalHandler;
-    action.sa_flags = SA_RESETHAND;
+    action.sa_sigaction = FatalSignalHandler;
+    action.sa_flags = SA_SIGINFO | SA_RESETHAND;
     sigemptyset(&action.sa_mask);
 
     sigaction(SIGABRT, &action, NULL);
