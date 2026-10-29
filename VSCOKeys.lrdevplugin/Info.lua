@@ -47,16 +47,6 @@ return {
       title = "VSCO Keys Settings...",
       file = "Options.lua",
     },
-    {
-      title = "Update Photo Filter Metadata...",
-      file = "UpdatePhotoMetadataMenu.lua",
-      enabledWhen = 'photosAvailable',
-    },
-    {
-      title = "Wipe Photo Filter Metadata...",
-      file = "WipePhotoMetadataMenu.lua",
-      enabledWhen = 'photosAvailable',
-    },
   },
 
   LrLibraryMenuItems = {
@@ -80,7 +70,7 @@ return {
     'PhotoMetadataTagset.lua',
   },
 
-  VERSION = { major=1, minor=0, revision=9, build=0, },
+  VERSION = { major=1, minor=0, revision=7, build=0, },
 
 }
 
