@@ -8,6 +8,7 @@
 @property (assign) MainWindowController *mainController;
 @property (retain) KeyControl *keyControl;
 @property (retain) NSView *rootView;
+@property (assign) BOOL hasUnsavedChanges;
 
 - (id)initWithKeyControl:(KeyControl *)keyControl;
 - (void)loadKeyfile:(NSDictionary *)keyfile;
@@ -17,5 +18,6 @@
 - (void)reloadActionCatalog;
 - (CGFloat)keyboardPreviewUnitScale;
 - (CGFloat)keyboardPreviewUnitScaleForRootViewSize:(NSSize)size;
+- (void)saveClicked:(id)sender;
 
 @end

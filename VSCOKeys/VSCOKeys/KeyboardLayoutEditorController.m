@@ -67,6 +67,7 @@
 @property (assign) BOOL hasUnrepairableLoadedData;
 @property (retain) NSButton *listenForKeysSwitch;
 @property (retain) id keyEventMonitor;
+@property (retain) id shortcutEventMonitor;
 @property (retain) NSString *selectedModifierValue;
 @property (retain) NSString *previewModifierValue;
 @property (retain) NSDictionary *copiedBindingGroup;
@@ -75,6 +76,8 @@
 - (void)selectKeyCode:(NSString *)keyCode modifierValue:(NSString *)modifierValue;
 - (NSEvent *)handleListeningKeyDown:(NSEvent *)event;
 - (NSInteger)addBindingForKeyCode:(NSString *)keyCode preferredModifier:(NSString *)modifier;
+- (void)markAsChanged;
+- (BOOL)confirmUnsavedChanges;
 @end
 
 @implementation KeyboardLayoutEditorController
@@ -88,8 +91,8 @@
 @synthesize modeKeyPopup, physicalKeyboardPopup, bindingRowsScrollView, bindingRowsView, sortedKeyCodes, selectedKeyCode, selectedKeyCodes;
 @synthesize labelStyleControl, labelLayerPopup, incrementAmountsSwitch, editLabelsSwitch, opacitySlider;
 @synthesize hasUnrepairableLoadedData;
-@synthesize listenForKeysSwitch, keyEventMonitor, selectedModifierValue, previewModifierValue;
-@synthesize isOneShotCapture, pendingActionBindingIndex, copiedBindingGroup;
+@synthesize listenForKeysSwitch, keyEventMonitor, shortcutEventMonitor, selectedModifierValue, previewModifierValue;
+@synthesize isOneShotCapture, pendingActionBindingIndex, copiedBindingGroup, hasUnsavedChanges;
 
 - (NSString *)displayLabelForKeyCode:(NSString *)keyCode
 {
@@ -99,6 +102,31 @@
         }
     }
     return [self.keyControl getKeynameForVirtual:keyCode] ?: @"?";
+}
+
+- (void)markAsChanged
+{
+    self.hasUnsavedChanges = YES;
+}
+
+- (BOOL)confirmUnsavedChanges
+{
+    if (!self.hasUnsavedChanges) return YES;
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:@"You have unsaved changes"];
+    [alert setInformativeText:@"Do you want to save your changes before continuing?"];
+    [alert addButtonWithTitle:@"Save"];
+    [alert addButtonWithTitle:@"Don't Save"];
+    [alert addButtonWithTitle:@"Cancel"];
+    NSModalResponse response = [alert runModal];
+    if (response == NSAlertFirstButtonReturn) {
+        [self saveClicked:nil];
+        return YES;
+    } else if (response == NSAlertSecondButtonReturn) {
+        return YES;
+    } else {
+        return NO;
+    }
 }
 
 - (id)initWithKeyControl:(KeyControl *)kc
@@ -126,6 +154,56 @@
         [self buildUI];
     }
     return self;
+}
+
+- (void)setupKeyboardShortcuts
+{
+    // Remove any existing shortcut monitor first
+    if (self.shortcutEventMonitor) {
+        [NSEvent removeMonitor:self.shortcutEventMonitor];
+        self.shortcutEventMonitor = nil;
+    }
+
+    __weak KeyboardLayoutEditorController *weakSelf = self;
+    self.shortcutEventMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^NSEvent *(NSEvent *event) {
+        if (!weakSelf || !weakSelf.rootView.window.isKeyWindow) return event;
+        if (weakSelf.listenForKeysSwitch.state == NSControlStateValueOn) return event;
+
+        // Check if first responder is a text field - if so, don't intercept
+        NSResponder *firstResponder = weakSelf.rootView.window.firstResponder;
+        if ([firstResponder isKindOfClass:[NSTextView class]] ||
+            [firstResponder isKindOfClass:[NSTextField class]]) {
+            return event;
+        }
+
+        NSEventModifierFlags flags = event.modifierFlags;
+        BOOL cmdPressed = (flags & NSEventModifierFlagCommand) != 0;
+
+        if (cmdPressed) {
+            // Cmd+C - Copy binding
+            if (event.keyCode == 8) { // C key
+                [weakSelf copyBindingClicked:nil];
+                return nil;
+            }
+            // Cmd+V - Paste binding
+            if (event.keyCode == 9) { // V key
+                [weakSelf pasteBindingClicked:nil];
+                return nil;
+            }
+            // Cmd+X - Cut binding (copy then delete)
+            if (event.keyCode == 7) { // X key
+                [weakSelf cutBindingClicked:nil];
+                return nil;
+            }
+            // Cmd+Delete - Delete selected bindings
+            if (event.keyCode == 117) { // Delete key
+                [weakSelf deleteSelectedBindings:nil];
+                return nil;
+            }
+        }
+
+        return event;
+    }];
 }
 
 - (NSTextField *)labelWithFrame:(NSRect)frame text:(NSString *)text size:(CGFloat)size
@@ -313,6 +391,7 @@
     self.statusLabel = [self labelWithFrame:NSZeroRect text:@"" size:10];
     [self.rootView addSubview:self.statusLabel];
     [self layoutEditorViews];
+    [self setupKeyboardShortcuts];
 }
 
 - (void)keyboardEditorRootViewDidResize:(NSView *)view
@@ -590,6 +669,48 @@
 {
     if (!self.copiedBindingGroup || self.selectedKeyCode.length == 0) return;
     [self transferBindingGroup:self.copiedBindingGroup toAnchorKey:self.selectedKeyCode moving:NO];
+    [self markAsChanged];
+}
+
+- (void)cutBindingClicked:(id)sender
+{
+    if (!self.selectedKeyCode) {
+        [self.statusLabel setStringValue:@"Select a key first."];
+        return;
+    }
+    [self copyBindingClicked:sender];
+    [self deleteSelectedBindings:sender];
+}
+
+- (void)deleteSelectedBindings:(id)sender
+{
+    if (!self.selectedKeyCode) {
+        [self.statusLabel setStringValue:@"Select a key first."];
+        return;
+    }
+
+    NSSet *keysToDelete = self.selectedKeyCodes.count > 0 ? self.selectedKeyCodes : [NSSet setWithObject:self.selectedKeyCode];
+    NSString *modifier = self.previewModifierValue ?: @"0";
+    NSMutableIndexSet *indexesToDelete = [NSMutableIndexSet indexSet];
+
+    for (NSString *keyCode in keysToDelete) {
+        NSInteger index = [self bindingIndexForKeyCode:keyCode modifierValue:modifier];
+        if (index != NSNotFound) {
+            [indexesToDelete addIndex:(NSUInteger)index];
+        }
+    }
+
+    if (indexesToDelete.count == 0) {
+        [self.statusLabel setStringValue:@"No bindings to delete for selected keys in this modifier layer."];
+        return;
+    }
+
+    [self.bindings removeObjectsAtIndexes:indexesToDelete];
+    [self refreshKeyStates];
+    [self rebuildBindingRows];
+    [self markAsChanged];
+    NSString *message = keysToDelete.count == 1 ? @"Deleted 1 binding." : [NSString stringWithFormat:@"Deleted %lu bindings.", (unsigned long)indexesToDelete.count];
+    [self.statusLabel setStringValue:message];
 }
 
 - (void)keyboardView:(MacBookKeyboardView *)keyboardView didMoveBindingFromKey:(NSString *)sourceKeyCode toKey:(NSString *)targetKeyCode
@@ -729,6 +850,7 @@
     [self.keyboardView setNeedsDisplay:YES];
     [self refreshKeyStates];
     [self rebuildBindingRows];
+    [self markAsChanged];
     [self.statusLabel setStringValue:moving ? @"Moved binding group. Save to apply." : @"Pasted binding group. Save to apply."];
 }
 
@@ -779,6 +901,7 @@
     NSUInteger modeIndex = [self.sortedKeyCodes indexOfObject:modeKey];
     if (modeIndex != NSNotFound) [self.modeKeyPopup selectItemAtIndex:(NSInteger)modeIndex];
     self.selectedKeyCode = nil;
+    self.hasUnsavedChanges = NO;
     [self refreshKeyStates];
     [self.selectedKeyLabel setStringValue:@"Select a key"];
     [self rebuildBindingRows];
@@ -805,6 +928,7 @@
     } mutableCopy];
     self.bindings = [NSMutableArray array];
     self.hasUnrepairableLoadedData = NO;
+    self.hasUnsavedChanges = NO;
     [self.nameField setStringValue:@""];
     [self.authorField setStringValue:@""];
     [self.descriptionField setStringValue:@""];
@@ -1061,13 +1185,16 @@
 - (IBAction)listenForKeysChanged:(NSButton *)sender
 {
 	if ([sender state] == NSControlStateValueOn) {
-        if (!self.keyEventMonitor) {
-            __weak KeyboardLayoutEditorController *weakSelf = self;
-            self.keyEventMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^NSEvent *(NSEvent *event) {
-                if (!weakSelf) return event;
-                return [weakSelf handleListeningKeyDown:event];
-            }];
+        // Remove keyboard shortcuts monitor before enabling listening
+        if (self.shortcutEventMonitor) {
+            [NSEvent removeMonitor:self.shortcutEventMonitor];
+            self.shortcutEventMonitor = nil;
         }
+        __weak KeyboardLayoutEditorController *weakSelf = self;
+        self.keyEventMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^NSEvent *(NSEvent *event) {
+            if (!weakSelf) return event;
+            return [weakSelf handleListeningKeyDown:event];
+        }];
         [self.keyboardView setListeningForKeys:YES];
         [self.statusLabel setStringValue:@"Listening while this window is focused. Press a key to select it."];
     } else {
@@ -1095,6 +1222,8 @@
 	[self.listenForKeysSwitch setState:NSControlStateValueOff];
     self.isOneShotCapture = NO;
     [self.keyboardView setListeningForKeys:NO];
+    // Re-setup keyboard shortcuts after stopping listening
+    [self setupKeyboardShortcuts];
 }
 
 - (NSEvent *)handleListeningKeyDown:(NSEvent *)event
@@ -1178,6 +1307,7 @@
     }
     [[self.bindings objectAtIndex:(NSUInteger)index] setObject:modifier forKey:KEYFILE_MODIFIERS_NODENAME];
     [self refreshKeyStates];
+    [self markAsChanged];
     [self.statusLabel setStringValue:@"Modifier changed. Save to apply."];
 }
 
@@ -1222,6 +1352,7 @@
     [binding setObject:newAdjustments forKey:KEYFILE_ADJUSTMENTS_NODENAME];
     [self rebuildBindingRows];
     [self refreshKeyStates];
+    [self markAsChanged];
     [self.statusLabel setStringValue:@"Action changed. Save to apply."];
 }
 
@@ -1238,6 +1369,7 @@
     updatedAdjustments[action] = [field stringValue];
     [binding setObject:updatedAdjustments forKey:KEYFILE_ADJUSTMENTS_NODENAME];
     [self refreshKeyStates];
+    [self markAsChanged];
     [self.statusLabel setStringValue:@"Value changed. Save to apply."];
 }
 
@@ -1263,6 +1395,7 @@
     updatedAdjustments[action] = [field stringValue];
     [binding setObject:updatedAdjustments forKey:KEYFILE_ADJUSTMENTS_NODENAME];
     [self refreshKeyStates];
+    [self markAsChanged];
     [self.statusLabel setStringValue:@"Value changed. Save to apply."];
 }
 
@@ -1306,7 +1439,10 @@
         return;
     }
     NSInteger index = [self addBindingForKeyCode:self.selectedKeyCode preferredModifier:self.selectedModifierValue];
-    if (index != NSNotFound) [self.statusLabel setStringValue:@"Binding added. Save to apply."];
+    if (index != NSNotFound) {
+        [self markAsChanged];
+        [self.statusLabel setStringValue:@"Binding added. Save to apply."];
+    }
 }
 
 - (void)removeBindingClicked:(id)sender
@@ -1316,6 +1452,7 @@
     [self.bindings removeObjectAtIndex:(NSUInteger)index];
     [self refreshKeyStates];
     [self rebuildBindingRows];
+    [self markAsChanged];
     [self.statusLabel setStringValue:@"Binding removed. Save to apply it."];
 }
 
@@ -1360,6 +1497,7 @@
         [self.mainController.editorController loadKeyfile:self.mainController.selectedKeyfile];
     }
     [self.statusLabel setStringValue:@"Saved and activated."];
+    self.hasUnsavedChanges = NO;
 }
 
 - (void)revertClicked:(id)sender
@@ -1404,12 +1542,15 @@
 
 - (void)tableEditorClicked:(id)sender
 {
-    [self.mainController showTableEditor];
+    if ([self confirmUnsavedChanges]) {
+        [self.mainController showTableEditor];
+    }
 }
 
 - (void)dealloc
 {
     [self stopListeningForKeys];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 @end

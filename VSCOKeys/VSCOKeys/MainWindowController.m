@@ -778,6 +778,22 @@
 - (void)showTableEditor
 {
     [self setupEditorController];
+    if (self.keyboardEditorController.hasUnsavedChanges) {
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:@"You have unsaved changes in the keyboard editor"];
+        [alert setInformativeText:@"Do you want to save your changes before switching to the table editor?"];
+        [alert addButtonWithTitle:@"Save"];
+        [alert addButtonWithTitle:@"Don't Save"];
+        [alert addButtonWithTitle:@"Cancel"];
+        NSModalResponse response = [alert runModal];
+        if (response == NSAlertFirstButtonReturn) {
+            // Trigger save by calling the save method
+            [self.keyboardEditorController performSelector:@selector(saveClicked:) withObject:nil];
+        } else if (response == NSAlertThirdButtonReturn) {
+            // Cancel - don't switch
+            return;
+        }
+    }
     [self.keyboardEditorController stopListeningForKeys];
     [self restoreEditorWindowSize];
     [self.tabv_tabs selectTabViewItemWithIdentifier:@"edit"];

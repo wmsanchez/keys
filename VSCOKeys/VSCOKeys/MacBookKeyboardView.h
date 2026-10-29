@@ -36,6 +36,7 @@
 @property (assign) CGFloat glowPhase;
 @property (assign) CGFloat glowRemaining;
 @property (retain) NSTimer *glowTimer;
+@property (nonatomic, retain) NSString *selectionAnchorKeyCode;
 - (void)setKeyboardLayoutDefinition:(NSDictionary *)layout;
 - (CGFloat)keyboardUnitScale;
 - (NSSize)canvasSizeForKeyboardUnitScale:(CGFloat)scale;

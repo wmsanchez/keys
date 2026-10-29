@@ -19,6 +19,7 @@
 @property (assign) CGFloat layoutHeightUnits;
 @property (assign) CGFloat layoutKeyGapUnits;
 - (void)rebuildInlineLabelFields;
+- (NSArray *)keyCodesBetween:(NSString *)startCode and:(NSString *)endCode;
 @end
 
 @implementation MacBookKeyboardView
@@ -27,7 +28,7 @@
 @synthesize assignmentDetails = _assignmentDetails;
 @synthesize usesMotibodoLabels = _usesMotibodoLabels, showsIncrementAmounts, allowsInlineLabelEditing = _allowsInlineLabelEditing;
 @synthesize selectedKeyCode, selectedKeyCodes, capturedKeyCode, capturedKeyHasBinding, delegate;
-@synthesize listeningForKeys, glowPhase, glowRemaining, glowTimer;
+@synthesize listeningForKeys, glowPhase, glowRemaining, glowTimer, selectionAnchorKeyCode;
 
 - (void)setKeyboardLayoutDefinition:(NSDictionary *)layout
 {
@@ -145,6 +146,36 @@
         }
         self.inlineLabelFields[code] = fields;
     }
+}
+
+- (NSArray *)keyCodesBetween:(NSString *)startCode and:(NSString *)endCode
+{
+    if (!startCode || !endCode) return @[];
+    if ([startCode isEqualToString:endCode]) return @[startCode];
+
+    // Get the positions of both keys in the keyItems array
+    NSInteger startIndex = -1;
+    NSInteger endIndex = -1;
+    for (NSUInteger i = 0; i < self.keyItems.count; i++) {
+        NSDictionary *item = self.keyItems[i];
+        NSString *code = item[@"code"];
+        if ([code isEqualToString:startCode]) startIndex = (NSInteger)i;
+        if ([code isEqualToString:endCode]) endIndex = (NSInteger)i;
+    }
+
+    if (startIndex == -1 || endIndex == -1) return @[];
+
+    NSInteger fromIndex = MIN(startIndex, endIndex);
+    NSInteger toIndex = MAX(startIndex, endIndex);
+
+    NSMutableArray *keyCodes = [NSMutableArray array];
+    for (NSInteger i = fromIndex; i <= toIndex; i++) {
+        NSDictionary *item = self.keyItems[(NSUInteger)i];
+        NSString *code = item[@"code"];
+        if (code) [keyCodes addObject:code];
+    }
+
+    return keyCodes;
 }
 
 - (void)setListeningForKeys:(BOOL)enabled
@@ -601,19 +632,39 @@
         NSString *code = [item objectForKey:@"code"];
         if (code && NSPointInRect(point, [self frameForKeyItem:item])) {
             self.mouseDownPoint = point;
-            BOOL extendsSelection = ([event modifierFlags] & NSEventModifierFlagShift) != 0;
-            NSMutableSet *selection = (extendsSelection || [self.selectedKeyCodes containsObject:code])
-                ? [self.selectedKeyCodes mutableCopy] : [NSMutableSet set];
-            if (!selection) selection = [NSMutableSet set];
-            if (extendsSelection) {
-                if ([selection containsObject:code]) [selection removeObject:code];
-                else [selection addObject:code];
-            } else if (![selection containsObject:code]) {
+            NSEventModifierFlags flags = [event modifierFlags];
+            BOOL shiftPressed = (flags & NSEventModifierFlagShift) != 0;
+            BOOL cmdPressed = (flags & NSEventModifierFlagCommand) != 0;
+
+            NSMutableSet *selection = [NSMutableSet set];
+
+            if (shiftPressed && self.selectionAnchorKeyCode) {
+                // Range selection: select all keys between anchor and clicked key
+                NSArray *rangeKeys = [self keyCodesBetween:self.selectionAnchorKeyCode and:code];
+                [selection addObjectsFromArray:rangeKeys];
+                self.selectedKeyCodes = selection;
+                self.selectedKeyCode = code;
+            } else if (cmdPressed) {
+                // Individual toggle selection
+                selection = [self.selectedKeyCodes mutableCopy] ?: [NSMutableSet set];
+                if ([selection containsObject:code]) {
+                    [selection removeObject:code];
+                    self.selectedKeyCode = [selection anyObject];
+                } else {
+                    [selection addObject:code];
+                    self.selectedKeyCode = code;
+                }
+                self.selectedKeyCodes = selection;
+                self.selectionAnchorKeyCode = code;
+            } else {
+                // Normal click: select just this key
                 [selection addObject:code];
+                self.selectedKeyCodes = selection;
+                self.selectedKeyCode = code;
+                self.selectionAnchorKeyCode = code;
             }
-            self.selectedKeyCodes = selection;
-            self.selectedKeyCode = [selection containsObject:code] ? code : [selection anyObject];
-            self.dragAnchorKeyCode = [selection containsObject:code] ? code : nil;
+
+            self.dragAnchorKeyCode = self.selectedKeyCode;
             self.dragSourceKeyCode = self.dragAnchorKeyCode;
             [self setNeedsDisplay:YES];
             if ([self.delegate respondsToSelector:@selector(keyboardView:didSelectKeyCodes:primaryKeyCode:)]) {
