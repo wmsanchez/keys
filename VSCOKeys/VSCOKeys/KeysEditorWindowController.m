@@ -22,6 +22,7 @@
 //
 
 #import "KeysEditorWindowController.h"
+#import "KeyboardLayoutEditorController.h"
 #import "MainWindowController.h"
 #import "KeyControl.h"
 #import "Constants.h"
@@ -45,6 +46,7 @@ static NSString * const kBindKey    = @"bKey";    // keycode string, e.g. "13"
 static NSString * const kBindMod    = @"bMod";    // modifier bitmask string, e.g. "2"
 static NSString * const kBindAdj    = @"bAdj";    // adjustment key, e.g. "Saturation"
 static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
+static NSString * const kBindAdjDict = @"bAdjDict";
 
 @interface KeysEditorWindowController ()
 
@@ -72,6 +74,7 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 
 // ── Last-used adjustment (remembered across Add Binding calls) ───────────────
 @property (retain) NSString      *lastUsedAdjKey;
+@property (assign) BOOL hasUnrepairableLoadedData;
 
 // ── Sorted lookup arrays (index → code/key) ──────────────────────────────────
 @property (retain) NSArray *sortedKeyCodes;    // sorted by display name: ["0","11",…]
@@ -100,6 +103,7 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 @synthesize bulkDupBtn, bulkDelBtn;
 @synthesize currentUUID, currentFilename, bindings;
 @synthesize lastUsedAdjKey;
+@synthesize hasUnrepairableLoadedData;
 @synthesize sortedKeyCodes, sortedKeyNames, sortedAdjKeys, sortedAdjNames;
 @synthesize modBitmasks, modTitles;
 @synthesize statusLabel;
@@ -176,36 +180,35 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     self.sortedAdjNames = dedupNames;
 
     // ── Modifiers ─────────────────────────────────────────────────────────────
-    // Expose meaningful single-key and two-key combinations
-    self.modBitmasks = @[@"0", @"1", @"2", @"4", @"8", @"3", @"5", @"9", @"6", @"10", @"12"];
+    self.modBitmasks = @[@"0", @"1", @"2", @"4", @"8", @"3", @"5", @"9", @"6", @"10", @"12", @"7", @"11", @"13", @"14", @"15"];
     self.modTitles   = @[@"—", @"SHIFT", @"CTRL", @"OPT", @"CMD",
                          @"SHIFT+CTRL", @"SHIFT+OPT", @"SHIFT+CMD",
-                         @"CTRL+OPT",  @"CTRL+CMD",  @"OPT+CMD"];
+                         @"CTRL+OPT", @"CTRL+CMD", @"OPT+CMD",
+                         @"SHIFT+CTRL+OPT", @"SHIFT+CTRL+CMD", @"SHIFT+OPT+CMD",
+                         @"CTRL+OPT+CMD", @"SHIFT+CTRL+OPT+CMD"];
 
-    // ── Categorized action menu template ─────────────────────────────────────
-    // Built once from CommandCategories.json; cloned per-row in dataCellForTableColumn.
-    NSArray *cats = self.keyControl.commandCategories;
-    if (cats) {
-        NSMenu *tmpl = [[NSMenu alloc] initWithTitle:@""];
-        [tmpl setAutoenablesItems:NO];
-        for (NSDictionary *cat in cats) {
-            NSString *catName = [cat objectForKey:@"category"];
-            NSArray *catItems = [cat objectForKey:@"items"];
-            NSMenuItem *catItem = [[NSMenuItem alloc] initWithTitle:catName action:nil keyEquivalent:@""];
-            NSMenu *sub = [[NSMenu alloc] initWithTitle:catName];
-            [sub setAutoenablesItems:NO];
-            for (NSDictionary *cmdDict in catItems) {
-                NSString *cid   = [cmdDict objectForKey:@"id"];
-                NSString *cname = [cmdDict objectForKey:@"name"];
-                NSMenuItem *mi  = [[NSMenuItem alloc] initWithTitle:cname action:nil keyEquivalent:@""];
-                [mi setRepresentedObject:cid];
-                [sub addItem:mi];
-            }
-            [catItem setSubmenu:sub];
-            [tmpl addItem:catItem];
+    [self reloadActionCatalog];
+}
+
+- (void)reloadActionCatalog
+{
+    NSMenu *template = [[NSMenu alloc] initWithTitle:@""];
+    [template setAutoenablesItems:NO];
+    for (NSDictionary *category in self.keyControl.commandCategories) {
+        NSString *categoryName = [category objectForKey:@"category"] ?: @"Other";
+        NSMenuItem *categoryItem = [[NSMenuItem alloc] initWithTitle:categoryName action:nil keyEquivalent:@""];
+        NSMenu *submenu = [[NSMenu alloc] initWithTitle:categoryName];
+        [submenu setAutoenablesItems:NO];
+        for (NSDictionary *command in [category objectForKey:@"items"]) {
+            NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:[command objectForKey:@"name"] ?: [command objectForKey:@"id"] action:nil keyEquivalent:@""];
+            [item setRepresentedObject:[command objectForKey:@"id"]];
+            [submenu addItem:item];
         }
-        self.actionMenuTemplate = tmpl;
+        [categoryItem setSubmenu:submenu];
+        [template addItem:categoryItem];
     }
+    self.actionMenuTemplate = template;
+    [self.tableView reloadData];
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -420,6 +423,13 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
                      NSFontAttributeName:[NSFont fontWithName:PROXIMA_FONT_NAME size:11]}]];
     [rightPanel addSubview:self.bulkDelBtn];
 
+    NSButton *keyboardEditorBtn = [self makeButtonWithTitle:@"KEYBOARD MAP" darkStyle:YES];
+    [keyboardEditorBtn setFrame:NSMakeRect(390, toolY, 175, 26)];
+    [keyboardEditorBtn setAutoresizingMask:NSViewMinYMargin];
+    [keyboardEditorBtn setTarget:self];
+    [keyboardEditorBtn setAction:@selector(keyboardEditorClicked:)];
+    [rightPanel addSubview:keyboardEditorBtn];
+
     // ── NSTableView ───────────────────────────────────────────────────────────
     self.tableView = [[NSTableView alloc] initWithFrame:NSMakeRect(0, 0, 825 - rightX, 400)];
     [self.tableView setRowHeight:26];
@@ -466,6 +476,9 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 
 - (void)loadKeyfile:(NSDictionary *)keyfile
 {
+    NSError *validationError = nil;
+    BOOL validKeyfile = [self.keyControl validateKeyfile:keyfile error:&validationError];
+    self.hasUnrepairableLoadedData = !validKeyfile && validationError.code == 2;
     [self.nameField   setStringValue:[keyfile objectForKey:KEYFILE_NAME_NODENAME]        ?: @""];
     [self.authorField setStringValue:[keyfile objectForKey:KEYFILE_AUTHOR_NODENAME]      ?: @""];
     [self.descField   setStringValue:[keyfile objectForKey:KEYFILE_DESCRIPTION_NODENAME] ?: @""];
@@ -479,19 +492,38 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 
     // Bindings
     [self.bindings removeAllObjects];
-    for (NSDictionary *keyEntry in [keyfile objectForKey:KEYFILE_KEYS_NODENAME]) {
-        NSString *keyCode = [keyEntry objectForKey:KEYFILE_KEY_NODENAME]       ?: @"0";
-        NSString *mod     = [keyEntry objectForKey:KEYFILE_MODIFIERS_NODENAME] ?: @"0";
-        NSDictionary *adj = [keyEntry objectForKey:KEYFILE_ADJUSTMENTS_NODENAME];
-        NSString *adjKey  = [[adj allKeys] firstObject]  ?: [self.sortedAdjKeys firstObject];
+    id rawBindings = [keyfile objectForKey:KEYFILE_KEYS_NODENAME];
+    NSArray *keyEntries = [rawBindings isKindOfClass:[NSArray class]] ? rawBindings : @[];
+    for (id rawEntry in keyEntries) {
+        if (![rawEntry isKindOfClass:[NSDictionary class]]) continue;
+        NSDictionary *keyEntry = rawEntry;
+        NSString *keyCode = [[keyEntry objectForKey:KEYFILE_KEY_NODENAME] description] ?: @"0";
+        NSString *mod     = [[keyEntry objectForKey:KEYFILE_MODIFIERS_NODENAME] description] ?: @"0";
+        id rawAdjustments = [keyEntry objectForKey:KEYFILE_ADJUSTMENTS_NODENAME];
+        NSDictionary *adj = [rawAdjustments isKindOfClass:[NSDictionary class]] ? rawAdjustments : @{};
+        NSArray *adjKeys = [[adj allKeys] sortedArrayUsingSelector:@selector(compare:)];
+        NSString *adjKey = nil;
+        for (NSString *candidate in adjKeys) {
+            if (![candidate isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME]) {
+                adjKey = candidate;
+                break;
+            }
+        }
+        adjKey = adjKey ?: [adjKeys firstObject] ?: [self.sortedAdjKeys firstObject];
         NSString *adjVal  = [adj objectForKey:adjKey]    ?: @"1";
 
         [self.bindings addObject:[@{kBindKey:keyCode, kBindMod:mod,
-                                    kBindAdj:adjKey,  kBindValue:adjVal} mutableCopy]];
+                                    kBindAdj:adjKey,  kBindValue:adjVal,
+                                    kBindAdjDict:[adj mutableCopy] ?: [NSMutableDictionary dictionary]} mutableCopy]];
     }
 
     [self.tableView reloadData];
-    [self.statusLabel setStringValue:@""];
+    if (!validKeyfile) {
+        [self.statusLabel setStringValue:[NSString stringWithFormat:@"Layout needs attention: %@", validationError.localizedDescription]];
+        [self.statusLabel setTextColor:[NSColor colorWithCalibratedRed:1 green:0.3 blue:0.3 alpha:1]];
+    } else {
+        [self.statusLabel setStringValue:@""];
+    }
     [self.keyControl loadAvailableDevelopPresetsWithCompletion:^(NSArray *presets) {
         [self.tableView reloadData];
     }];
@@ -508,6 +540,7 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     self.currentFilename = nil;
 
     [self.bindings removeAllObjects];
+    self.hasUnrepairableLoadedData = NO;
     [self.tableView reloadData];
     [self.keyControl loadAvailableDevelopPresetsWithCompletion:^(NSArray *presets) {
         [self.tableView reloadData];
@@ -546,6 +579,11 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     [self.tableView reloadData];
     // Scroll to the new row
     [self.tableView scrollRowToVisible:(NSInteger)self.bindings.count - 1];
+}
+
+- (IBAction)keyboardEditorClicked:(id)sender
+{
+    [self.mainController showKeyboardEditor];
 }
 
 // ── Bulk duplicate: duplicate all selected rows (in reverse order to preserve indices) ──
@@ -630,6 +668,12 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
 
 - (IBAction)saveClicked:(id)sender
 {
+    if (self.hasUnrepairableLoadedData) {
+        [self.statusLabel setStringValue:@"Save blocked: this layout contains malformed binding data that cannot be edited safely."];
+        [self.statusLabel setTextColor:[NSColor colorWithCalibratedRed:1 green:0.3 blue:0.3 alpha:1]];
+        return;
+    }
+
     NSString *name = [self.nameField stringValue];
     if ([name length] == 0) {
         [self.statusLabel setStringValue:@"Name required"];
@@ -645,8 +689,13 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     NSMutableArray *keysArray = [NSMutableArray array];
     for (NSDictionary *b in self.bindings) {
         NSString *adjKey = b[kBindAdj];
-        NSString *value  = [self clampValue:b[kBindValue] forAdjustment:adjKey];
-        NSDictionary *adjDict = @{adjKey: value};
+        id value = [adjKey isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME]
+            ? b[kBindValue]
+            : [self clampValue:b[kBindValue] forAdjustment:adjKey];
+        NSMutableDictionary *adjDict = [b[kBindAdjDict] mutableCopy] ?: [NSMutableDictionary dictionary];
+        if (![adjKey isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME]) {
+            adjDict[adjKey] = value;
+        }
         [keysArray addObject:@{
             KEYFILE_KEY_NODENAME:              b[kBindKey],
             KEYFILE_MODIFIERS_NODENAME:        b[kBindMod],
@@ -672,34 +721,12 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         KEYFILE_KEYS_NODENAME:        keysArray
     };
 
-    // Serialize to JSON
-    NSString *json = [layout JSONRepresentation];
-    if (!json) {
-        [self.statusLabel setStringValue:@"JSON error"];
-        [self.statusLabel setTextColor:[NSColor colorWithCalibratedRed:1 green:0.3 blue:0.3 alpha:1]];
-        return;
-    }
-
-    // Determine file path
-    NSString *dir  = self.keyControl.keyfileDirectory;
-    NSString *path = [[dir stringByAppendingPathComponent:self.currentUUID]
-                          stringByAppendingPathExtension:KEYFILE_JSON_EXTENSION];
-
     NSError *err = nil;
-    BOOL ok = [json writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:&err];
-
-    if (!ok) {
+    if (![self.keyControl saveKeyfile:layout error:&err]) {
         [self.statusLabel setStringValue:[NSString stringWithFormat:@"Error: %@", err.localizedDescription]];
         [self.statusLabel setTextColor:[NSColor colorWithCalibratedRed:1 green:0.3 blue:0.3 alpha:1]];
         return;
     }
-
-    // Reload the keyfile list in KeyControl
-    [self.keyControl loadAllKeyfiles];
-    [self.keyControl resetStatusMenu];
-
-    // Immediately activate and hot-reload the updated layout
-    [self.keyControl activateKeyfileWithUUID:self.currentUUID];
 
     // If main window controller is open, update its selection and view table
     if (self.mainController) {
@@ -707,6 +734,7 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         self.mainController.selectedKeyfile = [self.keyControl.keyfileList objectForKey:self.currentUUID];
         [self.mainController prepareSelectedKeys];
         [self.mainController prepareCommandTableForContent];
+        [self.mainController.keyboardEditorController loadKeyfile:self.mainController.selectedKeyfile];
     }
 
     [self.statusLabel setStringValue:@"Saved & Activated!"];
@@ -731,6 +759,9 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     if (!newAdj || row < 0 || row >= (NSInteger)self.bindings.count) return;
     NSMutableDictionary *b = self.bindings[(NSUInteger)row];
     NSString *oldAdj = b[kBindAdj];
+    if ([oldAdj isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME]) return;
+    NSMutableDictionary *adjDict = [b[kBindAdjDict] mutableCopy] ?: [NSMutableDictionary dictionary];
+    [adjDict removeObjectForKey:oldAdj];
     b[kBindAdj] = newAdj;
     self.lastUsedAdjKey = newAdj;
     if ([newAdj isEqualToString:@"_SetPreset"] && ![oldAdj isEqualToString:newAdj]) {
@@ -738,6 +769,8 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
     } else {
         b[kBindValue] = [self clampValue:b[kBindValue] forAdjustment:newAdj];
     }
+    adjDict[newAdj] = b[kBindValue];
+    b[kBindAdjDict] = adjDict;
     [self.tableView reloadData];
 }
 
@@ -836,10 +869,24 @@ static NSString * const kBindValue  = @"bValue";  // value string, e.g. "-1"
         [cell setMenu:rowMenu];
         [cell selectItem:dummy];
         [cell setTitle:currName ?: @""];
+            if ([currKey isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME]) [cell setEnabled:NO];
         return cell;
     }
 
     if ([colId isEqualToString:kColValue]) {
+            if ([b[kBindAdj] isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME]) {
+                id remap = b[kBindValue];
+                NSString *display = [remap isKindOfClass:[NSDictionary class]]
+                    ? [NSString stringWithFormat:@"Key %@, modifiers %@", remap[KEYFILE_KEY_NODENAME] ?: @"?", remap[KEYFILE_MODIFIERS_NODENAME] ?: @"0"]
+                    : [NSString stringWithFormat:@"Key %@", remap ?: @"?"];
+                NSTextFieldCell *cell = [[NSTextFieldCell alloc] initTextCell:display];
+                [cell setEditable:NO];
+                [cell setFont:[NSFont systemFontOfSize:11]];
+                [cell setTextColor:[NSColor colorWithCalibratedWhite:0.7 alpha:1]];
+                [cell setBackgroundColor:[NSColor colorWithCalibratedWhite:0.22 alpha:1]];
+                [cell setDrawsBackground:YES];
+                return cell;
+            }
         if ([b[kBindAdj] isEqualToString:@"_SetPreset"]) {
             NSComboBoxCell *cell = [[NSComboBoxCell alloc] initTextCell:b[kBindValue] ?: @""];
             [cell setEditable:YES];

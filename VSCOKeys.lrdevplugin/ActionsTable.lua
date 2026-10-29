@@ -10,10 +10,24 @@ local LrApplicationView   = import 'LrApplicationView'
 local LrDevelopController = import 'LrDevelopController'
 local LrDialogs           = import 'LrDialogs'
 local LrSelection         = import 'LrSelection'
+local LrPrefs             = import 'LrPrefs'
 local LrUndo              = import 'LrUndo'
 local LrTasks             = import 'LrTasks'
+local prefs = LrPrefs.prefsForPlugin()
 
 local CU = {}
+
+local function withTargetPhoto(action)
+  return function()
+    LrTasks.startAsyncTask(function()
+      local catalog = LrApplication.activeCatalog()
+      local target = catalog and catalog:getTargetPhoto()
+      if target then
+        action(target)
+      end
+    end)
+  end
+end
 
 -- Ensure correct module is active
 function CU.wrapFOM(F, ...)
@@ -64,11 +78,9 @@ function CU.wrapForEachPhoto(actionName)
 end
 
 function CU.QuickCropAspect(aspect)
-  local cat = LrApplication.activeCatalog()
-  local target = cat and cat:getTargetPhoto()
-  if target then
+  return withTargetPhoto(function(target)
     target:quickDevelopCropAspect(aspect)
-  end
+  end)()
 end
 
 function CU.fChangeModule(modName)
@@ -86,6 +98,42 @@ function CU.fChangePanel(panelName)
       LrTasks.yield()
     end
     LrDevelopController.revealPanel(panelName)
+  end
+end
+
+function CU.fSetEnhance(paramName, value, denoiseAmount)
+  return function()
+    LrTasks.startAsyncTask(function()
+      if LrApplicationView.getCurrentModuleName() ~= 'develop' then
+        LrApplicationView.switchToModule('develop')
+        LrTasks.yield()
+      end
+      if type(LrDevelopController.setEnhance) ~= 'function' then
+        LrDialogs.message('Enhance actions require Lightroom Classic 15.3 or newer.')
+        return
+      end
+      LrDevelopController.setEnhance(paramName, value, denoiseAmount)
+    end)
+  end
+end
+
+function CU.fChangeDenoiseAmount()
+  return function(amount)
+    local numericAmount = tonumber(amount)
+    if not numericAmount or numericAmount < 1 or numericAmount > 100 then
+      error('Denoise amount must be a number from 1 to 100')
+    end
+    LrTasks.startAsyncTask(function()
+      if LrApplicationView.getCurrentModuleName() ~= 'develop' then
+        LrApplicationView.switchToModule('develop')
+        LrTasks.yield()
+      end
+      if type(LrDevelopController.changeDenoiseAmount) ~= 'function' then
+        LrDialogs.message('Changing Denoise amount requires Lightroom Classic 14.5 or newer.')
+        return
+      end
+      LrDevelopController.changeDenoiseAmount(numericAmount)
+    end)
   end
 end
 
@@ -172,23 +220,15 @@ function CU.fToggleTool1(toolName)
 end
 
 function CU.quickDevAdjust(param, step)
-  return function()
-    local cat = LrApplication.activeCatalog()
-    local target = cat and cat:getTargetPhoto()
-    if target then
-      target:quickDevelopAdjustImage(param, step)
-    end
-  end
+  return withTargetPhoto(function(target)
+    target:quickDevelopAdjustImage(param, step)
+  end)
 end
 
 function CU.quickDevAdjustWB(param, step)
-  return function()
-    local cat = LrApplication.activeCatalog()
-    local target = cat and cat:getTargetPhoto()
-    if target then
-      target:quickDevelopAdjustWhiteBalance(param, step)
-    end
-  end
+  return withTargetPhoto(function(target)
+    target:quickDevelopAdjustWhiteBalance(param, step)
+  end)
 end
 
 function CU.UpdatePointCurve(curveSettings)
@@ -337,6 +377,7 @@ local ACTIONS = {
   ColorGradeResetCurrent = CU.cg_reset_current,
   ColorGradeShadow = CU.wrapFOM(LrDevelopController.setActiveColorGradingView,'shadow'),
   ColorLabelNone = function() LrSelection.setColorLabel("none") end,
+  DenoiseAmount = CU.fChangeDenoiseAmount(),
   ConvertToGrayscale = CU.fToggleTFasync('ConvertToGrayscale'),
   CropConstrainToWarp = CU.fToggle01('CropConstrainToWarp'),
   CropOverlay = CU.fToggleTool('crop'),
@@ -348,6 +389,12 @@ local ACTIONS = {
   EnableColorAdjustments = CU.fToggleTFasync('EnableColorAdjustments'),
   EnableColorGrading = CU.fToggleTFasync('EnableSplitToning'),
   EnableDetail = CU.fToggleTFasync('EnableDetail'),
+  EnhanceDenoiseOn = CU.fSetEnhance('denoise', true, tonumber(prefs.denoiseAmount) or 50),
+  EnhanceDenoiseOff = CU.fSetEnhance('denoise', false),
+  EnhanceRawDetailsOn = CU.fSetEnhance('rawDetails', true),
+  EnhanceRawDetailsOff = CU.fSetEnhance('rawDetails', false),
+  EnhanceSuperResOn = CU.fSetEnhance('superRes', true),
+  EnhanceSuperResOff = CU.fSetEnhance('superRes', false),
   EnableEffects = CU.fToggleTFasync('EnableEffects'),
   EnableGrayscaleMix = CU.fToggleTFasync('EnableGrayscaleMix'),
   EnableLensCorrections = CU.fToggleTFasync('EnableLensCorrections'),

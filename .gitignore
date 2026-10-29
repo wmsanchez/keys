@@ -1,17 +1,35 @@
-*.DS_Store
-Build/VSCOKeys.lrplugin/
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
 VSCOKeys/VSCOKeys.xcodeproj/project.xcworkspace
 VSCOKeys/VSCOKeys.xcodeproj/xcuserdata
-Tools/VSCOKeys.xml.backup
-VSCOKeys.lrdevplugin/halfway_server/test.log
-VSCOKeys/build
+VSCOKeys/build/
 VSCOKeys/VSCOKeys/AdjustmentMapping.vkeys
 VSCOKeys/VSCOKeys/KeyMapping.vkeys
-VSCOKeys-win/*.suo
-VSCOKeys-win/VSCOKeys/bin
-VSCOKeys-win/VSCOKeys/obj
-VSCOKeys-win/NotifyIconWpf/bin
-VSCOKeys-win/NotifyIconWpf/obj
-/VSCOKeys-win/VSCOKeys/VSCOKeys.csproj.user
-/Tools/VSCOKeys-win.xml.backup
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+# Build output
+Build/
+
+# Logs
+*.log
+VSCOKeys.lrdevplugin/halfway_server/test.log
+
+# Security and licenses
 *.p12
+skey.key
+
+# Tools
+Tools/VSCOKeys.xml.backup

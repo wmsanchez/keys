@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 require "Utils"
 require "Constants"
 require "json"
+local PluginSettings = require 'PluginSettings'
 local logging = require "Logging.lua"
 local JSON = require "json"
 local DevelopSettings = require "DevelopSettings"
@@ -50,6 +51,30 @@ Client = {
 
 function Client:loop()
   local ACTIONS = require "ActionsTable"()
+  local storedSettings = PluginSettings.load() or {}
+  local storedHiddenActions = storedSettings.hiddenActions
+  local settingsPayload = {
+    denoiseAmount = tonumber(storedSettings.denoiseAmount) or tonumber(prefs.denoiseAmount) or 50,
+    hiddenActions = type(storedHiddenActions) == 'table' and storedHiddenActions or prefs.hiddenActions or {},
+    brushIncreaseKey = LOC("$$$/AgDevelop/Localized/BrushIncreaseKey=]"),
+    brushDecreaseKey = LOC("$$$/AgDevelop/Localized/BrushDecreaseKey=["),
+  }
+  if not next(storedSettings) then
+    PluginSettings.save {
+      denoiseAmount = settingsPayload.denoiseAmount,
+      hiddenActions = settingsPayload.hiddenActions,
+    }
+  end
+  local settingsResponse, settingsHeaders = LrHttp.post(
+    CLIENT_SETTINGS_ENDPOINT,
+    JSON:encode(settingsPayload),
+    {{field="Content-Type", value="application/json"}},
+    "POST",
+    1
+  )
+  if settingsResponse == nil then
+    logging:log("Could not publish VSCO Keys settings: " .. to_string(settingsHeaders.error))
+  end
   local availablePresets = {}
   for _, folder in ipairs(LrApplication.developPresetFolders()) do
     local folderName = folder:getName()
@@ -73,8 +98,6 @@ function Client:loop()
   local counter = 0
   while (not self.done) do
 
-    self.currentPhoto = LrApplication.activeCatalog():getTargetPhoto()
-
     local photoData = {}
 
     -- Pushing photodata is super super costly and slow -- not good need to do some incremental version of this if the feature is needed
@@ -84,19 +107,42 @@ function Client:loop()
 --      photoData = self.currentPhoto:getDevelopSettings()
 --    end
 
-    local response, headers = LrHttp.post(CLIENT_DATA_ENDPOINT, JSON:encode(photoData), {{field="UUID", value=self.uuid}, {field="Content-Type", value="application/json"}}, "POST", 1)
+    local response, headers = LrHttp.post(
+      CLIENT_DATA_ENDPOINT,
+      JSON:encode(photoData),
+      {{field="UUID", value=self.uuid}, {field="Content-Type", value="application/json"}},
+      "POST",
+      CLIENT_HTTP_TIMEOUT
+    )
 
     if (response == nil) then
       logging:log("error:" .. to_string(headers.error))
+      LrTasks.sleep(CLIENT_ERROR_BACKOFF_TIME)
     else
       if (headers.status == 403) then
         -- server has told us that our id has expired (init happened) which means we are a dangler.
         logging:log("Old LR thread was killed ".. self.uuid)
         break
       end
-      -- logging:log("headers:"..to_string(headers))
 
-      local json = JSON:decode(response)
+      local body = response or ""
+      local isIdle = headers.status == 204 or (type(body) == "string" and body:match("^%s*$"))
+      local json = nil
+
+      if (not isIdle and headers.status == 200) then
+        local decodeOk, decoded = pcall(function()
+          return JSON:decode(body)
+        end)
+        if decodeOk and type(decoded) == "table" then
+          json = decoded
+        else
+          logging:log("Could not decode poll payload: " .. tostring(decoded))
+        end
+      end
+
+      if json then
+        self.currentPhoto = LrApplication.activeCatalog():getTargetPhoto()
+      end
 
       -- SPECIAL CASE for authentication information
       if (json and json._AuthUUID and json._AuthToken and json._AuthSerial and json._AuthTimestamp) then
@@ -174,7 +220,12 @@ function Client:loop()
         for k, v in pairs(json) do
           local action = ACTIONS[k]
           if action then
-            local ok, err = pcall(action)
+            local ok, err
+            if k == 'DenoiseAmount' then
+              ok, err = pcall(action, v)
+            else
+              ok, err = pcall(action)
+            end
             if ok then
               logging:log('Executed action ' .. k)
             else
@@ -244,8 +295,6 @@ function Client:loop()
     -- logging:log("counter " .. to_string(counter))
 
     counter = counter + 1
-
-    LrTasks.sleep(CLIENT_UPDATE_TIME)
   end
 end
 
@@ -419,15 +468,9 @@ function Client:init()
     self:sendKillMessageToServer()
 
     logging:log("Booting server")
-    if WIN_ENV then
-      LrTasks.startAsyncTask(function()
-        LrTasks.execute("cd " .. _PLUGIN.path .. "\\halfway_server & lua5.1.exe Server.lua")
-      end, "Boot win server")
-    else
-      LrTasks.startAsyncTask(function()
-        LrTasks.execute("cd \"" .. _PLUGIN.path .. "/halfway_server\" && /usr/bin/python3 server.py > server.log 2>&1 &")
-      end, "Boot mac server")
-    end
+    LrTasks.startAsyncTask(function()
+      LrTasks.execute("cd \"" .. _PLUGIN.path .. "/halfway_server\" && /usr/bin/python3 server.py > server.log 2>&1 &")
+    end, "Boot server")
 
     LrTasks.sleep(CLIENT_WAIT_FOR_SERVER_TIME)
 

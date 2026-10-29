@@ -29,6 +29,7 @@
 @class QuickWindowController;
 @class LicenseWindowController;
 @class MainWindowController;
+@class KeyboardHUDWindowController;
 
 @interface KeyControl : NSObject
 
@@ -45,8 +46,14 @@
 @property (retain) NSImage *statusBarIconError;
 
 @property (retain) NSMenuItem *toggleMenuItem;
+@property (retain) NSMenuItem *keyboardHUDMenuItem;
+@property (retain) KeyboardHUDWindowController *keyboardHUDWindowController;
+@property (assign) BOOL keyboardHUDEnabled;
+@property (assign) BOOL keyboardHUDShowsIncrements;
+@property (retain) NSString *keyboardHUDLabelStyle;
 
 @property (retain) NSString *activeKeyFile;
+@property (readonly, retain) NSString *physicalKeyboardLayoutIdentifier;
 
 @property (retain) NSThread *keyThread;
 @property (retain) NSThread *statusThread;
@@ -72,6 +79,10 @@
 @property (retain) NSDictionary *adjustmentMapping;
 @property (retain) NSDictionary *adjustmentLimits;
 @property (retain) NSArray *commandCategories;
+@property (retain) NSArray *allCommandCategories;
+@property (retain) NSSet *hiddenCommandIdentifiers;
+@property (retain) NSTimer *pluginSettingsTimer;
+@property (assign) BOOL pluginSettingsRequestInProgress;
 @property (retain) NSArray *availableDevelopPresets;
 
 @property (retain) NSNumberFormatter *numFormatter;
@@ -86,11 +97,19 @@
 - (void)importKeyFile:(NSString *)keyFileUrl;
 
 - (void)quitApplication;
+- (NSString *)shortLabelForAction:(NSString *)action customLabels:(NSDictionary *)customLabels;
+- (NSString *)presetLabelForValue:(id)value customLabels:(NSDictionary *)customLabels;
+- (void)updateKeyboardHUDLabelSettingsWithStyle:(NSString *)style showsIncrements:(BOOL)showsIncrements customLabels:(NSDictionary *)customLabels;
+- (void)updateKeyboardHUDPresetLabels:(NSDictionary *)presetLabels;
 
 - (void)makeLRActive;
 - (BOOL)isLRRunning;
 
 - (NSArray *)getKeyfileList;
+- (NSArray *)physicalKeyboardLayoutOptions;
+- (NSDictionary *)physicalKeyboardLayoutDefinition;
+- (void)selectPhysicalKeyboardLayout:(NSString *)layoutIdentifier;
+- (void)refreshPluginSettings:(NSTimer *)timer;
 
 - (NSString *)getKeynameForVirtual:(NSString *)virtKey;
 - (NSString *)getNormalNameForAdjustment:(NSString*)adjustment;
@@ -102,6 +121,8 @@
 - (void)updateDefaults;
 - (void)resetStatusMenu;
 
+- (BOOL)validateKeyfile:(NSDictionary *)keyfile error:(NSError **)error;
+- (BOOL)saveKeyfile:(NSDictionary *)keyfile error:(NSError **)error;
 - (void)deleteKeyfile:(NSDictionary *)keyfile;
 - (void)loadAllKeyfiles;
 - (void)loadAvailableDevelopPresetsWithCompletion:(void (^)(NSArray *presets))completion;

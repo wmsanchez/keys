@@ -26,10 +26,13 @@
 #import "AppDelegate.h"
 #import "KeyControl.h"
 #import "MainWindowController.h"
-#include <libkern/OSAtomic.h>
-#include <execinfo.h>
+#import <dispatch/dispatch.h>
 #include <ExceptionHandling/ExceptionHandling.h>
 #import <CoreServices/CoreServices.h>
+#include <libkern/OSAtomic.h>
+#include <signal.h>
+#include <string.h>
+#include <unistd.h>
 
 @implementation AppDelegate
 
@@ -39,84 +42,138 @@
 @synthesize mainController;
 @synthesize quitTimer;
 
-NSString * const UncaughtExceptionHandlerSignalExceptionName = @"UncaughtExceptionHandlerSignalExceptionName";
-
-volatile int32_t UncaughtExceptionCount = 0;
-const int32_t UncaughtExceptionMaximum = 10;
-
 NSString *traceFilePath = NULL;
+static volatile int32_t UncaughtExceptionHandlingInProgress = 0;
+
+static NSLock *DualLogLock(void)
+{
+    static NSLock *lock;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        lock = [[NSLock alloc] init];
+    });
+    return lock;
+}
+
+// NSAlert/NSWindow must be created and presented on the main thread. Exceptions can be
+// delivered on background threads (CGEventTap thread, status bar thread, run loops, etc.).
+// Hop with dispatch_sync (never dispatch_async + _exit) so the alert actually runs.
+static void PresentUncaughtExceptionAlert(NSException *exception, NSString *filePath, NSString *tracePath)
+{
+    NSString *alertString = @"%@\n\nThe crash has been logged to disk at:\n%@\n\nThe run log has been stored at:\n%@\n\nPlease send an email to support@visualsupply.co with the above files attached.";
+
+    void (^presentAlert)(void) = ^{
+        @try
+        {
+            NSAlert *alert = [NSAlert alertWithMessageText:@"An Unhandled Exception Occurred" defaultButton:@"Ok" alternateButton:nil otherButton:nil informativeTextWithFormat:alertString, exception, filePath, tracePath];
+            [alert runModal];
+        }
+        @catch (NSException *alertException)
+        {
+            NSLog(@"VSCOKeys: failed to present crash alert: %@", alertException);
+        }
+    };
+
+    if ([NSThread isMainThread])
+    {
+        presentAlert();
+    }
+    else
+    {
+        dispatch_sync(dispatch_get_main_queue(), presentAlert);
+    }
+}
 
 void uncaughtExceptionHandler(NSException *exception)
 {
-    DualLog(@"CRASH: %@", exception);
-
-    NSArray *callstack = [NSThread callStackSymbols];
-
-    DualLog(@"Stack Trace: %@", callstack);
-
-    NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-
-    if (dirs && dirs.count >= 1)
+    if (!OSAtomicCompareAndSwap32(0, 1, &UncaughtExceptionHandlingInProgress))
     {
-        NSFileManager *fileMan = [NSFileManager defaultManager];
-        NSString *logDir = [((NSString *)[dirs objectAtIndex:0]) stringByAppendingPathComponent:@"VSCOKeysLogs"];
-
-        if (![fileMan fileExistsAtPath:logDir])
-        {
-            [fileMan createDirectoryAtPath:logDir withIntermediateDirectories:YES attributes:nil error:nil];
-        }
-
-        NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-        [dateFormatter setDateFormat:@"yyyy-M-d-HH-mm-ss"];
-
-        NSString *filestamp = [dateFormatter stringFromDate:[NSDate date]];
-
-        NSString *filePath = [logDir stringByAppendingPathComponent:[NSString stringWithFormat:@"VSCOKeysErrorLog_%@.log",filestamp]];
-
-        NSMutableString *fileContents = [[NSMutableString alloc] init];
-
-        [fileContents appendFormat:@"%@\n", [NSDate date]];
-        [fileContents appendFormat:@"%@\n", [[NSHost currentHost] name]];
-        [fileContents appendFormat:@"Exception: %@\n\n", exception];
-        [fileContents appendFormat:@"%@\n\n", callstack];
-
-        NSError *error;
-
-        [fileContents writeToFile:filePath atomically:YES encoding:NSUTF8StringEncoding error:&error];
-
-        if (error)
-        {
-            DualLog(@"Error writing error log. %@", error);
-        }
-
-        NSString *alertString = @"%@\n\nThe crash has been logged to disk at:\n%@\n\nThe run log has been stored at:\n%@\n\nPlease send an email to support@visualsupply.co with the above files attached.";
-
-        NSAlert *alert = [NSAlert alertWithMessageText:@"An Unhandled Exception Occurred" defaultButton:@"Ok" alternateButton:nil otherButton:nil informativeTextWithFormat:alertString, exception, filePath, traceFilePath];
-
-        [alert runModal];
+        return;
     }
 
-    exit(0);
+    NSString *filePath = nil;
+
+    @try
+    {
+        DualLog(@"CRASH: %@", exception);
+
+        NSArray *callstack = [NSThread callStackSymbols];
+
+        DualLog(@"Stack Trace: %@", callstack);
+
+        NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+
+        if (dirs && dirs.count >= 1)
+        {
+            NSFileManager *fileMan = [NSFileManager defaultManager];
+            NSString *logDir = [((NSString *)[dirs objectAtIndex:0]) stringByAppendingPathComponent:@"VSCOKeysLogs"];
+
+            if (![fileMan fileExistsAtPath:logDir])
+            {
+                [fileMan createDirectoryAtPath:logDir withIntermediateDirectories:YES attributes:nil error:nil];
+            }
+
+            NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+            [dateFormatter setDateFormat:@"yyyy-M-d-HH-mm-ss"];
+
+            NSString *filestamp = [dateFormatter stringFromDate:[NSDate date]];
+
+            filePath = [logDir stringByAppendingPathComponent:[NSString stringWithFormat:@"VSCOKeysErrorLog_%@.log",filestamp]];
+
+            NSMutableString *fileContents = [[NSMutableString alloc] init];
+
+            [fileContents appendFormat:@"%@\n", [NSDate date]];
+            [fileContents appendFormat:@"%@\n", [[NSHost currentHost] name]];
+            [fileContents appendFormat:@"Exception: %@\n\n", exception];
+            [fileContents appendFormat:@"%@\n\n", callstack];
+
+            NSError *error = nil;
+            [fileContents writeToFile:filePath atomically:YES encoding:NSUTF8StringEncoding error:&error];
+
+            if (error)
+            {
+                DualLog(@"Error writing error log. %@", error);
+            }
+        }
+
+        PresentUncaughtExceptionAlert(exception, filePath, traceFilePath);
+    }
+    @catch (NSException *handlerException)
+    {
+        NSLog(@"VSCOKeys: nested exception in uncaught handler: %@", handlerException);
+    }
+
+    _exit(1);
 }
 
-void SignalHandler(int signal)
+static void FatalSignalHandler(int signo)
 {
-	int32_t exceptionCount = OSAtomicIncrement32(&UncaughtExceptionCount);
-	if (exceptionCount > UncaughtExceptionMaximum)
-	{
-		return;
-	}
+    static const char message[] = "VSCOKeys: fatal signal\n";
+    ssize_t ignored __attribute__((unused)) = write(STDERR_FILENO, message, sizeof(message) - 1);
+    (void)signo;
+    _exit(128 + (signo & 0x7f));
+}
 
-    uncaughtExceptionHandler([NSException
-                              exceptionWithName: UncaughtExceptionHandlerSignalExceptionName
-                              reason: [NSString stringWithFormat: NSLocalizedString(@"Signal %d was raised.", nil), signal]
-                              userInfo: NULL]);
+static void InstallFatalSignalHandlers(void)
+{
+    struct sigaction action;
+    memset(&action, 0, sizeof(action));
+    action.sa_handler = FatalSignalHandler;
+    action.sa_flags = SA_RESETHAND;
+    sigemptyset(&action.sa_mask);
+
+    sigaction(SIGABRT, &action, NULL);
+    sigaction(SIGILL, &action, NULL);
+    sigaction(SIGSEGV, &action, NULL);
+    sigaction(SIGFPE, &action, NULL);
+    sigaction(SIGBUS, &action, NULL);
+    sigaction(SIGPIPE, &action, NULL);
 }
 
 - (BOOL)exceptionHandler:(NSExceptionHandler *)sender shouldHandleException:(NSException *)exception mask:(unsigned long)aMask
 {
-    uncaughtExceptionHandler(exception);
-    return YES;
+    DualLog(@"NSExceptionHandler (%lu): %@", aMask, exception);
+    return NO;
 }
 
 void SetUpLogging()
@@ -172,30 +229,35 @@ void DualLog(NSString* format, ...)
     va_start(argList, format);
     NSString* formattedMessage = [[NSString alloc] initWithFormat: format arguments: argList];
     va_end(argList);
-    NSLog(@"%@", formattedMessage);
 
-    if (traceFilePath != NULL)
+    NSLock *lock = DualLogLock();
+    [lock lock];
+    @try
     {
-        formattedMessage = [formattedMessage stringByAppendingString:@"\n"];
-        NSFileHandle *myHandle = [NSFileHandle fileHandleForWritingAtPath:traceFilePath];
-        [myHandle seekToEndOfFile];
-        [myHandle writeData:[formattedMessage dataUsingEncoding:NSUTF8StringEncoding]];
+        NSLog(@"%@", formattedMessage);
+
+        if (traceFilePath != NULL)
+        {
+            formattedMessage = [formattedMessage stringByAppendingString:@"\n"];
+            NSFileHandle *myHandle = [NSFileHandle fileHandleForWritingAtPath:traceFilePath];
+            [myHandle seekToEndOfFile];
+            [myHandle writeData:[formattedMessage dataUsingEncoding:NSUTF8StringEncoding]];
+        }
+    }
+    @finally
+    {
+        [lock unlock];
     }
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
     NSExceptionHandler *handler = [NSExceptionHandler defaultExceptionHandler];
-    [handler setExceptionHandlingMask:NSLogAndHandleEveryExceptionMask];
+    [handler setExceptionHandlingMask:NSLogUncaughtExceptionMask | NSHandleUncaughtExceptionMask];
     [handler setDelegate:self];
 
     NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
-	signal(SIGABRT, SignalHandler);
-	signal(SIGILL, SignalHandler);
-	signal(SIGSEGV, SignalHandler);
-	signal(SIGFPE, SignalHandler);
-	signal(SIGBUS, SignalHandler);
-	signal(SIGPIPE, SignalHandler);
+    InstallFatalSignalHandlers();
 
     SetUpLogging();
 

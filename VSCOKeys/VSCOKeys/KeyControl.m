@@ -24,6 +24,8 @@
 //
 
 #import "KeyControl.h"
+#import "KeyfileValidator.h"
+#import "VSCOKeyCodeLookup.h"
 #import "AppDelegate.h"
 
 #import "SBJson.h"
@@ -31,6 +33,9 @@
 
 #import "AboutWindowController.h"
 #import "QuickWindowController.h"
+#import "KeyboardHUDWindowController.h"
+#import "KeyboardLayoutEditorController.h"
+#import "KeysEditorWindowController.h"
 #import "MainWindowController.h"
 
 #import "NSData+Cryption.h"
@@ -39,6 +44,121 @@
 #import "NSColor+FromHex.h"
 #import "NSFileManager+DirectoryLocations.h"
 #import "NSString+MD5.h"
+#import <Carbon/Carbon.h>
+#import <math.h>
+
+static const int64_t kVSCOInjectedKeyEventMarker = 0x5653434f;
+
+static BOOL VSCOKeyCodeForCharacter(NSString *character, CGKeyCode *keyCode, CGEventFlags *eventFlags)
+{
+    return VSCOResolveKeyCodeForCharacter(character, keyCode, eventFlags);
+}
+
+static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CGKeyCode *keyCode,
+                                 CGEventFlags *eventFlags, NSUInteger depth)
+{
+    if (!element || depth > 12) return NO;
+
+    CFTypeRef titleValue = NULL;
+    AXError titleError = AXUIElementCopyAttributeValue(element, kAXTitleAttribute, &titleValue);
+    BOOL matchesTitle = titleError == kAXErrorSuccess && titleValue &&
+        CFGetTypeID(titleValue) == CFStringGetTypeID() &&
+        [(__bridge NSString *)titleValue isEqualToString:menuTitle];
+    if (titleValue) CFRelease(titleValue);
+
+    if (matchesTitle) {
+        CFTypeRef virtualKeyValue = NULL;
+        CFTypeRef modifierValue = NULL;
+        CGKeyCode resolvedKeyCode = 0;
+        CGEventFlags resolvedFlags = 0;
+        BOOL hasKeyCode = NO;
+
+        if (AXUIElementCopyAttributeValue(element, kAXMenuItemCmdVirtualKeyAttribute, &virtualKeyValue) == kAXErrorSuccess &&
+            virtualKeyValue && CFGetTypeID(virtualKeyValue) == CFNumberGetTypeID()) {
+            int virtualKey = 0;
+            hasKeyCode = CFNumberGetValue((CFNumberRef)virtualKeyValue, kCFNumberIntType, &virtualKey);
+            resolvedKeyCode = (CGKeyCode)virtualKey;
+        }
+        if (AXUIElementCopyAttributeValue(element, kAXMenuItemCmdModifiersAttribute, &modifierValue) == kAXErrorSuccess &&
+            modifierValue && CFGetTypeID(modifierValue) == CFNumberGetTypeID()) {
+            int modifiers = 0;
+            CFNumberGetValue((CFNumberRef)modifierValue, kCFNumberIntType, &modifiers);
+            if (modifiers & kAXMenuItemModifierShift) resolvedFlags |= kCGEventFlagMaskShift;
+            if (modifiers & kAXMenuItemModifierOption) resolvedFlags |= kCGEventFlagMaskAlternate;
+            if (modifiers & kAXMenuItemModifierControl) resolvedFlags |= kCGEventFlagMaskControl;
+            if (!(modifiers & kAXMenuItemModifierNoCommand)) resolvedFlags |= kCGEventFlagMaskCommand;
+        }
+        if (virtualKeyValue) CFRelease(virtualKeyValue);
+        if (modifierValue) CFRelease(modifierValue);
+
+        if (hasKeyCode) {
+            *keyCode = resolvedKeyCode;
+            *eventFlags = resolvedFlags;
+            return YES;
+        }
+
+        CFTypeRef characterValue = NULL;
+        if (AXUIElementCopyAttributeValue(element, kAXMenuItemCmdCharAttribute, &characterValue) == kAXErrorSuccess &&
+            characterValue && CFGetTypeID(characterValue) == CFStringGetTypeID()) {
+            CGEventFlags characterFlags = 0;
+            BOOL foundCharacter = VSCOKeyCodeForCharacter((__bridge NSString *)characterValue, &resolvedKeyCode, &characterFlags);
+            if (characterValue) CFRelease(characterValue);
+            if (foundCharacter) {
+                *keyCode = resolvedKeyCode;
+                *eventFlags = resolvedFlags | characterFlags;
+                return YES;
+            }
+        } else if (characterValue) {
+            CFRelease(characterValue);
+        }
+    }
+
+    CFTypeRef childrenValue = NULL;
+    if (AXUIElementCopyAttributeValue(element, kAXChildrenAttribute, &childrenValue) != kAXErrorSuccess ||
+        !childrenValue || CFGetTypeID(childrenValue) != CFArrayGetTypeID()) {
+        if (childrenValue) CFRelease(childrenValue);
+        return NO;
+    }
+
+    CFArrayRef children = (CFArrayRef)childrenValue;
+    for (CFIndex index = 0; index < CFArrayGetCount(children); index++) {
+        AXUIElementRef child = (AXUIElementRef)CFArrayGetValueAtIndex(children, index);
+        if (VSCOFindMenuShortcut(child, menuTitle, keyCode, eventFlags, depth + 1)) {
+            CFRelease(childrenValue);
+            return YES;
+        }
+    }
+    CFRelease(childrenValue);
+    return NO;
+}
+
+@interface KeyControl ()
+@property (retain) NSString *physicalKeyboardLayoutIdentifier;
+@property (retain) NSString *brushIncreaseKey;
+@property (retain) NSString *brushDecreaseKey;
+@property (assign) CGKeyCode brushIncreaseKeyCode;
+@property (assign) CGEventFlags brushIncreaseEventFlags;
+@property (assign) BOOL brushIncreaseKeyCodeValid;
+@property (assign) CGKeyCode brushDecreaseKeyCode;
+@property (assign) CGEventFlags brushDecreaseEventFlags;
+@property (assign) BOOL brushDecreaseKeyCodeValid;
+- (void)toggleKeyboardHUD:(id)sender;
+- (void)setKeyboardHUDVisible:(BOOL)visible;
+- (void)setKeyboardHUDVisibleForCapsLock:(NSNumber *)enabled;
+- (void)toggleKeyboardHUDShortLabels:(id)sender;
+- (void)selectPhysicalKeyboardLayoutFromMenu:(id)sender;
+- (void)selectPhysicalKeyboardLayout:(NSString *)layoutIdentifier;
+- (void)editCurrentLayout;
+- (void)updateKeyboardHUDForEvent:(NSDictionary *)eventInfo;
+- (void)refreshKeyboardHUDBindings;
+- (NSDictionary *)commandForKeyCode:(int)keyCode modifierFlags:(CGEventFlags)modifiers;
+- (NSString *)actionTitleForCommand:(NSDictionary *)command;
+- (NSUInteger)modifierMaskForEventFlags:(CGEventFlags)flags;
+- (void)updateShortcutKeyCodes:(NSDictionary *)shortcuts;
+- (void)postShortcutWithKeyCode:(CGKeyCode)keyCode flags:(CGEventFlags)eventFlags;
+- (BOOL)executeShortcutFallbackForAction:(NSString *)action;
+- (void)sendBrushSizeChange:(double)delta;
+@end
 
 @implementation KeyControl
 
@@ -55,8 +175,13 @@
 @synthesize statusBarIconError;
 
 @synthesize toggleMenuItem;
+@synthesize keyboardHUDMenuItem, keyboardHUDWindowController;
+@synthesize keyboardHUDEnabled;
+@synthesize keyboardHUDShowsIncrements, keyboardHUDLabelStyle;
 
 @synthesize activeKeyFile;
+@synthesize physicalKeyboardLayoutIdentifier;
+@synthesize brushIncreaseKey, brushDecreaseKey;
 
 @synthesize keyThread;
 @synthesize statusThread;
@@ -83,6 +208,7 @@
 @synthesize adjustmentMapping;
 @synthesize adjustmentLimits;
 @synthesize commandCategories;
+@synthesize allCommandCategories, hiddenCommandIdentifiers, pluginSettingsTimer, pluginSettingsRequestInProgress;
 @synthesize availableDevelopPresets;
 
 @synthesize numFormatter;
@@ -99,6 +225,18 @@
     if (self)
     {
         self.authContinueTrial = NO;
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        NSString *savedLabelStyle = [defaults stringForKey:DEFAULTS_KEYBOARD_HUD_LABEL_STYLE];
+        self.keyboardHUDLabelStyle = [@[KEYBOARD_HUD_LABEL_STYLE_STANDARD, KEYBOARD_HUD_LABEL_STYLE_MOTIBODO] containsObject:savedLabelStyle]
+            ? savedLabelStyle : KEYBOARD_HUD_LABEL_STYLE_STANDARD;
+        self.keyboardHUDShowsIncrements = [defaults boolForKey:DEFAULTS_KEYBOARD_HUD_SHOW_INCREMENTS];
+        NSString *savedLayout = [defaults stringForKey:DEFAULTS_PHYSICAL_KEYBOARD_LAYOUT];
+        NSArray *layoutOptions = [self physicalKeyboardLayoutOptions];
+        BOOL supportedLayout = [layoutOptions indexOfObjectPassingTest:^BOOL(NSDictionary *option, NSUInteger index, BOOL *stop) {
+            return [[option objectForKey:@"id"] isEqualToString:savedLayout];
+        }] != NSNotFound;
+        self.physicalKeyboardLayoutIdentifier = supportedLayout ? savedLayout : KEYBOARD_LAYOUT_MACBOOK_ISO;
+        [self updateShortcutKeyCodes:@{@"increase": @"]", @"decrease": @"["}];
 
         self.keyfileDirectory = [[NSFileManager defaultManager] applicationSupportDirectory];
 
@@ -108,6 +246,13 @@
 
         [self initAppList];
         [self initMappings];
+                self.hiddenCommandIdentifiers = [NSSet set];
+                [self refreshPluginSettings:nil];
+                self.pluginSettingsTimer = [NSTimer scheduledTimerWithTimeInterval:3.0
+                                                                                                                                        target:self
+                                                                                                                                    selector:@selector(refreshPluginSettings:)
+                                                                                                                                    userInfo:nil
+                                                                                                                                     repeats:YES];
 
         self.lrVersion = [self getLRVersion];
 
@@ -222,9 +367,19 @@
     [self.aboutWindow.window makeKeyAndOrderFront:nil];
 }
 
+- (void)editCurrentLayout
+{
+    NSDictionary *keyfile = [self.keyfileList objectForKey:self.activeKeyFile];
+    if (!keyfile || !self.mainController) return;
+
+    [self.mainController openEditorForKeyfile:keyfile];
+    [NSApp activateIgnoringOtherApps:YES];
+    [self.mainController.window makeKeyAndOrderFront:nil];
+}
 
 - (void)quitApplication
 {
+    [self.keyboardHUDWindowController hideHUD];
     [[NSApplication sharedApplication] terminate:nil];
 }
 
@@ -273,6 +428,7 @@
     if (!uuid || [uuid length] == 0) return;
 
     self.activeKeyFile = uuid;
+    [self refreshKeyboardHUDBindings];
 
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults setValue:self.activeKeyFile forKey:DEFAULTS_ACTIVE_KEYFILE];
@@ -286,6 +442,78 @@
     }
 }
 
+- (BOOL)saveKeyfile:(NSDictionary *)keyfile error:(NSError **)error
+{
+    if (![self validateKeyfile:keyfile error:error]) return NO;
+
+    NSString *uuid = [keyfile objectForKey:KEYFILE_UUID_NODENAME];
+    NSString *name = [keyfile objectForKey:KEYFILE_NAME_NODENAME];
+    NSString *json = [keyfile JSONRepresentation];
+    if (!uuid || [uuid length] == 0 || ![name isKindOfClass:[NSString class]] || name.length == 0 || !json) {
+        if (error) {
+            *error = [NSError errorWithDomain:@"VSCOKeys.Keyfile"
+                                         code:1
+                                     userInfo:@{NSLocalizedDescriptionKey: @"The layout could not be serialized."}];
+        }
+        return NO;
+    }
+
+    NSString *fileNameBase = [name stringByReplacingOccurrencesOfString:@"/" withString:@"-"];
+    fileNameBase = [fileNameBase stringByReplacingOccurrencesOfString:@":" withString:@"-"];
+    fileNameBase = [fileNameBase stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (fileNameBase.length == 0) fileNameBase = @"Layout";
+
+    NSDictionary *existingKeyfile = [self.keyfileList objectForKey:uuid];
+    NSString *existingFilename = [existingKeyfile objectForKey:KEYFILE_FILENAME_NODENAME];
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSString *filename = [fileNameBase stringByAppendingPathExtension:KEYFILE_JSON_EXTENSION];
+    NSUInteger suffix = 2;
+    NSString *path = [self.keyfileDirectory stringByAppendingPathComponent:filename];
+    while ([fileManager fileExistsAtPath:path] && ![filename isEqualToString:existingFilename]) {
+        filename = [NSString stringWithFormat:@"%@ (%lu).%@", fileNameBase, (unsigned long)suffix++, KEYFILE_JSON_EXTENSION];
+        path = [self.keyfileDirectory stringByAppendingPathComponent:filename];
+    }
+
+    NSError *writeError = nil;
+    if (![json writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:&writeError]) {
+        if (error) *error = writeError;
+        return NO;
+    }
+
+    if (existingFilename.length > 0 && ![existingFilename isEqualToString:filename]) {
+        NSString *existingPath = [self.keyfileDirectory stringByAppendingPathComponent:existingFilename];
+        if ([fileManager fileExistsAtPath:existingPath] && ![fileManager removeItemAtPath:existingPath error:&writeError]) {
+            [fileManager removeItemAtPath:path error:NULL];
+            if (error) *error = writeError;
+            return NO;
+        }
+    }
+
+    [self loadAllKeyfiles];
+    [self resetStatusMenu];
+    [self activateKeyfileWithUUID:uuid];
+    return YES;
+}
+
+- (BOOL)validateKeyfile:(NSDictionary *)keyfile error:(NSError **)error
+{
+    if (!VSCOValidateKeyfile(keyfile, error)) return NO;
+    for (NSDictionary *binding in [keyfile objectForKey:KEYFILE_KEYS_NODENAME]) {
+        NSDictionary *adjustments = [binding objectForKey:KEYFILE_ADJUSTMENTS_NODENAME];
+        for (NSString *action in adjustments) {
+            if ([action isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME] || [action isEqualToString:@"_SetPreset"] ||
+                [self.adjustmentMapping objectForKey:action]) continue;
+            if (error) {
+                *error = [NSError errorWithDomain:@"VSCOKeys.Keyfile"
+                                             code:5
+                                         userInfo:@{NSLocalizedDescriptionKey: [NSString stringWithFormat:@"Action %@ is not supported by this version of VSCO Keys.", action]}];
+            }
+            return NO;
+        }
+    }
+    return YES;
+}
+
 - (void)resetStatusMenu
 {
     NSMenu *theMenu = [[NSMenu alloc] initWithTitle:@"main"];
@@ -293,6 +521,20 @@
     self.toggleMenuItem = [self addItem:STATUSMENUITEM_INACTIVE toMenu:theMenu target:self selector:@selector(toggleKeyControlActive) object:NULL];
 
     [self addItem:STATUSMENUITEM_PREFERENCES toMenu:theMenu target:self selector:@selector(showWindow) object:NULL];
+    self.keyboardHUDMenuItem = [self addItem:@"Show Keyboard Overlay" toMenu:theMenu target:self selector:@selector(toggleKeyboardHUD:) object:NULL];
+    self.keyboardHUDEnabled = self.keyboardHUDWindowController.window.isVisible;
+    [self.keyboardHUDMenuItem setState:self.keyboardHUDEnabled ? NSOnState : NSOffState];
+    NSMenuItem *layoutItem = [[NSMenuItem alloc] initWithTitle:@"Physical Keyboard" action:nil keyEquivalent:@""];
+    NSMenu *layoutMenu = [[NSMenu alloc] initWithTitle:@"Physical Keyboard"];
+    for (NSDictionary *option in [self physicalKeyboardLayoutOptions]) {
+        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:[option objectForKey:@"name"] action:@selector(selectPhysicalKeyboardLayoutFromMenu:) keyEquivalent:@""];
+        [item setTarget:self];
+        [item setRepresentedObject:[option objectForKey:@"id"]];
+        [item setState:[[option objectForKey:@"id"] isEqualToString:self.physicalKeyboardLayoutIdentifier] ? NSOnState : NSOffState];
+        [layoutMenu addItem:item];
+    }
+    [layoutItem setSubmenu:layoutMenu];
+    [theMenu addItem:layoutItem];
 
     [theMenu addItem:[NSMenuItem separatorItem]];
 
@@ -315,6 +557,8 @@
     }
 
     [theMenu addItem:[NSMenuItem separatorItem]];
+    [self addItem:@"Edit Current Layout" toMenu:theMenu target:self selector:@selector(editCurrentLayout) object:NULL];
+    [theMenu addItem:[NSMenuItem separatorItem]];
 
     [self addItem:STATUSMENUITEM_ABOUT toMenu:theMenu target:self selector:@selector(showAbout) object:NULL];
 
@@ -323,6 +567,206 @@
     [self.statusBar setMenu:theMenu];
 
     [self setMenuForKeyFileActive];
+    [self refreshKeyboardHUDBindings];
+}
+
+- (void)toggleKeyboardHUD:(id)sender
+{
+    [self setKeyboardHUDVisible:!self.keyboardHUDWindowController.window.isVisible];
+}
+
+- (void)setKeyboardHUDVisibleForCapsLock:(NSNumber *)enabled
+{
+    [self setKeyboardHUDVisible:enabled.boolValue];
+}
+
+- (void)setKeyboardHUDVisible:(BOOL)visible
+{
+    if (!self.keyboardHUDWindowController) {
+        self.keyboardHUDWindowController = [[KeyboardHUDWindowController alloc] initWithKeyMapping:self.keyMapping];
+    }
+    [self.keyboardHUDWindowController setKeyboardLayoutDefinition:[self physicalKeyboardLayoutDefinition]];
+    [self refreshKeyboardHUDBindings];
+    if (visible && !self.keyboardHUDWindowController.window.isVisible) {
+        CGFloat keyboardUnitScale = [self.mainController keyboardEditorPreviewUnitScale];
+        [self.keyboardHUDWindowController setKeyboardUnitScale:keyboardUnitScale];
+        [self.keyboardHUDWindowController showHUD];
+    } else if (!visible && self.keyboardHUDWindowController.window.isVisible) {
+        [self.keyboardHUDWindowController hideHUD];
+    }
+    self.keyboardHUDEnabled = self.keyboardHUDWindowController.window.isVisible;
+    [self.keyboardHUDMenuItem setState:self.keyboardHUDEnabled ? NSOnState : NSOffState];
+}
+
+- (NSArray *)physicalKeyboardLayoutOptions
+{
+    return @[
+        @{@"id": KEYBOARD_LAYOUT_MACBOOK_ISO, @"name": @"MacBook Pro ISO (AZERTY, QWERTY caps)"},
+        @{@"id": KEYBOARD_LAYOUT_APPLE_MAGIC_ANSI, @"name": @"Apple Magic Keyboard (QWERTY ANSI)"}
+    ];
+}
+
+- (NSDictionary *)physicalKeyboardLayoutDefinition
+{
+    NSString *resourceName = [self.physicalKeyboardLayoutIdentifier isEqualToString:KEYBOARD_LAYOUT_APPLE_MAGIC_ANSI]
+        ? @"AppleMagicANSIKeyboard"
+        : @"MacBookISOKeyboard";
+    NSString *path = [[NSBundle mainBundle] pathForResource:resourceName ofType:@"json"];
+    NSData *data = path ? [NSData dataWithContentsOfFile:path] : nil;
+    return data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+}
+
+- (void)selectPhysicalKeyboardLayoutFromMenu:(NSMenuItem *)sender
+{
+    [self selectPhysicalKeyboardLayout:[sender representedObject]];
+}
+
+- (void)selectPhysicalKeyboardLayout:(NSString *)layoutIdentifier
+{
+    BOOL supported = NO;
+    for (NSDictionary *option in [self physicalKeyboardLayoutOptions]) {
+        if ([[option objectForKey:@"id"] isEqualToString:layoutIdentifier]) {
+            supported = YES;
+            break;
+        }
+    }
+    if (!supported || [layoutIdentifier isEqualToString:self.physicalKeyboardLayoutIdentifier]) return;
+
+    self.physicalKeyboardLayoutIdentifier = layoutIdentifier;
+    [[NSUserDefaults standardUserDefaults] setObject:layoutIdentifier forKey:DEFAULTS_PHYSICAL_KEYBOARD_LAYOUT];
+    [self.mainController.keyboardEditorController reloadPhysicalKeyboardLayout];
+    [self.keyboardHUDWindowController setKeyboardLayoutDefinition:[self physicalKeyboardLayoutDefinition]];
+    [self resetStatusMenu];
+}
+
+- (void)refreshKeyboardHUDBindings
+{
+    if (!self.keyboardHUDWindowController) return;
+    NSDictionary *keyfile = [self.keyfileList objectForKey:self.activeKeyFile];
+    NSArray *bindings = [keyfile objectForKey:KEYFILE_KEYS_NODENAME];
+    [self.keyboardHUDWindowController setBindings:bindings ?: @[]
+                               adjustmentMapping:self.adjustmentMapping ?: @{}
+                                adjustmentLimits:self.adjustmentLimits ?: @{}];
+    NSDictionary *customLabels = [[NSUserDefaults standardUserDefaults] dictionaryForKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_LABELS] ?: @{};
+    NSDictionary *customPresetLabels = [[NSUserDefaults standardUserDefaults] dictionaryForKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_PRESET_LABELS] ?: @{};
+    [self.keyboardHUDWindowController setLabelStyle:self.keyboardHUDLabelStyle
+                               showsIncrementAmounts:self.keyboardHUDShowsIncrements
+                                       customLabels:customLabels
+                                 customPresetLabels:customPresetLabels];
+}
+
+- (NSString *)shortLabelForAction:(NSString *)action customLabels:(NSDictionary *)customLabels
+{
+    if ([action isEqualToString:@"_SetPreset"]) return @"Preset";
+    NSString *customLabel = [[customLabels objectForKey:action] description];
+    if (customLabel.length > 0) return customLabel;
+
+    static NSDictionary *shortNames;
+    if (!shortNames) {
+        shortNames = @{
+            @"Exposure2012": @"Exp", @"Contrast2012": @"Con", @"Highlights2012": @"Hi",
+            @"Shadows2012": @"Shd", @"Whites2012": @"Wht", @"Blacks2012": @"Blk",
+            @"Temperature": @"Tmp", @"Tint": @"Tint", @"Saturation": @"Sat",
+            @"Vibrance": @"Vib", @"Clarity2012": @"Clar", @"Texture": @"Tex",
+            @"straightenAngle": @"Angle", @"ResetCrop": @"Rst Crop",
+            @"ResetParametricDarks": @"Rst Dark"
+        };
+    }
+    NSString *title = [shortNames objectForKey:action];
+    if (title) return title;
+
+    NSString *mappedTitle = [[self.adjustmentMapping objectForKey:action] description] ?: action;
+    NSArray *words = [mappedTitle componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    NSString *firstWord = [words filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(NSString *word, NSDictionary *bindings) {
+        return word.length > 0 && ![word hasPrefix:@"("];
+    }]].firstObject;
+    title = firstWord ?: action;
+    return title.length > 7 ? [title substringToIndex:7] : title;
+}
+
+- (NSString *)presetLabelForValue:(id)value customLabels:(NSDictionary *)customLabels
+{
+    NSString *presetValue = [value description];
+    NSString *customLabel = [[customLabels objectForKey:presetValue] description];
+    if (customLabel.length > 0) return customLabel;
+    NSString *displayName = [presetValue lastPathComponent];
+    return displayName.length > 0 ? displayName : presetValue;
+}
+
+- (void)updateKeyboardHUDLabelSettingsWithStyle:(NSString *)style showsIncrements:(BOOL)showsIncrements customLabels:(NSDictionary *)customLabels
+{
+    NSString *validStyle = [style isEqualToString:KEYBOARD_HUD_LABEL_STYLE_MOTIBODO]
+        ? KEYBOARD_HUD_LABEL_STYLE_MOTIBODO : KEYBOARD_HUD_LABEL_STYLE_STANDARD;
+    self.keyboardHUDLabelStyle = validStyle;
+    self.keyboardHUDShowsIncrements = showsIncrements;
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults setObject:validStyle forKey:DEFAULTS_KEYBOARD_HUD_LABEL_STYLE];
+    [defaults setBool:showsIncrements forKey:DEFAULTS_KEYBOARD_HUD_SHOW_INCREMENTS];
+    [defaults setObject:customLabels ?: @{} forKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_LABELS];
+    [self refreshKeyboardHUDBindings];
+}
+
+- (void)updateKeyboardHUDPresetLabels:(NSDictionary *)presetLabels
+{
+    [[NSUserDefaults standardUserDefaults] setObject:presetLabels ?: @{} forKey:DEFAULTS_KEYBOARD_HUD_CUSTOM_PRESET_LABELS];
+    [self refreshKeyboardHUDBindings];
+}
+
+- (NSDictionary *)commandForKeyCode:(int)keyCode modifierFlags:(CGEventFlags)modifiers
+{
+    CGEventFlags relevantModifiers = modifiers & (kCGEventFlagMaskShift | kCGEventFlagMaskControl | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand);
+    for (NSDictionary *command in self.keysDict) {
+        if (keyCode == [[command objectForKey:KEYFILE_KEY_NODENAME] intValue] &&
+            relevantModifiers == [[command objectForKey:KEYFILE_MODIFIERS_NODENAME] unsignedLongLongValue]) {
+            return command;
+        }
+    }
+    return nil;
+}
+
+- (NSString *)actionTitleForCommand:(NSDictionary *)command
+{
+    NSDictionary *adjustments = [command objectForKey:KEYFILE_ADJUSTMENTS_NODENAME];
+    NSArray *actions = [[adjustments allKeys] sortedArrayUsingSelector:@selector(compare:)];
+    NSMutableArray *titles = [NSMutableArray array];
+    for (NSString *action in actions) {
+        id value = [adjustments objectForKey:action];
+        NSString *title = nil;
+        if ([action isEqualToString:KEYFILE_ADJUSTMENT_REMAP_NODENAME]) {
+            id target = [value isKindOfClass:[NSDictionary class]] ? [value objectForKey:KEYFILE_KEY_NODENAME] : value;
+            NSString *targetName = [self getKeynameForVirtual:[target description]] ?: [target description];
+            title = [NSString stringWithFormat:@"Remap to %@", targetName];
+        } else if ([action isEqualToString:@"_SetPreset"]) {
+            title = [NSString stringWithFormat:@"Apply %@", value];
+        } else {
+            title = [self getNormalNameForAdjustment:action] ?: action;
+        }
+        if (title) [titles addObject:title];
+    }
+    return [titles componentsJoinedByString:@" · "];
+}
+
+- (NSUInteger)modifierMaskForEventFlags:(CGEventFlags)flags
+{
+    NSUInteger mask = 0;
+    if (flags & kCGEventFlagMaskShift) mask |= 1;
+    if (flags & kCGEventFlagMaskControl) mask |= 2;
+    if (flags & kCGEventFlagMaskAlternate) mask |= 4;
+    if (flags & kCGEventFlagMaskCommand) mask |= 8;
+    return mask;
+}
+
+- (void)updateKeyboardHUDForEvent:(NSDictionary *)eventInfo
+{
+    if (!self.keyboardHUDWindowController.window.isVisible) return;
+    NSUInteger modifierMask = [[eventInfo objectForKey:@"modifierMask"] unsignedIntegerValue];
+    [self.keyboardHUDWindowController updateModifierMask:modifierMask];
+    NSString *keyCode = [eventInfo objectForKey:@"keyCode"];
+    if (keyCode) {
+        [self.keyboardHUDWindowController showKeyCode:keyCode
+                                          actionTitle:[eventInfo objectForKey:@"actionTitle"]
+                                         modifierMask:modifierMask];
+    }
 }
 
 - (void)statusBarUpdateLoop
@@ -596,6 +1040,118 @@
 
 
 #pragma mark Lightroom Integration
+
+- (void)updateShortcutKeyCodes:(NSDictionary *)shortcuts
+{
+    NSString *increaseKey = shortcuts[@"increase"];
+    NSString *decreaseKey = shortcuts[@"decrease"];
+    if ([increaseKey isKindOfClass:[NSString class]] && increaseKey.length == 1) {
+        self.brushIncreaseKey = increaseKey;
+        self.brushIncreaseKeyCodeValid = VSCOKeyCodeForCharacter(increaseKey, &_brushIncreaseKeyCode, &_brushIncreaseEventFlags);
+    }
+    if ([decreaseKey isKindOfClass:[NSString class]] && decreaseKey.length == 1) {
+        self.brushDecreaseKey = decreaseKey;
+        self.brushDecreaseKeyCodeValid = VSCOKeyCodeForCharacter(decreaseKey, &_brushDecreaseKeyCode, &_brushDecreaseEventFlags);
+    }
+}
+
+- (void)sendBrushSizeChange:(double)delta
+{
+    if (!isfinite(delta) || delta == 0) return;
+
+    CGKeyCode keyCode = delta > 0 ? self.brushIncreaseKeyCode : self.brushDecreaseKeyCode;
+    CGEventFlags eventFlags = delta > 0 ? self.brushIncreaseEventFlags : self.brushDecreaseEventFlags;
+    BOOL keyCodeValid = delta > 0 ? self.brushIncreaseKeyCodeValid : self.brushDecreaseKeyCodeValid;
+    NSString *character = delta > 0 ? self.brushIncreaseKey : self.brushDecreaseKey;
+    if (!keyCodeValid) {
+        DualLog(@"Could not resolve Lightroom brush shortcut: %@", character);
+        return;
+    }
+
+    [self postShortcutWithKeyCode:keyCode flags:eventFlags];
+}
+
+- (void)postShortcutWithKeyCode:(CGKeyCode)keyCode flags:(CGEventFlags)eventFlags
+{
+    NSRunningApplication *lightroom = [self getLRRunningInstance];
+    if (!lightroom) return;
+
+    CGEventRef keyDown = CGEventCreateKeyboardEvent(NULL, keyCode, true);
+    CGEventRef keyUp = CGEventCreateKeyboardEvent(NULL, keyCode, false);
+    if (!keyDown || !keyUp) {
+        if (keyDown) CFRelease(keyDown);
+        if (keyUp) CFRelease(keyUp);
+        return;
+    }
+
+    CGEventSetFlags(keyDown, eventFlags);
+    CGEventSetFlags(keyUp, eventFlags);
+    CGEventSetIntegerValueField(keyDown, kCGEventSourceUserData, kVSCOInjectedKeyEventMarker);
+    CGEventSetIntegerValueField(keyUp, kCGEventSourceUserData, kVSCOInjectedKeyEventMarker);
+    CGEventPostToPid((pid_t)lightroom.processIdentifier, keyDown);
+    CGEventPostToPid((pid_t)lightroom.processIdentifier, keyUp);
+    CFRelease(keyDown);
+    CFRelease(keyUp);
+}
+
+- (BOOL)executeShortcutFallbackForAction:(NSString *)action
+{
+    for (NSDictionary *category in self.allCommandCategories ?: self.commandCategories) {
+        for (NSDictionary *item in [category objectForKey:@"items"]) {
+            if (![[item objectForKey:@"id"] isEqualToString:action]) continue;
+            id shortcutValue = [item objectForKey:@"shortcut"];
+            if (!shortcutValue) return NO;
+            if (![shortcutValue isKindOfClass:[NSDictionary class]]) {
+                DualLog(@"Invalid shortcut metadata for %@.", action);
+                return YES;
+            }
+            NSDictionary *shortcut = shortcutValue;
+            NSString *menuTitle = [shortcut objectForKey:@"menuTitle"];
+            if (![menuTitle isKindOfClass:[NSString class]] || menuTitle.length == 0) {
+                DualLog(@"Missing Lightroom menu title for shortcut action %@.", action);
+                return YES;
+            }
+
+            NSString *fallbackKey = [shortcut objectForKey:@"fallbackKey"];
+            NSArray *fallbackModifiers = [shortcut objectForKey:@"fallbackModifiers"];
+            CGEventFlags fallbackFlags = 0;
+            if ([fallbackModifiers isKindOfClass:[NSArray class]]) {
+                for (id modifier in fallbackModifiers) {
+                    if (![modifier isKindOfClass:[NSString class]]) continue;
+                    if ([modifier isEqualToString:@"command"]) fallbackFlags |= kCGEventFlagMaskCommand;
+                    else if ([modifier isEqualToString:@"option"]) fallbackFlags |= kCGEventFlagMaskAlternate;
+                    else if ([modifier isEqualToString:@"shift"]) fallbackFlags |= kCGEventFlagMaskShift;
+                    else if ([modifier isEqualToString:@"control"]) fallbackFlags |= kCGEventFlagMaskControl;
+                }
+            }
+            CGKeyCode keyCode = 0;
+            CGEventFlags eventFlags = 0;
+            if ([fallbackKey isKindOfClass:[NSString class]] &&
+                VSCOKeyCodeForCharacter(fallbackKey, &keyCode, &eventFlags)) {
+                [self postShortcutWithKeyCode:keyCode flags:fallbackFlags | eventFlags];
+                DualLog(@"Used configured shortcut fallback for %@.", action);
+                return YES;
+            }
+
+            NSRunningApplication *lightroom = [self getLRRunningInstance];
+            if (!lightroom) return YES;
+            AXUIElementRef application = AXUIElementCreateApplication(lightroom.processIdentifier);
+            AXUIElementRef menuBar = NULL;
+            BOOL found = NO;
+            if (AXUIElementCopyAttributeValue(application, kAXMenuBarAttribute, (CFTypeRef *)&menuBar) == kAXErrorSuccess && menuBar) {
+                found = VSCOFindMenuShortcut(menuBar, menuTitle, &keyCode, &eventFlags, 0);
+                CFRelease(menuBar);
+            }
+            CFRelease(application);
+            if (found) {
+                [self postShortcutWithKeyCode:keyCode flags:eventFlags];
+                DualLog(@"Used resolved Lightroom menu shortcut for %@.", action);
+            } else DualLog(@"Could not resolve Lightroom menu or fallback shortcut for %@.", action);
+            return YES;
+        }
+    }
+    return NO;
+}
 
 - (void)initAppList
 {
@@ -994,6 +1550,7 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
         if (catsData) {
             self.commandCategories = [NSJSONSerialization JSONObjectWithData:catsData options:0 error:nil];
             if (self.commandCategories) {
+                self.allCommandCategories = self.commandCategories;
                 // Merge all category command IDs and display names into adjustmentMapping
                 NSMutableDictionary *mergedAdj = [self.adjustmentMapping mutableCopy] ?: [NSMutableDictionary dictionary];
                 for (NSDictionary *cat in self.commandCategories) {
@@ -1010,6 +1567,56 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
             }
         }
     }
+}
+
+- (void)refreshPluginSettings:(NSTimer *)timer
+{
+    if (self.pluginSettingsRequestInProgress) return;
+    self.pluginSettingsRequestInProgress = YES;
+    [HttpRequest sendGetTo:SERVER_SETTINGS_ENDPOINT responded:^(NSURLConnection *connection, NSURLResponse *response, NSData *data, NSString *mimeType) {
+        self.pluginSettingsRequestInProgress = NO;
+        NSString *body = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        id settings = [body JSONValue];
+        if (![settings isKindOfClass:[NSDictionary class]]) return;
+        NSString *brushIncreaseKey = settings[@"brushIncreaseKey"];
+        NSString *brushDecreaseKey = settings[@"brushDecreaseKey"];
+        NSString *increaseShortcut = [brushIncreaseKey isKindOfClass:[NSString class]] ? brushIncreaseKey : @"]";
+        NSString *decreaseShortcut = [brushDecreaseKey isKindOfClass:[NSString class]] ? brushDecreaseKey : @"[";
+        NSDictionary *shortcuts = @{@"increase": increaseShortcut, @"decrease": decreaseShortcut};
+        [self performSelectorOnMainThread:@selector(updateShortcutKeyCodes:)
+                       withObject:@{@"increase": increaseShortcut,
+                            @"decrease": decreaseShortcut,
+                            }
+                            waitUntilDone:YES];
+        NSDictionary *hiddenActions = settings[@"hiddenActions"];
+        if (![hiddenActions isKindOfClass:[NSDictionary class]]) return;
+
+        NSMutableSet *hiddenIdentifiers = [NSMutableSet set];
+        for (id actionIdentifier in hiddenActions) {
+            if ([hiddenActions[actionIdentifier] boolValue]) [hiddenIdentifiers addObject:actionIdentifier];
+        }
+        if ([hiddenIdentifiers isEqualToSet:self.hiddenCommandIdentifiers ?: [NSSet set]]) return;
+
+        self.hiddenCommandIdentifiers = hiddenIdentifiers;
+        NSMutableArray *visibleCategories = [NSMutableArray array];
+        for (NSDictionary *category in self.allCommandCategories) {
+            NSMutableArray *visibleItems = [NSMutableArray array];
+            for (NSDictionary *item in [category objectForKey:@"items"]) {
+                if (![hiddenIdentifiers containsObject:[item objectForKey:@"id"]]) [visibleItems addObject:item];
+            }
+            if (visibleItems.count > 0) {
+                [visibleCategories addObject:@{
+                    @"category": [category objectForKey:@"category"] ?: @"Other",
+                    @"items": visibleItems
+                }];
+            }
+        }
+        self.commandCategories = visibleCategories;
+        [self.mainController.keyboardEditorController reloadActionCatalog];
+        [self.mainController.editorController reloadActionCatalog];
+    } failed:^(NSURLConnection *connection, NSError *error) {
+        self.pluginSettingsRequestInProgress = NO;
+    }];
 }
 
 - (NSString *)getKeynameForVirtual:(NSString *)virtKey
@@ -1175,6 +1782,8 @@ void printKeyDebug(CGEventType type, CGEventFlags modifiers, int keyCode)
 
 CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon)
 {
+    @try
+    {
     KeyControl *appSelf = (__bridge KeyControl *)refcon;
 
     // handle kill-event cases
@@ -1186,8 +1795,35 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
         return NULL;
     }
 
+    if (CGEventGetIntegerValueField(event, kCGEventSourceUserData) == kVSCOInjectedKeyEventMarker) return event;
+
     int keyCode = (int)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
     CGEventFlags modifiers = CGEventGetFlags(event);
+    BOOL isLightroomForeground = [appSelf checkIsLRInForeground];
+    if (type == kCGEventFlagsChanged && keyCode == kVK_CapsLock && isLightroomForeground) {
+        NSNumber *capsLockEnabled = @((modifiers & kCGEventFlagMaskAlphaShift) != 0);
+        [appSelf performSelectorOnMainThread:@selector(setKeyboardHUDVisibleForCapsLock:)
+                                  withObject:capsLockEnabled
+                               waitUntilDone:NO];
+        return NULL;
+    }
+    if (isLightroomForeground && (modifiers & kCGEventFlagMaskAlphaShift)) {
+        modifiers &= ~kCGEventFlagMaskAlphaShift;
+        CGEventSetFlags(event, modifiers);
+    }
+    NSDictionary *matchedCommand = [appSelf commandForKeyCode:keyCode modifierFlags:modifiers];
+    if (type == kCGEventFlagsChanged && appSelf.keyboardHUDEnabled) {
+        NSDictionary *eventInfo = @{@"modifierMask": @([appSelf modifierMaskForEventFlags:modifiers])};
+        [appSelf performSelectorOnMainThread:@selector(updateKeyboardHUDForEvent:) withObject:eventInfo waitUntilDone:NO];
+    } else if ((type == kCGEventKeyDown || type == kCGEventKeyUp) && appSelf.keyboardHUDEnabled) {
+        NSMutableDictionary *eventInfo = [@{@"modifierMask": @([appSelf modifierMaskForEventFlags:modifiers])} mutableCopy];
+        if (type == kCGEventKeyDown) {
+            [eventInfo setObject:[NSString stringWithFormat:@"%d", keyCode] forKey:@"keyCode"];
+            NSString *actionTitle = matchedCommand ? [appSelf actionTitleForCommand:matchedCommand] : @"";
+            [eventInfo setObject:actionTitle ?: @"" forKey:@"actionTitle"];
+        }
+        [appSelf performSelectorOnMainThread:@selector(updateKeyboardHUDForEvent:) withObject:eventInfo waitUntilDone:NO];
+    }
 
     // Mode switch for app
     if ( !(modifiers & (kCGEventFlagMaskShift | kCGEventFlagMaskControl | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand)) && keyCode == appSelf.controlToggleKey && [appSelf checkIsLRInForeground])
@@ -1218,56 +1854,59 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
         return NULL;
     }
 
-    if ([appSelf checkIsKeySystemEngaged])
+    if ((type == kCGEventKeyDown || type == kCGEventKeyUp) && [appSelf checkIsKeySystemEngaged] && matchedCommand)
     {
-        if (appSelf.keysDict)
-        {
-            // check if any key combos match
-            for (int i = 0; i < [appSelf.keysDict count]; ++i)
-            {
-                NSDictionary *command = [appSelf.keysDict objectAtIndex:i];
+        NSMutableDictionary *adjustments = [[matchedCommand objectForKey:KEYFILE_ADJUSTMENTS_NODENAME] mutableCopy];
+        NSDictionary *remap = [adjustments objectForKey:KEYFILE_ADJUSTMENT_REMAP_NODENAME];
+        CGEventRef newEvent = NULL;
 
-                if (
-                    keyCode == [[command objectForKey:KEYFILE_KEY_NODENAME] intValue] &&
-                    (modifiers & (kCGEventFlagMaskShift | kCGEventFlagMaskControl | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand)) ==  [[command objectForKey:KEYFILE_MODIFIERS_NODENAME] unsignedLongLongValue]
-                    )
-                {
-                    NSMutableDictionary *adjustments = [[command objectForKey:KEYFILE_ADJUSTMENTS_NODENAME] mutableCopy];
-
-                    NSDictionary *remap = [adjustments objectForKey:KEYFILE_ADJUSTMENT_REMAP_NODENAME];
-
-                    CGEventRef newEvent = NULL;
-
-                    if (remap)
-                    {
-                        int newKey = [[remap objectForKey:KEYFILE_KEY_NODENAME] intValue];
-                        CGEventFlags newMod = [[remap objectForKey:KEYFILE_MODIFIERS_NODENAME] unsignedLongLongValue];
-
-                        newEvent = CGEventCreateKeyboardEvent(NULL, newKey, type == kCGEventKeyDown);
-                        CGEventSetFlags(newEvent, newMod);
-
-                        [adjustments removeObjectForKey:KEYFILE_ADJUSTMENT_REMAP_NODENAME];
-
-                        NSString *modString = GetModString(newMod);
-                        DualLog(@"Remapping key to %@%d", modString, newKey);
-                    }
-
-                    if (type == kCGEventKeyDown)
-                    {
-                        if (adjustments && [adjustments count] > 0)
-                        {
-                            [appSelf sendUpdate:adjustments];
-                            DualLog(@"Key Command Executed");
-                        }
-                    }
-
-                    return newEvent;
-                }
+        id brushSizeChange = [adjustments objectForKey:@"ChangeBrushSize"];
+        if (type == kCGEventKeyDown && brushSizeChange) {
+            [appSelf sendBrushSizeChange:[[brushSizeChange description] doubleValue]];
+            [adjustments removeObjectForKey:@"ChangeBrushSize"];
+        }
+        if (type == kCGEventKeyDown) {
+            for (NSString *action in [adjustments allKeys]) {
+                if ([appSelf executeShortcutFallbackForAction:action]) [adjustments removeObjectForKey:action];
             }
         }
+
+        if (remap)
+        {
+            int newKey = [[remap objectForKey:KEYFILE_KEY_NODENAME] intValue];
+            CGEventFlags newMod = [[remap objectForKey:KEYFILE_MODIFIERS_NODENAME] unsignedLongLongValue];
+
+            newEvent = CGEventCreateKeyboardEvent(NULL, newKey, type == kCGEventKeyDown);
+            CGEventSetFlags(newEvent, newMod);
+            [adjustments removeObjectForKey:KEYFILE_ADJUSTMENT_REMAP_NODENAME];
+
+            NSString *modString = GetModString(newMod);
+            DualLog(@"Remapping key to %@%d", modString, newKey);
+        }
+
+        if (type == kCGEventKeyDown && adjustments.count > 0)
+        {
+            [appSelf sendUpdate:adjustments];
+            DualLog(@"Key Command Executed");
+        }
+        return newEvent;
     }
 
     return event;
+    }
+    @catch (NSException *exception)
+    {
+        @try
+        {
+            DualLog(@"Event tap exception: %@", exception);
+            DualLog(@"Event tap stack: %@", [NSThread callStackSymbols]);
+        }
+        @catch (NSException *logException)
+        {
+            NSLog(@"VSCOKeys: event tap log failed: %@", logException);
+        }
+        return event;
+    }
 }
 
 // suppress false positive on event-tap create
@@ -1282,12 +1921,13 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 
     CFRunLoopSourceRef runLoopSource;
 
-    self.eventTap = CGEventTapCreate(kCGHIDEventTap, kCGHeadInsertEventTap, kCGEventTapOptionDefault, CGEventMaskBit(kCGEventKeyUp) | CGEventMaskBit(kCGEventKeyDown), myCGCreateEventCallback, (__bridge void *)self);
+    self.eventTap = CGEventTapCreate(kCGHIDEventTap, kCGHeadInsertEventTap, kCGEventTapOptionDefault,
+                                     CGEventMaskBit(kCGEventKeyUp) | CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventFlagsChanged),
+                                     myCGCreateEventCallback, (__bridge void *)self);
 
     if (!self.eventTap) {
         DualLog(@"Couldn't create event tap!");
-
-        exit(0);
+        return;
     }
 
     runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, self.eventTap, 0);

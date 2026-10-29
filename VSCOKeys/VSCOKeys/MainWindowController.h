@@ -30,11 +30,13 @@
 @class RSVerticallyCenteredTextFieldCell;
 @class FlatButton;
 @class KeysEditorWindowController;
+@class KeyboardLayoutEditorController;
 
 @interface MainWindowController : NSWindowController<NSTableViewDelegate, NSTextFieldDelegate>
 
 @property (retain) KeyControl *keyControl;
 @property (retain) KeysEditorWindowController *editorController;
+@property (retain) KeyboardLayoutEditorController *keyboardEditorController;
 
 @property (assign) NSPoint initialLocation;
 @property (assign) IBOutlet NSTabView *tabv_tabs;
@@ -86,6 +88,9 @@
 - (void)setupEditorController;
 - (void)openEditorForKeyfile:(NSDictionary *)keyfile;
 - (void)openNewLayoutEditor;
+- (void)showKeyboardEditor;
+- (CGFloat)keyboardEditorPreviewUnitScale;
+- (void)showTableEditor;
 
 - (IBAction)viewActivateButtonClicked:(id)sender;
 - (IBAction)viewPdfButtonClicked:(id)sender;
