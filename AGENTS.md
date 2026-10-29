@@ -173,9 +173,41 @@ VSCOKeys requires Accessibility permissions:
 
 ### Xcode Build Phases
 
-The Xcode project has one custom build phase:
+**IMPORTANT: The Xcode project should NOT have a Run Script build phase.**
 
-1. **Build Lightroom plugin** - Runs `Tools/compileLrplugin.sh`
+The project previously had a Run Script phase that called `Tools/compileLrplugin.sh`, but this was removed because:
+- Xcode's build sandbox blocks file access even with Input Files declared
+- The script needs to copy files from source tree, which the sandbox denies
+- This causes: `Sandbox: cp(XXXXX) deny(1) file-read-data` errors
+
+**Solution:**
+- Use the Makefile for all builds (`make build`, `make rebuild`)
+- The Makefile handles app building, plugin compilation, and Lightroom sync
+- Do not add Run Script phases to Xcode - they will fail with sandbox errors
+
+**Why this is better:**
+- Makefile runs outside Xcode's sandbox (no permission issues)
+- Single source of truth for build process
+- Clear separation: Xcode compiles the app, Makefile handles plugin integration
+
+### Code Signing and Bundle Identifiers
+
+**Current bundle identifier:** `com.VSCO.VSCOKeys`
+
+All three targets (VSCOKeys, VSCOKeysActivator, VSCOKeysTests) use this identifier:
+- Main app: `com.VSCO.VSCOKeys`
+- Activator helper: `com.VSCO.VSCOKeys` (could be `com.VSCO.VSCOKeys.Activator` for clarity)
+- Tests: `com.VSCO.VSCOKeys` (could be `com.VSCO.VSCOKeys.tests` for clarity)
+
+**Code signing:**
+- Uses "Sign to Run Locally" identity (ad-hoc signing)
+- Entitlements: `com.apple.security.get-task-allow = 1` (for debugging)
+- No developer team ID required for local development
+
+**Important:**
+- When changing bundle identifiers, update all targets consistently
+- The activator helper uses the same identifier to work with the main app
+- Test target identifier doesn't affect runtime behavior
 
 ### Auto-Launch VSCOKeys App
 
@@ -199,6 +231,39 @@ The plugin and app communicate via HTTP:
 - Defines all available commands
 - Synced from app source to plugin during build
 - Both sides must agree on command structure
+
+## Getting Xcode Warnings in IDE
+
+**Xcode-specific warnings** can only be seen in Xcode itself:
+- Xcode project configuration warnings
+- Build phase warnings
+- Interface Builder warnings
+- Asset catalog warnings
+- Signing/capability warnings
+- Apple-specific deprecation warnings
+
+**Code-level warnings** can be seen in both Xcode and command line:
+- Swift/ObjC compiler warnings
+- Static analyzer warnings
+- Linting warnings (if you add a linter like SwiftLint)
+
+**To see compiler warnings from command line:**
+```bash
+cd VSCOKeys
+xcodebuild -scheme VSCOKeys -configuration Debug build 2>&1 | grep -i "warning:"
+```
+
+**To see deprecation warnings:**
+```bash
+cd VSCOKeys
+xcodebuild -scheme VSCOKeys -configuration Debug build 2>&1 | grep -i "deprecated"
+```
+
+**Adding SwiftLint (optional):**
+- Can catch many code quality issues in this IDE
+- Install via Homebrew: `brew install swiftlint`
+- Add `.swiftlint.yml` configuration to project root
+- Run: `swiftlint` to see linting issues
 
 ## Related Documentation
 
