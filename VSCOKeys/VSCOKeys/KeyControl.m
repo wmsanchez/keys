@@ -207,6 +207,7 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
 @synthesize keyMapping;
 @synthesize adjustmentMapping;
 @synthesize adjustmentLimits;
+@synthesize adjustmentDefaults;
 @synthesize commandCategories;
 @synthesize allCommandCategories, hiddenCommandIdentifiers, pluginSettingsTimer, pluginSettingsRequestInProgress;
 @synthesize availableDevelopPresets;
@@ -1566,6 +1567,8 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
     self.adjustmentMapping = [[NSString stringWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"AdjustmentMapping" ofType:@"json"] encoding:NSUTF8StringEncoding error:nil] JSONValue];
 
     self.adjustmentLimits = [[NSString stringWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"AdjustmentLimits" ofType:@"json"] encoding:NSUTF8StringEncoding error:nil] JSONValue];
+
+    self.adjustmentDefaults = [[NSString stringWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"AdjustmentDefaults" ofType:@"json"] encoding:NSUTF8StringEncoding error:nil] JSONValue];
 
     // Load command categories (from MIDI2LR / LR SDK 15)
     NSString *catsPath = [[NSBundle mainBundle] pathForResource:@"CommandCategories" ofType:@"json"];

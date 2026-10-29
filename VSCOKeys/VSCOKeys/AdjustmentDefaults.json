@@ -1,0 +1,470 @@
+{
+  "metadata": {
+    "description": "Default values and increment steps for adjustment commands",
+    "version": "1.0"
+  },
+  "defaults": {
+    "Blacks2012": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Adjust black clipping (-25 to 25)"
+    },
+    "BlueHue": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Blue hue shift (-25 to 25)"
+    },
+    "BlueSaturation": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Blue saturation shift (-25 to 25)"
+    },
+    "ChangeBrushSize": {
+      "defaultValue": "1",
+      "increment": "1",
+      "tooltip": "Brush size adjustment (0.1 to 100)"
+    },
+    "Clarity2012": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Clarity adjustment (-25 to 25)"
+    },
+    "ColorNoiseReduction": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Color noise reduction (1 to 25)"
+    },
+    "ColorNoiseReductionDetail": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Color noise reduction detail (1 to 25)"
+    },
+    "Contrast2012": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Contrast adjustment (-50 to 50)"
+    },
+    "DefringeGreenAmount": {
+      "defaultValue": "5",
+      "increment": "1",
+      "tooltip": "Green defringe amount (1 to 10)"
+    },
+    "DefringeGreenHueHi": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Green defringe hue high (1 to 25)"
+    },
+    "DefringeGreenHueLo": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Green defringe hue low (1 to 25)"
+    },
+    "DefringePurpleAmount": {
+      "defaultValue": "5",
+      "increment": "1",
+      "tooltip": "Purple defringe amount (1 to 10)"
+    },
+    "DefringePurpleHueHi": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Purple defringe hue high (1 to 25)"
+    },
+    "DefringePurpleHueLo": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Purple defringe hue low (1 to 25)"
+    },
+    "Exposure2012": {
+      "defaultValue": "0.25",
+      "increment": "0.25",
+      "tooltip": "Exposure adjustment (-1 to 1)"
+    },
+    "GrainAmount": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Grain amount (1 to 25)"
+    },
+    "GrainFrequency": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Grain roughness (1 to 25)"
+    },
+    "GrainSize": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Grain size (1 to 25)"
+    },
+    "GreenHue": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Green hue shift (-25 to 25)"
+    },
+    "GreenSaturation": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Green saturation shift (-25 to 25)"
+    },
+    "Highlights2012": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Highlights adjustment (-25 to 25)"
+    },
+    "HueAdjustmentAqua": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Aqua hue shift (-25 to 25)"
+    },
+    "HueAdjustmentBlue": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Blue hue shift (-25 to 25)"
+    },
+    "HueAdjustmentGreen": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Green hue shift (-25 to 25)"
+    },
+    "HueAdjustmentMagenta": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Magenta hue shift (-25 to 25)"
+    },
+    "HueAdjustmentOrange": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Orange hue shift (-25 to 25)"
+    },
+    "HueAdjustmentPurple": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Purple hue shift (-25 to 25)"
+    },
+    "HueAdjustmentRed": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Red hue shift (-25 to 25)"
+    },
+    "HueAdjustmentYellow": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Yellow hue shift (-25 to 25)"
+    },
+    "IncrementalTemperature": {
+      "defaultValue": "100",
+      "increment": "100",
+      "tooltip": "Temperature adjustment (100 to 2000)"
+    },
+    "IncrementalTint": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Tint adjustment (1 to 25)"
+    },
+    "LensManualDistortionAmount": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Manual distortion (1 to 25)"
+    },
+    "LuminanceAdjustmentAqua": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Aqua luminance shift (-25 to 25)"
+    },
+    "LuminanceAdjustmentBlue": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Blue luminance shift (-25 to 25)"
+    },
+    "LuminanceAdjustmentGreen": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Green luminance shift (-25 to 25)"
+    },
+    "LuminanceAdjustmentMagenta": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Magenta luminance shift (-25 to 25)"
+    },
+    "LuminanceAdjustmentOrange": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Orange luminance shift (-25 to 25)"
+    },
+    "LuminanceAdjustmentPurple": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Purple luminance shift (-25 to 25)"
+    },
+    "LuminanceAdjustmentRed": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Red luminance shift (-25 to 25)"
+    },
+    "LuminanceAdjustmentYellow": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Yellow luminance shift (-25 to 25)"
+    },
+    "LuminanceNoiseReductionContrast": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Luminance noise reduction contrast (1 to 25)"
+    },
+    "LuminanceNoiseReductionDetail": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Luminance noise reduction detail (1 to 25)"
+    },
+    "LuminanceSmoothing": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Luminance smoothing (1 to 25)"
+    },
+    "ParametricDarks": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Dark tones (-25 to 25)"
+    },
+    "ParametricHighlightSplit": {
+      "defaultValue": "5",
+      "increment": "1",
+      "tooltip": "Highlight split (1 to 10)"
+    },
+    "ParametricHighlights": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Highlight tones (-25 to 25)"
+    },
+    "ParametricLights": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Light tones (-25 to 25)"
+    },
+    "ParametricMidtoneSplit": {
+      "defaultValue": "5",
+      "increment": "1",
+      "tooltip": "Midtone split (1 to 10)"
+    },
+    "ParametricShadowSplit": {
+      "defaultValue": "5",
+      "increment": "1",
+      "tooltip": "Shadow split (1 to 10)"
+    },
+    "ParametricShadows": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Shadow tones (-25 to 25)"
+    },
+    "PerspectiveHorizontal": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Horizontal perspective (-25 to 25)"
+    },
+    "PerspectiveRotate": {
+      "defaultValue": "1",
+      "increment": "0.5",
+      "tooltip": "Perspective rotation (-5 to 5)"
+    },
+    "PerspectiveScale": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Perspective scale (1 to 25)"
+    },
+    "PerspectiveVertical": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Vertical perspective (-25 to 25)"
+    },
+    "PostCropVignetteAmount": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Post-crop vignette amount (-50 to 50)"
+    },
+    "PostCropVignetteFeather": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Post-crop vignette feather (1 to 25)"
+    },
+    "PostCropVignetteHighlightContrast": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Post-crop vignette highlights (1 to 25)"
+    },
+    "PostCropVignetteMidpoint": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Post-crop vignette midpoint (1 to 25)"
+    },
+    "PostCropVignetteRoundness": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Post-crop vignette roundness (-50 to 50)"
+    },
+    "RedHue": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Red hue shift (-25 to 25)"
+    },
+    "RedSaturation": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Red saturation shift (-25 to 25)"
+    },
+    "Saturation": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Saturation adjustment (-25 to 25)"
+    },
+    "SaturationAdjustmentAqua": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Aqua saturation shift (-25 to 25)"
+    },
+    "SaturationAdjustmentBlue": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Blue saturation shift (-25 to 25)"
+    },
+    "SaturationAdjustmentGreen": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Green saturation shift (-25 to 25)"
+    },
+    "SaturationAdjustmentMagenta": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Magenta saturation shift (-25 to 25)"
+    },
+    "SaturationAdjustmentOrange": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Orange saturation shift (-25 to 25)"
+    },
+    "SaturationAdjustmentPurple": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Purple saturation shift (-25 to 25)"
+    },
+    "SaturationAdjustmentRed": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Red saturation shift (-25 to 25)"
+    },
+    "SaturationAdjustmentYellow": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Yellow saturation shift (-25 to 25)"
+    },
+    "ShadowTint": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Shadow tint (1 to 25)"
+    },
+    "Shadows2012": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Shadows adjustment (-25 to 25)"
+    },
+    "SharpenDetail": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Sharpen detail (1 to 25)"
+    },
+    "SharpenEdgeMasking": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Sharpen edge masking (1 to 25)"
+    },
+    "SharpenRadius": {
+      "defaultValue": "0.5",
+      "increment": "0.1",
+      "tooltip": "Sharpen radius (0.1 to 1)"
+    },
+    "Sharpness": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Sharpness (1 to 25)"
+    },
+    "SplitToningBalance": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Split toning balance (-50 to 50)"
+    },
+    "SplitToningHighlightHue": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Highlight hue (1 to 50)"
+    },
+    "SplitToningHighlightSaturation": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Highlight saturation (1 to 25)"
+    },
+    "SplitToningShadowHue": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Shadow hue (1 to 50)"
+    },
+    "SplitToningShadowSaturation": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Shadow saturation (1 to 25)"
+    },
+    "Temperature": {
+      "defaultValue": "100",
+      "increment": "100",
+      "tooltip": "Temperature adjustment (100 to 2000)"
+    },
+    "Tint": {
+      "defaultValue": "5",
+      "increment": "5",
+      "tooltip": "Tint adjustment (1 to 25)"
+    },
+    "Vibrance": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Vibrance (1 to 25)"
+    },
+    "VignetteAmount": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Vignette amount (-50 to 50)"
+    },
+    "VignetteMidpoint": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Vignette midpoint (1 to 25)"
+    },
+    "Whites2012": {
+      "defaultValue": "10",
+      "increment": "5",
+      "tooltip": "Whites adjustment (-25 to 25)"
+    }
+  },
+  "valuelessCommands": {
+    "description": "Commands that don't accept values (boolean/toggle actions)",
+    "categories": [
+      "Keyboard Shortcuts for User",
+      "Command sequence",
+      "Library filter",
+      "View",
+      "Rating",
+      "Flagging",
+      "Photos",
+      "Quick develop",
+      "Develop",
+      "HDR",
+      "Tone Curve",
+      "Reset Color Adjustments",
+      "Color Grading",
+      "Detail",
+      "Lens Corrections",
+      "Transform",
+      "Lens Blur",
+      "Effects",
+      "Crop",
+      "Local Adjustments",
+      "Calibration",
+      "Metadata"
+    ]
+  }
+}

@@ -79,6 +79,7 @@
 @property (retain) NSDictionary *keyMapping;
 @property (retain) NSDictionary *adjustmentMapping;
 @property (retain) NSDictionary *adjustmentLimits;
+@property (retain) NSDictionary *adjustmentDefaults;
 @property (retain) NSArray *commandCategories;
 @property (retain) NSArray *allCommandCategories;
 @property (retain) NSSet *hiddenCommandIdentifiers;

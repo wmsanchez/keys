@@ -564,9 +564,19 @@ static NSString * const kBindAdjDict = @"bAdjDict";
     }
 
     NSString *defaultVal = @"1";
-    NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:adjKey];
-    if (limits && limits[@"min"] && limits[@"min"] != [NSNull null]) {
-        defaultVal = [NSString stringWithFormat:@"%g", [limits[@"min"] doubleValue]];
+    NSDictionary *defaults = [self.keyControl.adjustmentDefaults objectForKey:@"defaults"];
+    if (defaults) {
+        NSDictionary *adjDefaults = [defaults objectForKey:adjKey];
+        if (adjDefaults && adjDefaults[@"defaultValue"]) {
+            defaultVal = adjDefaults[@"defaultValue"];
+        }
+    }
+    // Fallback to limits if no default is defined
+    if ([defaultVal isEqualToString:@"1"]) {
+        NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:adjKey];
+        if (limits && limits[@"min"] && limits[@"min"] != [NSNull null]) {
+            defaultVal = [NSString stringWithFormat:@"%g", [limits[@"min"] doubleValue]];
+        }
     }
 
     NSMutableDictionary *newBinding = [@{
@@ -909,16 +919,38 @@ static NSString * const kBindAdjDict = @"bAdjDict";
         [cell setBackgroundColor:[NSColor colorWithCalibratedWhite:0.22 alpha:1]];
         [cell setDrawsBackground:YES];
 
-        NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:b[kBindAdj]];
+        // Use tooltip from defaults if available, otherwise fall back to range from limits
+        NSDictionary *defaults = [self.keyControl.adjustmentDefaults objectForKey:@"defaults"];
         if ([b[kBindAdj] isEqualToString:@"_SetPreset"]) {
             [cell setPlaceholderString:@"Folder/Preset"];
-        } else if (limits) {
-            id minObj = [limits objectForKey:@"min"];
-            id maxObj = [limits objectForKey:@"max"];
-            if (minObj != nil && minObj != [NSNull null] && maxObj != nil && maxObj != [NSNull null]) {
-                [cell setPlaceholderString:[NSString stringWithFormat:@"%@..%@", minObj, maxObj]];
-            } else if (maxObj != nil && maxObj != [NSNull null]) {
-                [cell setPlaceholderString:[NSString stringWithFormat:@"max %@", maxObj]];
+        } else if (defaults) {
+            NSDictionary *adjDefaults = [defaults objectForKey:b[kBindAdj]];
+            if (adjDefaults && adjDefaults[@"tooltip"]) {
+                [cell setPlaceholderString:adjDefaults[@"tooltip"]];
+            } else {
+                // Fallback to limits range
+                NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:b[kBindAdj]];
+                if (limits) {
+                    id minObj = [limits objectForKey:@"min"];
+                    id maxObj = [limits objectForKey:@"max"];
+                    if (minObj != nil && minObj != [NSNull null] && maxObj != nil && maxObj != [NSNull null]) {
+                        [cell setPlaceholderString:[NSString stringWithFormat:@"%@..%@", minObj, maxObj]];
+                    } else if (maxObj != nil && maxObj != [NSNull null]) {
+                        [cell setPlaceholderString:[NSString stringWithFormat:@"max %@", maxObj]];
+                    }
+                }
+            }
+        } else {
+            // Fallback to limits range if no defaults file
+            NSDictionary *limits = [self.keyControl.adjustmentLimits objectForKey:b[kBindAdj]];
+            if (limits) {
+                id minObj = [limits objectForKey:@"min"];
+                id maxObj = [limits objectForKey:@"max"];
+                if (minObj != nil && minObj != [NSNull null] && maxObj != nil && maxObj != [NSNull null]) {
+                    [cell setPlaceholderString:[NSString stringWithFormat:@"%@..%@", minObj, maxObj]];
+                } else if (maxObj != nil && maxObj != [NSNull null]) {
+                    [cell setPlaceholderString:[NSString stringWithFormat:@"max %@", maxObj]];
+                }
             }
         }
         return cell;

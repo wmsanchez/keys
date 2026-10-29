@@ -922,8 +922,22 @@
         if (limits && number) {
             NSStepper *stepper = [[NSStepper alloc] initWithFrame:NSMakeRect(valueX + valueWidth + 3, 1, 19, 26)];
             double maximum = [[limits objectForKey:@"max"] doubleValue];
-            id minimum = [limits objectForKey:@"min"];
-            double increment = minimum && minimum != [NSNull null] ? fabs([minimum doubleValue]) : 1.0;
+            
+            // Use increment from defaults if available, otherwise fall back to minimum value
+            double increment = 1.0;
+            NSDictionary *defaults = [self.keyControl.adjustmentDefaults objectForKey:@"defaults"];
+            if (defaults) {
+                NSDictionary *adjDefaults = [defaults objectForKey:action];
+                if (adjDefaults && adjDefaults[@"increment"]) {
+                    increment = [adjDefaults[@"increment"] doubleValue];
+                }
+            }
+            // Fallback to minimum value if no increment defined
+            if (increment == 1.0) {
+                id minimum = [limits objectForKey:@"min"];
+                increment = minimum && minimum != [NSNull null] ? fabs([minimum doubleValue]) : 1.0;
+            }
+            
             [stepper setMinValue:-maximum];
             [stepper setMaxValue:maximum];
             [stepper setIncrement:increment > 0 ? increment : 1.0];
