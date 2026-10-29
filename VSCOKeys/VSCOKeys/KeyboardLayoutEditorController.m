@@ -40,7 +40,6 @@
 @property (retain) NSTextField *hintLabel;
 @property (retain) NSTextField *keyboardLabel;
 @property (retain) NSTextField *modeKeyLabel;
-@property (retain) NSTextField *opacityLabel;
 @property (retain) NSTextField *modifierColumnLabel;
 @property (retain) NSTextField *actionColumnLabel;
 @property (retain) NSTextField *valueColumnLabel;
@@ -58,7 +57,6 @@
 @property (retain) NSPopUpButton *labelLayerPopup;
 @property (retain) NSButton *incrementAmountsSwitch;
 @property (retain) NSButton *editLabelsSwitch;
-@property (retain) NSSlider *opacitySlider;
 @property (retain) NSScrollView *bindingRowsScrollView;
 @property (retain) NSView *bindingRowsView;
 @property (retain) NSArray *sortedKeyCodes;
@@ -79,14 +77,14 @@
 
 @implementation KeyboardLayoutEditorController
 
-@synthesize mainController, keyControl, rootView;
+@synthesize mainController, keyControl, rootView, leftPanel;
 @synthesize keyfile, bindings, keyboardView, modifierValues, modifierTitles, actionKeys;
 @synthesize selectedKeyLabel, nameField, authorField, descriptionField, statusLabel;
-@synthesize titleLabel, hintLabel, keyboardLabel, modeKeyLabel, opacityLabel;
+@synthesize titleLabel, hintLabel, keyboardLabel, modeKeyLabel;
 @synthesize modifierColumnLabel, actionColumnLabel, valueColumnLabel;
 @synthesize tableEditorButton, duplicateButton, saveButton, revertButton, addBindingButton, bindingCopyButton, bindingPasteButton, captureBindingButton;
 @synthesize modeKeyPopup, physicalKeyboardPopup, bindingRowsScrollView, bindingRowsView, sortedKeyCodes, selectedKeyCode, selectedKeyCodes;
-@synthesize labelStyleControl, labelLayerPopup, incrementAmountsSwitch, editLabelsSwitch, opacitySlider;
+@synthesize labelStyleControl, labelLayerPopup, incrementAmountsSwitch, editLabelsSwitch;
 @synthesize hasUnrepairableLoadedData;
 @synthesize listenForKeysSwitch, keyEventMonitor, selectedModifierValue, previewModifierValue;
 @synthesize isOneShotCapture, pendingActionBindingIndex, copiedBindingGroup;
@@ -166,6 +164,21 @@
     [self.rootView setWantsLayer:YES];
     [self.rootView layer].backgroundColor = [NSColor colorWithCalibratedWhite:0.13 alpha:1].CGColor;
 
+    // ── Left panel container (240px wide) ───────────────────────────────────────
+    self.leftPanel = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 240, 463)];
+    [self.leftPanel setWantsLayer:YES];
+    [self.leftPanel layer].backgroundColor = [NSColor colorWithCalibratedWhite:0.13 alpha:1].CGColor;
+    [self.leftPanel setAutoresizingMask:NSViewHeightSizable];
+    [self.rootView addSubview:self.leftPanel];
+
+    // ── Left panel separator line ───────────────────────────────────────────────
+    NSBox *leftSep = [[NSBox alloc] initWithFrame:NSMakeRect(240, 0, 1, 463)];
+    [leftSep setBoxType:NSBoxCustom];
+    [leftSep setFillColor:[NSColor colorWithCalibratedWhite:0.22 alpha:1]];
+    [leftSep setBorderWidth:0];
+    [leftSep setAutoresizingMask:NSViewHeightSizable];
+    [self.rootView addSubview:leftSep];
+
     self.titleLabel = [self labelWithFrame:NSZeroRect text:@"Keyboard Editor (Experimental)" size:16];
     [self.titleLabel setFont:[NSFont boldSystemFontOfSize:16]];
     [self.rootView addSubview:self.titleLabel];
@@ -196,9 +209,6 @@
     [self.physicalKeyboardPopup setAction:@selector(physicalKeyboardChanged:)];
     [self.rootView addSubview:self.physicalKeyboardPopup];
 
-    self.opacityLabel = [self labelWithFrame:NSZeroRect text:@"Opacity" size:11];
-    [self.rootView addSubview:self.opacityLabel];
-
     self.labelStyleControl = [[NSSegmentedControl alloc] initWithFrame:NSZeroRect];
     [self.labelStyleControl setSegmentCount:2];
     [self.labelStyleControl setLabel:@"Standard" forSegment:0];
@@ -221,15 +231,6 @@
     [self.editLabelsSwitch setTarget:self];
     [self.editLabelsSwitch setAction:@selector(labelOptionsChanged:)];
     [self.rootView addSubview:self.editLabelsSwitch];
-
-    self.opacitySlider = [[NSSlider alloc] initWithFrame:NSZeroRect];
-    [self.opacitySlider setMinValue:0.1];
-    [self.opacitySlider setMaxValue:1.0];
-    [self.opacitySlider setFloatValue:self.keyControl.keyboardHUDOpacity];
-    [self.opacitySlider setTarget:self];
-    [self.opacitySlider setAction:@selector(opacityChanged:)];
-    [self.opacitySlider setToolTip:@"Adjust keyboard overlay opacity for use while working"];
-    [self.rootView addSubview:self.opacitySlider];
 
     self.labelLayerPopup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
     for (NSUInteger index = 0; index < self.modifierTitles.count; index++) {
@@ -345,15 +346,18 @@
     CGFloat height = NSHeight(self.rootView.bounds);
     if (width <= 0 || height <= 0 || !self.keyboardView) return;
 
+    // Update left panel height to match root view
+    [self.leftPanel setFrame:NSMakeRect(0, 0, 240, height)];
+
     CGFloat padding = 16;
     CGFloat right = width - padding;
     CGFloat titleY = height - 38;
-    BOOL compactWidth = width < 1050;
+    BOOL compactWidth = width < 900;
     CGFloat optionsY = height - 72;
     CGFloat captureY = compactWidth ? height - 104 : optionsY;
-    BOOL wrapLabelControls = width < 1050;
+    BOOL wrapLabelControls = width < 900;
     CGFloat labelOptionsY = compactWidth ? height - 140 : height - 108;
-    CGFloat metadataY = height - (compactWidth ? (wrapLabelControls ? 238 : 206) : 142);
+    CGFloat metadataY = height - (compactWidth ? (wrapLabelControls ? 206 : 174) : 142);
 
     [self.tableEditorButton setFrame:NSMakeRect(right - 140, titleY - 1, 140, 27)];
     [self.duplicateButton setFrame:NSMakeRect(NSMinX(self.tableEditorButton.frame) - 108, titleY - 1, 100, 27)];
@@ -379,15 +383,8 @@
     [self.labelStyleControl setFrame:NSMakeRect(padding, labelOptionsY, 180, 26)];
     [self.incrementAmountsSwitch setFrame:NSMakeRect(padding + 190, labelOptionsY + 1, 150, 24)];
     [self.editLabelsSwitch setFrame:NSMakeRect(padding + 350, labelOptionsY + 1, 120, 24)];
-    if (wrapLabelControls) {
-        [self.opacityLabel setFrame:NSMakeRect(padding, labelOptionsY - 32, 55, 18)];
-        [self.opacitySlider setFrame:NSMakeRect(padding + 60, labelOptionsY - 35, 120, 24)];
-    } else {
-        [self.opacityLabel setFrame:NSMakeRect(padding + 480, labelOptionsY + 4, 55, 18)];
-        [self.opacitySlider setFrame:NSMakeRect(padding + 540, labelOptionsY + 1, 120, 24)];
-    }
-    CGFloat previewY = wrapLabelControls ? labelOptionsY - 64 : labelOptionsY;
-    CGFloat previewX = wrapLabelControls ? padding : padding + 670;
+    CGFloat previewY = wrapLabelControls ? labelOptionsY - 32 : labelOptionsY;
+    CGFloat previewX = wrapLabelControls ? padding : padding + 480;
     [self.labelLayerPopup setFrame:NSMakeRect(previewX, previewY, fmax(150, right - previewX), 26)];
 
     CGFloat metaRight = right;
@@ -525,12 +522,6 @@
     self.keyboardView.allowsInlineLabelEditing = usesMotibodo && [self.editLabelsSwitch state] == NSControlStateValueOn;
     [self updateBindingTransferButtons];
     [self refreshKeyStates];
-}
-
-- (IBAction)opacityChanged:(id)sender
-{
-    CGFloat opacity = [self.opacitySlider floatValue];
-    [self.keyControl updateKeyboardHUDOpacity:opacity];
 }
 
 - (NSInteger)bindingIndexForKeyCode:(NSString *)keyCode modifierValue:(NSString *)modifierValue
