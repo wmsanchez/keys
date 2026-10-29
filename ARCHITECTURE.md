@@ -70,6 +70,11 @@ VSCO Keys uses a client-server architecture where a macOS application and a Ligh
 - **DevelopSettings.lua** - Wraps `LrDevelopController` API calls
 - **ActionsTable.lua** - Defines available actions and their implementations
 - **CommandCategories.json** - Shared command definitions (synced from app)
+- **PhotoMetadataDefinition.lua** - Custom metadata field definitions
+- **PhotoMetadataTagset.lua** - Metadata tagset for library view
+- **UpdatePhotoMetadata.lua** - Metadata update utility
+- **UpdatePhotoMetadataMenu.lua** - Menu handler for update
+- **WipePhotoMetadataMenu.lua** - Menu handler for wipe
 
 **Responsibilities:**
 - Start Python HTTP server on plugin load
@@ -78,6 +83,7 @@ VSCO Keys uses a client-server architecture where a macOS application and a Ligh
 - Provide current photo information to app
 - Manage plugin settings and state
 - Handle long-polling for real-time updates
+- Calculate and store custom metadata (aspect ratio, color profiles) for photos
 
 ## Communication Protocol
 
@@ -297,6 +303,59 @@ This module wraps `LrDevelopController` calls with validation and error handling
 - Validates adjustment ranges
 - Handles errors gracefully
 - Provides type conversion
+
+## Photo Filter Metadata
+
+### Custom Metadata Fields
+
+The plugin defines custom metadata fields for filtering photos by their develop settings:
+
+- **aspectRatio** - Precise aspect ratio (e.g., "3:2", "16:9", "other")
+- **baseColorProfile** - Camera calibration profile (e.g., "Adobe Standard", "Camera Neutral")
+- **lutColorProfile** - Applied Look/Profile name (e.g., "VSCO A6", "VSCO M5")
+- **lookAmount** - Look intensity (e.g., "75", "100")
+
+These fields are defined in `PhotoMetadataDefinition.lua` and registered with Lightroom's metadata system.
+
+### Metadata Calculation
+
+The `UpdatePhotoMetadata.lua` module calculates metadata for selected photos:
+
+1. **Aspect Ratio Calculation**
+   - Uses cropped dimensions if available, otherwise original dimensions
+   - Normalizes to ratio >= 1.0
+   - Matches against standard ratios (1:1, 4:3, 3:2, 5:4, 16:9, 2:1, 21:9) with tolerance
+   - Returns "other" for non-standard ratios
+
+2. **Color Profile Extraction**
+   - Retrieves develop settings via `photo:getDevelopSettings()`
+   - Extracts `CameraProfile` for base color profile
+   - Extracts `Look.Name` for LUT color profile
+   - Extracts `Look.Amount` for look intensity
+
+3. **Batch Processing**
+   - Processes selected photos with progress bar
+   - Yields periodically to prevent blocking
+   - Collects all metadata in first pass
+   - Writes all metadata in single transaction
+
+### Menu Integration
+
+The metadata features are accessible via Lightroom's Library menu:
+
+- **Update Photo Filter Metadata...** - Calculates and updates metadata for selected photos
+- **Wipe Photo Filter Metadata...** - Removes all custom metadata from selected photos
+
+These menu items are defined in `Info.lua` under `LrLibraryMenuItems` and only show when photos are selected.
+
+### Metadata Tagset
+
+`PhotoMetadataTagset.lua` defines a custom tagset for the Library module, allowing users to:
+
+- View custom metadata columns in the Library grid
+- Filter photos by aspect ratio
+- Filter photos by color profile
+- Sort by custom metadata fields
 
 ## Keyboard Layouts
 

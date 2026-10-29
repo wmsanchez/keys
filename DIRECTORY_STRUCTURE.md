@@ -97,6 +97,11 @@ VSCOKeys.lrdevplugin/
 ├── Terminate.lua                # Termination handler
 ├── json.lua                     # JSON parsing library
 ├── CommandCategories.json       # Command definitions (synced from app)
+├── PhotoMetadataDefinition.lua  # Custom metadata field definitions
+├── PhotoMetadataTagset.lua      # Metadata tagset for library view
+├── UpdatePhotoMetadata.lua      # Metadata update utility
+├── UpdatePhotoMetadataMenu.lua  # Menu handler for update
+├── WipePhotoMetadataMenu.lua    # Menu handler for wipe
 └── halfway_server/              # Python HTTP server
     ├── __init__.py
     ├── server.py               # HTTP server for app-plugin communication
@@ -107,6 +112,9 @@ VSCOKeys.lrdevplugin/
 
 - **Init.lua** - Called when Lightroom loads the plugin
 - **Client.lua** - Handles HTTP requests to VSCOKeys.app
+- **halfway_server/server.py** - HTTP server running in plugin process
+- **PhotoMetadataDefinition.lua** - Defines custom metadata fields (aspect ratio, color profiles)
+- **UpdatePhotoMetadata.lua** - Calculates and updates custom metadata for selected photos
 - **DevelopSettings.lua** - Wraps `LrDevelopController` API calls
 - **halfway_server/server.py** - HTTP server running in plugin process
 
