@@ -100,7 +100,7 @@
 
     self.amountCell = [[RSVerticallyCenteredTextFieldCell alloc] init];
     [self.amountCell setFont:[NSFont fontWithName:PROXIMA_FONT_NAME size:10]];
-    [self.amountCell setAlignment:NSCenterTextAlignment];
+    [self.amountCell setAlignment:NSTextAlignmentCenter];
     [self.amountCell setEditable:NO];
     self.amountCell.padding = 2;
 

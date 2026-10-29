@@ -33,7 +33,8 @@
 
 + (NSString*)getMachineUUID
 {
-    io_service_t    platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice"));
+	io_service_t    platformExpert = IOServiceGetMatchingService(kIOMainPortDefault,
+																 IOServiceMatching("IOPlatformExpertDevice"));
     CFStringRef serialNumberAsCFString = NULL;
 
     if (platformExpert) {

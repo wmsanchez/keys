@@ -250,17 +250,17 @@ static NSString * const kBindAdjDict = @"bAdjDict";
 {
     NSButton *btn = [[NSButton alloc] initWithFrame:NSZeroRect];
     [btn setTitle:title];
-    [btn setButtonType:NSMomentaryLightButton];
+	[btn setButtonType:NSButtonTypeMomentaryLight];
     [btn setBordered:NO];
     [btn setFont:[NSFont fontWithName:PROXIMA_FONT_NAME size:11]];
     if (dark) {
-        [btn setBezelStyle:NSRoundedBezelStyle];
+		[btn setBezelStyle:NSBezelStylePush];
         [[btn cell] setBackgroundColor:[NSColor colorWithCalibratedWhite:0.25 alpha:1]];
         [btn setAttributedTitle:[[NSAttributedString alloc] initWithString:title
             attributes:@{NSForegroundColorAttributeName:[NSColor whiteColor],
                          NSFontAttributeName:[NSFont fontWithName:PROXIMA_FONT_NAME size:11]}]];
     } else {
-        [btn setBezelStyle:NSRoundedBezelStyle];
+		[btn setBezelStyle:NSBezelStylePush];
         [[btn cell] setBackgroundColor:[NSColor whiteColor]];
         [btn setAttributedTitle:[[NSAttributedString alloc] initWithString:title
             attributes:@{NSForegroundColorAttributeName:[NSColor colorWithCalibratedWhite:0.1 alpha:1],
@@ -384,7 +384,7 @@ static NSString * const kBindAdjDict = @"bAdjDict";
     self.statusLabel = [self makeLabelWithText:@""];
     [self.statusLabel setFrame:NSMakeRect(fieldX, y, fieldW, 20)];
     [self.statusLabel setAutoresizingMask:NSViewMinYMargin];
-    [self.statusLabel setAlignment:NSCenterTextAlignment];
+    [self.statusLabel setAlignment:NSTextAlignmentCenter];
     [leftPanel addSubview:self.statusLabel];
 
     // ── Right panel ───────────────────────────────────────────────────────────
@@ -854,7 +854,7 @@ static NSString * const kBindAdjDict = @"bAdjDict";
                     NSString *commandId = [tmplCmd representedObject];
                     [cmdItem setRepresentedObject:commandId];
                     if ([commandId isEqualToString:currKey]) {
-                        [cmdItem setState:NSOnState];
+                        [cmdItem setState:NSControlStateValueOn];
                         [cmdItem setAttributedTitle:[[NSAttributedString alloc] initWithString:[tmplCmd title]
                             attributes:@{NSForegroundColorAttributeName: currentColor,
                                          NSFontAttributeName: [NSFont boldSystemFontOfSize:13]}]];
@@ -926,9 +926,12 @@ static NSString * const kBindAdjDict = @"bAdjDict";
 
     if ([colId isEqualToString:kColDup]) {
         NSButtonCell *cell = [[NSButtonCell alloc] init];
-        [cell setButtonType:NSMomentaryLightButton];
+        [cell setButtonType:NSButtonTypeMomentaryPushIn];
         [cell setBordered:NO];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         [cell setBezelStyle:NSRoundRectBezelStyle];
+#pragma clang diagnostic pop
         NSColor *blueColor = [NSColor colorWithCalibratedRed:0.4 green:0.7 blue:1.0 alpha:1];
         NSAttributedString *attTitle = [[NSAttributedString alloc] initWithString:@"⧉"
             attributes:@{NSForegroundColorAttributeName: blueColor,
@@ -939,9 +942,12 @@ static NSString * const kBindAdjDict = @"bAdjDict";
 
     if ([colId isEqualToString:kColDel]) {
         NSButtonCell *cell = [[NSButtonCell alloc] init];
-        [cell setButtonType:NSMomentaryLightButton];
+        [cell setButtonType:NSButtonTypeMomentaryPushIn];
         [cell setBordered:NO];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         [cell setBezelStyle:NSRoundRectBezelStyle];
+#pragma clang diagnostic pop
         NSColor *redColor = [NSColor colorWithCalibratedRed:0.85 green:0.3 blue:0.3 alpha:1];
         NSAttributedString *attTitle = [[NSAttributedString alloc] initWithString:@"✕"
             attributes:@{NSForegroundColorAttributeName: redColor,

@@ -28,6 +28,7 @@
 #import "MainWindowController.h"
 #import <dispatch/dispatch.h>
 #include <ExceptionHandling/ExceptionHandling.h>
+#include <stdatomic.h>
 #import <CoreServices/CoreServices.h>
 #include <libkern/OSAtomic.h>
 #include <signal.h>
@@ -43,7 +44,7 @@
 @synthesize quitTimer;
 
 NSString *traceFilePath = NULL;
-static volatile int32_t UncaughtExceptionHandlingInProgress = 0;
+static _Atomic int32_t UncaughtExceptionHandlingInProgress = 0;
 
 static NSLock *DualLogLock(void)
 {
@@ -65,7 +66,10 @@ static void PresentUncaughtExceptionAlert(NSException *exception, NSString *file
     void (^presentAlert)(void) = ^{
         @try
         {
-            NSAlert *alert = [NSAlert alertWithMessageText:@"An Unhandled Exception Occurred" defaultButton:@"Ok" alternateButton:nil otherButton:nil informativeTextWithFormat:alertString, exception, filePath, tracePath];
+            NSAlert *alert = [[NSAlert alloc] init];
+            alert.messageText = @"An Unhandled Exception Occurred";
+            alert.informativeText = [NSString stringWithFormat:alertString, exception, filePath, tracePath];
+            [alert addButtonWithTitle:@"Ok"];
             [alert runModal];
         }
         @catch (NSException *alertException)
@@ -86,7 +90,8 @@ static void PresentUncaughtExceptionAlert(NSException *exception, NSString *file
 
 void uncaughtExceptionHandler(NSException *exception)
 {
-    if (!OSAtomicCompareAndSwap32(0, 1, &UncaughtExceptionHandlingInProgress))
+    int32_t expected = 0;
+    if (!atomic_compare_exchange_strong_explicit(&UncaughtExceptionHandlingInProgress, &expected, 1, memory_order_relaxed, memory_order_relaxed))
     {
         return;
     }
@@ -176,7 +181,7 @@ static void InstallFatalSignalHandlers(void)
     return NO;
 }
 
-void SetUpLogging()
+void SetUpLogging(void)
 {
     NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 
@@ -294,13 +299,13 @@ void DualLog(NSString* format, ...)
 
 - (void)checkOSVersion
 {
-    SInt32 major, minor, bugfix;
-    Gestalt(gestaltSystemVersionMajor, &major);
-    Gestalt(gestaltSystemVersionMinor, &minor);
-    Gestalt(gestaltSystemVersionBugFix, &bugfix);
+    NSOperatingSystemVersion version = [[NSProcessInfo processInfo] operatingSystemVersion];
+    NSInteger major = version.majorVersion;
+    NSInteger minor = version.minorVersion;
+    NSInteger bugfix = version.patchVersion;
 
-    NSString *systemVersion = [NSString stringWithFormat:@"%d.%d.%d",
-                               major, minor, bugfix];
+    NSString *systemVersion = [NSString stringWithFormat:@"%ld.%ld.%ld",
+                               (long)major, (long)minor, (long)bugfix];
     NSString *minSystemVersion = [NSString stringWithFormat:@"%d.%d.%d",
                                OS_VERSION_MIN_MAJOR, OS_VERSION_MIN_MINOR, OS_VERSION_MIN_BUGFIX];
 
@@ -308,7 +313,10 @@ void DualLog(NSString* format, ...)
         (major == OS_VERSION_MIN_MAJOR && minor < OS_VERSION_MIN_MINOR) ||
         (major == OS_VERSION_MIN_MAJOR && minor == OS_VERSION_MIN_MINOR && bugfix < OS_VERSION_MIN_BUGFIX))
     {
-        NSAlert *alert = [NSAlert alertWithMessageText:@"Operating System Not Supported" defaultButton:@"Ok" alternateButton:nil otherButton:nil informativeTextWithFormat:@"%@ is not a supported operating system version. Minimum required version is %@", systemVersion, minSystemVersion];
+        NSAlert *alert = [[NSAlert alloc] init];
+        alert.messageText = @"Operating System Not Supported";
+        alert.informativeText = [NSString stringWithFormat:@"%@ is not a supported operating system version. Minimum required version is %@", systemVersion, minSystemVersion];
+        [alert addButtonWithTitle:@"Ok"];
 
         [alert runModal];
 
@@ -319,7 +327,7 @@ void DualLog(NSString* format, ...)
 // Authorize Accessibility Client
 - (void)checkTrusted
 {
-    if (!AXIsProcessTrusted() && !AXAPIEnabled())
+    if (!AXIsProcessTrusted())
     {
         // request permission to change settingz
         DualLog(@"process is not trusted");

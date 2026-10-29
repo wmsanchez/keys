@@ -268,15 +268,14 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
 
         statusBar = [bar statusItemWithLength:NSSquareStatusItemLength];
 
-        [statusBar setImage:self.statusBarIconError];
-        [statusBar setHighlightMode:YES];
+        statusBar.button.image = self.statusBarIconError;
         [self resetStatusMenu];
 
         self.numFormatter = [[NSNumberFormatter alloc] init];
 
 
         NSMutableParagraphStyle *centered = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
-        [centered setAlignment:NSCenterTextAlignment];
+		[centered setAlignment:NSTextAlignmentCenter];
 
 
         self.blackStyle = [NSDictionary dictionaryWithObjectsAndKeys:
@@ -410,11 +409,11 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
         {
             if ([obj compare:self.activeKeyFile] == NSOrderedSame)
             {
-                [item setState:NSOnState];
+				[item setState:NSControlStateValueOn];
             }
             else
             {
-                [item setState:NSOffState];
+				[item setState:NSControlStateValueOff];
             }
         }
     }
@@ -525,14 +524,14 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
     [self addItem:STATUSMENUITEM_PREFERENCES toMenu:theMenu target:self selector:@selector(showWindow) object:NULL];
     self.keyboardHUDMenuItem = [self addItem:@"Show Keyboard Overlay" toMenu:theMenu target:self selector:@selector(toggleKeyboardHUD:) object:NULL];
     self.keyboardHUDEnabled = self.keyboardHUDWindowController.window.isVisible;
-    [self.keyboardHUDMenuItem setState:self.keyboardHUDEnabled ? NSOnState : NSOffState];
+	[self.keyboardHUDMenuItem setState:self.keyboardHUDEnabled ? NSControlStateValueOn : NSControlStateValueOff];
     NSMenuItem *layoutItem = [[NSMenuItem alloc] initWithTitle:@"Physical Keyboard" action:nil keyEquivalent:@""];
     NSMenu *layoutMenu = [[NSMenu alloc] initWithTitle:@"Physical Keyboard"];
     for (NSDictionary *option in [self physicalKeyboardLayoutOptions]) {
         NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:[option objectForKey:@"name"] action:@selector(selectPhysicalKeyboardLayoutFromMenu:) keyEquivalent:@""];
         [item setTarget:self];
         [item setRepresentedObject:[option objectForKey:@"id"]];
-        [item setState:[[option objectForKey:@"id"] isEqualToString:self.physicalKeyboardLayoutIdentifier] ? NSOnState : NSOffState];
+		[item setState:[[option objectForKey:@"id"] isEqualToString:self.physicalKeyboardLayoutIdentifier] ? NSControlStateValueOn : NSControlStateValueOff];
         [layoutMenu addItem:item];
     }
     [layoutItem setSubmenu:layoutMenu];
@@ -597,7 +596,7 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
         [self.keyboardHUDWindowController hideHUD];
     }
     self.keyboardHUDEnabled = self.keyboardHUDWindowController.window.isVisible;
-    [self.keyboardHUDMenuItem setState:self.keyboardHUDEnabled ? NSOnState : NSOffState];
+	[self.keyboardHUDMenuItem setState:self.keyboardHUDEnabled ? NSControlStateValueOn : NSControlStateValueOff];
 }
 
 - (NSArray *)physicalKeyboardLayoutOptions
@@ -808,22 +807,28 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
         {
             if (changed)
             {
-                [self.toggleMenuItem setTitle:STATUSMENUITEM_ACTIVE];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self.toggleMenuItem setTitle:STATUSMENUITEM_ACTIVE];
+                });
             }
 
             if (currServerState)
             {
                 if (changed)
                 {
-                    [self.statusBar setImage:self.statusBarIconActive];
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        self.statusBar.button.image = self.statusBarIconActive;
+                    });
                 }
             }
             else
             {
                 if (changed)
                 {
-                    [self.statusBar setImage:self.statusBarIconError];
-                    [self.toggleMenuItem setTitle:STATUSMENUITEM_ERROR];
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        self.statusBar.button.image = self.statusBarIconError;
+                        [self.toggleMenuItem setTitle:STATUSMENUITEM_ERROR];
+                    });
                 }
             }
         }
@@ -831,8 +836,10 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
         {
             if (changed)
             {
-                [self.toggleMenuItem setTitle:STATUSMENUITEM_INACTIVE];
-                [self.statusBar setImage:self.statusBarIconInactive];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self.toggleMenuItem setTitle:STATUSMENUITEM_INACTIVE];
+                    self.statusBar.button.image = self.statusBarIconInactive;
+                });
             }
         }
 
@@ -846,7 +853,8 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
     NSString *pdfPath = [self getPdfPath:self.activeKeyFile];
     if (pdfPath != nil)
     {
-        [[NSWorkspace sharedWorkspace] openFile:pdfPath];
+        NSURL *pdfURL = [NSURL fileURLWithPath:pdfPath];
+        [[NSWorkspace sharedWorkspace] openURL:pdfURL];
     }
     else
     {
@@ -872,14 +880,20 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
 
 - (void)reportImportError:(NSString *)error
 {
-    NSAlert *alert = [NSAlert alertWithMessageText:IMPORT_KEYFILE_TITLE_ERROR defaultButton:@"OK" alternateButton:nil otherButton:nil informativeTextWithFormat:@"%@", error];
+    NSAlert *alert = [[NSAlert alloc] init];
+    alert.messageText = IMPORT_KEYFILE_TITLE_ERROR;
+    alert.informativeText = error;
+    [alert addButtonWithTitle:@"OK"];
 
     [alert runModal];
 }
 
 - (void)reportImportSuccess:(NSString *)filename
 {
-    NSAlert *alert = [NSAlert alertWithMessageText:IMPORT_KEYFILE_TITLE_SUCCESS defaultButton:@"OK" alternateButton:nil otherButton:nil informativeTextWithFormat:IMPORT_KEYFILE_SUCCESS,filename];
+    NSAlert *alert = [[NSAlert alloc] init];
+    alert.messageText = IMPORT_KEYFILE_TITLE_SUCCESS;
+    alert.informativeText = [NSString stringWithFormat:IMPORT_KEYFILE_SUCCESS, filename];
+    [alert addButtonWithTitle:@"OK"];
 
     [alert runModal];
 }
@@ -1490,7 +1504,7 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
 
     if (keysDictionary == nil)
     {
-        self.keysDict = [NSDictionary dictionary];
+        self.keysDict = @[];
         DualLog(@"Bad keyfile format: missing %@", KEYFILE_KEYS_NODENAME);
     }
     else
@@ -1592,7 +1606,6 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
         NSString *brushDecreaseKey = settings[@"brushDecreaseKey"];
         NSString *increaseShortcut = [brushIncreaseKey isKindOfClass:[NSString class]] ? brushIncreaseKey : @"]";
         NSString *decreaseShortcut = [brushDecreaseKey isKindOfClass:[NSString class]] ? brushDecreaseKey : @"[";
-        NSDictionary *shortcuts = @{@"increase": increaseShortcut, @"decrease": decreaseShortcut};
         [self performSelectorOnMainThread:@selector(updateShortcutKeyCodes:)
                        withObject:@{@"increase": increaseShortcut,
                             @"decrease": decreaseShortcut,
@@ -1953,5 +1966,8 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 
 #endif
 
+
+- (void)toggleKeyboardHUDShortLabels:(id)sender {
+}
 
 @end

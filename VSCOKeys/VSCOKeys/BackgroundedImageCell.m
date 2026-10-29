@@ -61,7 +61,7 @@
     [self.backgroundColor set];
     NSRectFill(cellFrame);
 
-    [[self image] drawInRect:titleRect fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0];
+	[[self image] drawInRect:titleRect fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1.0];
 }
 
 @end

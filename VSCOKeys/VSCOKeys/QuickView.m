@@ -41,7 +41,7 @@
 {
     [[NSColor colorWithCalibratedWhite:1 alpha:0.90] set];
 
-    NSRectFillUsingOperation(dirtyRect, NSCompositeSourceOver);
+	NSRectFillUsingOperation(dirtyRect, NSCompositingOperationSourceOver);
 }
 
 - (void)mouseUp:(NSEvent *)theEvent

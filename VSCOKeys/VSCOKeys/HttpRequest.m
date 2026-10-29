@@ -58,8 +58,14 @@
         [request setHTTPBody:data];
     }
 
-    NSURLConnection *connection = [[NSURLConnection alloc] initWithRequest:request delegate:httpRequest];
-    [connection self]; // suppress warning about not using the connection object (it handles its own memory)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    NSURLConnection *connection = [[NSURLConnection alloc] initWithRequest:request delegate:httpRequest startImmediately:NO];
+#pragma clang diagnostic pop
+    if (connection) {
+        [connection setDelegateQueue:[NSOperationQueue mainQueue]];
+        [connection start];
+    }
 }
 
 
@@ -87,6 +93,8 @@
 
 #pragma mark Connection Delegate Methods
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)_response
 {
     self.response = _response;
@@ -114,6 +122,7 @@
 {
     self.failed(connection, error);
 }
+#pragma clang diagnostic pop
 
 
 @end

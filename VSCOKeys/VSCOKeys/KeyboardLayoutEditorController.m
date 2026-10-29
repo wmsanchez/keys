@@ -152,7 +152,7 @@
 {
     NSButton *button = [[NSButton alloc] initWithFrame:frame];
     [button setTitle:title];
-    [button setBezelStyle:NSRoundedBezelStyle];
+	[button setBezelStyle:NSBezelStylePush];
     [button setTarget:self];
     [button setAction:action];
     return button;
@@ -246,7 +246,7 @@
     [self.incrementAmountsSwitch setHidden:![savedStyle isEqualToString:KEYBOARD_HUD_LABEL_STYLE_MOTIBODO]];
     [self.editLabelsSwitch setEnabled:[savedStyle isEqualToString:KEYBOARD_HUD_LABEL_STYLE_MOTIBODO]];
     self.listenForKeysSwitch = [[NSButton alloc] initWithFrame:NSZeroRect];
-    [self.listenForKeysSwitch setButtonType:NSSwitchButton];
+	[self.listenForKeysSwitch setButtonType:NSButtonTypeSwitch];
     [self.listenForKeysSwitch setTitle:@"Listen for Key"];
     [self.listenForKeysSwitch setToolTip:@"Press a key while this window is focused to select it."];
     [self.listenForKeysSwitch setTarget:self];
@@ -1046,7 +1046,7 @@
 
 - (IBAction)listenForKeysChanged:(NSButton *)sender
 {
-    if ([sender state] == NSOnState) {
+	if ([sender state] == NSControlStateValueOn) {
         if (!self.keyEventMonitor) {
             __weak KeyboardLayoutEditorController *weakSelf = self;
             self.keyEventMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^NSEvent *(NSEvent *event) {
@@ -1065,8 +1065,8 @@
 - (IBAction)captureOneBindingClicked:(id)sender
 {
     self.isOneShotCapture = YES;
-    if (self.listenForKeysSwitch.state != NSOnState) {
-        [self.listenForKeysSwitch setState:NSOnState];
+	if (self.listenForKeysSwitch.state != NSControlStateValueOn) {
+		[self.listenForKeysSwitch setState:NSControlStateValueOn];
         [self listenForKeysChanged:self.listenForKeysSwitch];
     }
     [self.statusLabel setStringValue:@"Press one key with its modifiers. It will be selected or added as a draft binding."];
@@ -1078,7 +1078,7 @@
         [NSEvent removeMonitor:self.keyEventMonitor];
         self.keyEventMonitor = nil;
     }
-    [self.listenForKeysSwitch setState:NSOffState];
+	[self.listenForKeysSwitch setState:NSControlStateValueOff];
     self.isOneShotCapture = NO;
     [self.keyboardView setListeningForKeys:NO];
 }

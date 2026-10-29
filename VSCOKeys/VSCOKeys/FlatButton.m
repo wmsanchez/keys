@@ -74,7 +74,7 @@
 
     if (self.image)
     {
-        [self.image drawInRect:[self bounds] fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1 respectFlipped:YES hints:nil];
+		[self.image drawInRect:[self bounds] fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1 respectFlipped:YES hints:nil];
     }
     else
     {
@@ -86,12 +86,12 @@
         if (self.hoverImage != nil)
         {
             // draw hoverImage instead / over other image
-            [self.hoverImage drawInRect:[self bounds] fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1 respectFlipped:YES hints:nil];
+			[self.hoverImage drawInRect:[self bounds] fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1 respectFlipped:YES hints:nil];
         }
         else if (self.hoverColor != nil)
         {
             [self.hoverColor set];
-            NSRectFillUsingOperation(dirtyRect, NSCompositeSourceOver);
+			NSRectFillUsingOperation(dirtyRect, NSCompositingOperationSourceOver);
         }
     }
 }
@@ -100,14 +100,14 @@
 {
     self.isHovered = YES;
 
-    [self setNeedsDisplay];
+    self.needsDisplay = YES;
 }
 
 - (void)mouseExited:(NSEvent *)theEvent
 {
     self.isHovered = NO;
 
-    [self setNeedsDisplay];
+    self.needsDisplay = YES;
 }
 
 - (void)myRemoveTrackingArea

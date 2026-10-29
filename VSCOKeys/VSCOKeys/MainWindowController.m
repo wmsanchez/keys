@@ -175,7 +175,7 @@
     NSMutableParagraphStyle *para = [[NSMutableParagraphStyle defaultParagraphStyle] mutableCopy];
     [para setHeadIndent:50];
     [para setFirstLineHeadIndent:50];
-    [para setAlignment:NSLeftTextAlignment];
+	[para setAlignment:NSTextAlignmentLeft];
 
     NSDictionary *leftAlignAttribs = [NSDictionary dictionaryWithObjectsAndKeys:
                                       para, NSParagraphStyleAttributeName,
@@ -189,7 +189,7 @@
     NSMutableParagraphStyle *para1 = [[NSMutableParagraphStyle defaultParagraphStyle] mutableCopy];
     [para1 setHeadIndent:16];
     [para1 setFirstLineHeadIndent:16];
-    [para1 setAlignment:NSLeftTextAlignment];
+	[para1 setAlignment:NSTextAlignmentLeft];
 
     self.viewButtonLeftAlign = [NSDictionary dictionaryWithObjectsAndKeys:
                                       para1, NSParagraphStyleAttributeName,
@@ -205,13 +205,13 @@
     // Create prominent "EDIT LAYOUT" button in place of the outdated buttons
     self.editLayoutButton = [[NSButton alloc] initWithFrame:NSMakeRect(0, 0, 275, 45)];
     [self.editLayoutButton setTitle:@"EDIT LAYOUT"];
-    [self.editLayoutButton setButtonType:NSMomentaryLightButton];
+	[self.editLayoutButton setButtonType:NSButtonTypeMomentaryLight];
     [self.editLayoutButton setBordered:NO];
 
     NSMutableParagraphStyle *editPara = [[NSMutableParagraphStyle defaultParagraphStyle] mutableCopy];
     [editPara setHeadIndent:16];
     [editPara setFirstLineHeadIndent:16];
-    [editPara setAlignment:NSLeftTextAlignment];
+	[editPara setAlignment:NSTextAlignmentLeft];
     NSDictionary *editAttribs = @{
         NSParagraphStyleAttributeName: editPara,
         NSForegroundColorAttributeName: [NSColor blackColor],
@@ -249,7 +249,7 @@
 
     self.amountCell = [[RSVerticallyCenteredTextFieldCell alloc] init];
     [self.amountCell setFont:[NSFont fontWithName:PROXIMA_FONT_NAME size:11]];
-    [self.amountCell setAlignment:NSCenterTextAlignment];
+	[self.amountCell setAlignment:NSTextAlignmentCenter];
     [self.amountCell setBackgroundColor:[NSColor colorWithCalibratedWhite:0.90 alpha:1]];
     [self.amountCell setDrawsBackground:YES];
     [self.amountCell setEditable:NO];
@@ -607,7 +607,8 @@
 
         if (filePath)
         {
-            [[NSWorkspace sharedWorkspace] openFile:filePath];
+            NSURL *fileURL = [NSURL fileURLWithPath:filePath];
+            [[NSWorkspace sharedWorkspace] openURL:fileURL];
         }
         else
         {
@@ -663,7 +664,8 @@
 
     if (filePath)
     {
-        [[NSWorkspace sharedWorkspace] openFile:filePath];
+        NSURL *fileURL = [NSURL fileURLWithPath:filePath];
+        [[NSWorkspace sharedWorkspace] openURL:fileURL];
     }
     else
     {

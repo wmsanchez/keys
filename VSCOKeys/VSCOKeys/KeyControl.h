@@ -130,4 +130,8 @@
 - (void)loadAvailableDevelopPresetsWithCompletion:(void (^)(NSArray *presets))completion;
 - (void)activateKeyfileWithUUID:(NSString *)uuid;
 
+- (void)startUpEventLoop;
+- (void)startUpAXLoop;
+- (void)statusBarUpdateLoop;
+
 @end
