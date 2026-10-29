@@ -26,6 +26,8 @@
 #import <CoreFoundation/CoreFoundation.h>
 #import <ApplicationServices/ApplicationServices.h>
 #import <Cocoa/Cocoa.h>
+#include <sys/types.h>
+#include <signal.h>
 
 #pragma mark Main method
 
@@ -38,40 +40,21 @@ int main(int argc, const char * argv[])
 
     // wait until app is shutdown to relaunch
 	pid_t parentPID = atoi(argv[3]);
-	ProcessSerialNumber psn;
-	while (GetProcessForPID(parentPID, &psn) != procNotFound)
+	while (kill(parentPID, 0) == 0)
 		sleep(1);
 
     const char *appPathCString = argv[1];
     const char *appExePathCString = argv[2];
     NSString *appPath = [NSString stringWithCString:appPathCString encoding:NSUTF8StringEncoding];
 
-    CFStringRef cfAppPath = CFStringCreateWithCString(NULL, appPathCString, kCFStringEncodingASCII);
-
-    AXError error = AXMakeProcessTrusted(cfAppPath);
-
-    CFRelease(cfAppPath);
-
-    if (error != noErr)
-    {
-        NSLog(@"Error: could not make application trusted: %@", appPath);
-        return 1;
-    }
-
-    CFStringRef cfAppExePath = CFStringCreateWithCString(NULL, appExePathCString, kCFStringEncodingASCII);
-
-    error = AXMakeProcessTrusted(cfAppExePath);
-
-    CFRelease(cfAppExePath);
-
-    if (error != noErr)
-    {
-        NSLog(@"Error: could not make application trusted: %s", appExePathCString);
-        return 1;
-    }
+    // Accessibility permissions must be granted manually in System Settings
+    // The deprecated AXMakeProcessTrusted API no longer exists in modern macOS
 
     // relaunch app
-    BOOL success = [[NSWorkspace sharedWorkspace] launchApplication:[appPath stringByExpandingTildeInPath]];
+    NSURL *appURL = [NSURL fileURLWithPath:[appPath stringByExpandingTildeInPath]];
+    NSWorkspaceOpenConfiguration *config = [NSWorkspaceOpenConfiguration configuration];
+    [[NSWorkspace sharedWorkspace] openApplicationAtURL:appURL configuration:config completionHandler:nil];
+    BOOL success = YES;
 
     if (!success)
     {
