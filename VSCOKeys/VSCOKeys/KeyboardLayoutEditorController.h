@@ -8,7 +8,6 @@
 @property (assign) MainWindowController *mainController;
 @property (retain) KeyControl *keyControl;
 @property (retain) NSView *rootView;
-@property (retain) NSView *leftPanel;
 
 - (id)initWithKeyControl:(KeyControl *)keyControl;
 - (void)loadKeyfile:(NSDictionary *)keyfile;
