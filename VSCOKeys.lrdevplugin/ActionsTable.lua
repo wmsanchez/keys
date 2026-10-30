@@ -705,6 +705,7 @@ local ACTIONS = {
   QuickDevWhitesSmallDec = CU.quickDevAdjust('Whites',-5,'QuickDevWhitesSmallDec'),
   RedEye = CU.fToggleTool('redeye'),
   Redo = LrUndo.redo,
+  RedoUndo = LrUndo.redo,
   Reject = LrSelection.flagAsReject,
   RemoveFlag = LrSelection.removeFlag,
   ResetAll = CU.wrapFOM(LrDevelopController.resetAllDevelopAdjustments),
