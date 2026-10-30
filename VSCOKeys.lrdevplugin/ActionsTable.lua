@@ -357,6 +357,28 @@ function CU.fToggleTool1(toolName)
   end
 end
 
+function CU.togglePickFlag()
+  return function()
+    local currentFlag = LrSelection.getFlag()
+    if currentFlag == 1 then
+      LrSelection.removeFlag()
+    else
+      LrSelection.flagAsPick()
+    end
+  end
+end
+
+function CU.toggleRejectFlag()
+  return function()
+    local currentFlag = LrSelection.getFlag()
+    if currentFlag == -1 then
+      LrSelection.removeFlag()
+    else
+      LrSelection.flagAsReject()
+    end
+  end
+end
+
 function CU.quickDevAdjust(param, step)
   return withTargetPhoto(function(target)
     target:quickDevelopAdjustImage(param, step)
@@ -686,6 +708,8 @@ local ACTIONS = {
   Reject = LrSelection.flagAsReject,
   RemoveFlag = LrSelection.removeFlag,
   ResetAll = CU.wrapFOM(LrDevelopController.resetAllDevelopAdjustments),
+  TogglePick = CU.togglePickFlag(),
+  ToggleReject = CU.toggleRejectFlag(),
   ResetAllGrayMixer = CU.ResetAllGrayMixer,
   ResetAllHueAdjustment = CU.ResetAllHueAdjustment,
   ResetAllLuminanceAdjustment = CU.ResetAllLuminanceAdjustment,
