@@ -379,6 +379,16 @@ function CU.toggleRejectFlag()
   end
 end
 
+function CU.toggleUndoRedo()
+  return function()
+    if LrUndo.canUndo() then
+      LrUndo.undo()
+    elseif LrUndo.canRedo() then
+      LrUndo.redo()
+    end
+  end
+end
+
 function CU.quickDevAdjust(param, step)
   return withTargetPhoto(function(target)
     target:quickDevelopAdjustImage(param, step)
@@ -705,7 +715,7 @@ local ACTIONS = {
   QuickDevWhitesSmallDec = CU.quickDevAdjust('Whites',-5,'QuickDevWhitesSmallDec'),
   RedEye = CU.fToggleTool('redeye'),
   Redo = LrUndo.redo,
-  RedoUndo = LrUndo.redo,
+  RedoUndo = CU.toggleUndoRedo(),
   Reject = LrSelection.flagAsReject,
   RemoveFlag = LrSelection.removeFlag,
   ResetAll = CU.wrapFOM(LrDevelopController.resetAllDevelopAdjustments),
