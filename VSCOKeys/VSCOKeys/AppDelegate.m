@@ -47,6 +47,8 @@
 @synthesize keyControl;
 @synthesize mainController;
 @synthesize quitTimer;
+static NSInteger lrNotRunningCount = 0;
+static NSTimer *lrCheckTimer = nil;
 
 NSString *traceFilePath = NULL;
 static _Atomic int32_t UncaughtExceptionHandlingInProgress = 0;
@@ -484,23 +486,92 @@ void DualLog(NSString* format, ...)
 
     [self checkTrusted];
 
+    // Observe when any application terminates
+    [[NSWorkspace sharedWorkspace] addObserver:self
+                                     forKeyPath:@"runningApplications"
+                                        options:NSKeyValueObservingOptionNew
+                                        context:NULL];
+
     [NSThread detachNewThreadSelector:@selector(startUpEventLoop) toTarget:self.keyControl withObject:nil];
     [NSThread detachNewThreadSelector:@selector(startUpAXLoop) toTarget:self.keyControl withObject:nil];
     [NSThread detachNewThreadSelector:@selector(statusBarUpdateLoop) toTarget:self.keyControl withObject:nil];
-    self.quitTimer = [NSTimer scheduledTimerWithTimeInterval:APP_RUNNING_UPDATE_RATE target:self selector:@selector(lrRunningCheckLoop) userInfo:NULL repeats:YES];
 
     [self.keyControl makeLRActive];
 }
 
-- (void)lrRunningCheckLoop
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary<NSKeyValueChangeKey,id> *)change
+                       context:(void *)context
 {
-    @autoreleasepool
+    if ([keyPath isEqualToString:@"runningApplications"])
     {
-        if (![self.keyControl isLRRunning])
+        NSRunningApplication *lr = [self.keyControl getLRRunningInstance];
+
+        if (!lr)
         {
-            DualLog(@"Application was terminated because LR was not running.");
+            lrNotRunningCount++;
+
+            if (lrNotRunningCount == 1) {
+                DualLog(@"LR not detected (KVO change), will recheck in %.1fs", LR_RECHECK_DELAY);
+            }
+
+            // Cancel any existing recheck timer
+            if (lrCheckTimer) {
+                [lrCheckTimer invalidate];
+                lrCheckTimer = nil;
+            }
+
+            // Schedule a recheck with delay
+            lrCheckTimer = [NSTimer scheduledTimerWithTimeInterval:LR_RECHECK_DELAY
+                                                          target:self
+                                                        selector:@selector(recheckLRStatus)
+                                                        userInfo:nil
+                                                         repeats:NO];
+        }
+        else
+        {
+            if (lrNotRunningCount > 0) {
+                DualLog(@"LR detected again after %ld KVO-triggered checks", (long)lrNotRunningCount);
+                lrNotRunningCount = 0;
+                if (lrCheckTimer) {
+                    [lrCheckTimer invalidate];
+                    lrCheckTimer = nil;
+                }
+            }
+        }
+    }
+}
+
+- (void)recheckLRStatus
+{
+    NSRunningApplication *lr = [self.keyControl getLRRunningInstance];
+
+    if (!lr)
+    {
+        lrNotRunningCount++;
+        DualLog(@"LR recheck %ld/%d failed", (long)lrNotRunningCount, LR_NOT_RUNNING_RETRY_COUNT);
+
+        if (lrNotRunningCount >= LR_NOT_RUNNING_RETRY_COUNT)
+        {
+            DualLog(@"Lightroom not running after %d consecutive checks, quitting VSCOKeys",
+                    LR_NOT_RUNNING_RETRY_COUNT);
             [self.keyControl quitApplication];
         }
+        else
+        {
+            // Schedule another recheck
+            lrCheckTimer = [NSTimer scheduledTimerWithTimeInterval:LR_RECHECK_DELAY
+                                                          target:self
+                                                        selector:@selector(recheckLRStatus)
+                                                        userInfo:nil
+                                                         repeats:NO];
+        }
+    }
+    else
+    {
+        DualLog(@"LR detected again after %ld rechecks", (long)lrNotRunningCount);
+        lrNotRunningCount = 0;
     }
 }
 

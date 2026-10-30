@@ -96,6 +96,11 @@
 
 @property BOOL isInTextField;
 
+// Rate limiting for command dispatch
+@property (retain) dispatch_queue_t commandQueueSerial;
+@property (retain) NSOperationQueue *httpOperationQueue;
+@property (assign) NSTimeInterval lastCommandTime;
+
 - (void)importKeyFile:(NSString *)keyFileUrl;
 
 - (void)quitApplication;
@@ -107,6 +112,7 @@
 
 - (void)makeLRActive;
 - (BOOL)isLRRunning;
+- (NSRunningApplication*)getLRRunningInstance;
 
 - (NSArray *)getKeyfileList;
 - (NSArray *)physicalKeyboardLayoutOptions;

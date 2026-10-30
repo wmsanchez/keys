@@ -70,9 +70,18 @@
 #define LIGHTROOM_BUNDLE_LR5 @"com.adobe.Lightroom5"
 #define LIGHTROOM_BUNDLE_LR6 @"com.adobe.Lightroom6"
 #define LIGHTROOM_BUNDLE_LR7 @"com.adobe.LightroomClassicCC7"
+#define LIGHTROOM_BUNDLE_LR8 @"com.adobe.LightroomClassicCC8"
+#define LIGHTROOM_BUNDLE_LR9 @"com.adobe.LightroomClassicCC9"
+#define LIGHTROOM_BUNDLE_LR10 @"com.adobe.LightroomClassicCC10"
+#define LIGHTROOM_BUNDLE_LR11 @"com.adobe.LightroomClassicCC11"
+#define LIGHTROOM_BUNDLE_LR12 @"com.adobe.LightroomClassicCC12"
+#define LIGHTROOM_BUNDLE_LR13 @"com.adobe.LightroomClassicCC13"
 
 #define STATUSBAR_UPDATE_RATE 0.25
-#define APP_RUNNING_UPDATE_RATE 1
+#define LR_NOT_RUNNING_RETRY_COUNT 3
+#define LR_RECHECK_DELAY 0.5
+#define COMMAND_RATE_LIMIT_INTERVAL 0.01  // 10ms between commands = 100 commands/sec max
+#define HTTP_MAX_CONCURRENT_REQUESTS 6
 
 #ifdef DEV_ENDPOINT_MODE
 

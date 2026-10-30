@@ -221,6 +221,10 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
 
 @synthesize isInTextField;
 
+@synthesize commandQueueSerial;
+@synthesize httpOperationQueue;
+@synthesize lastCommandTime;
+
 - (id)init {
     self = [super init];
     if (self)
@@ -241,7 +245,11 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
         self.physicalKeyboardLayoutIdentifier = supportedLayout ? savedLayout : KEYBOARD_LAYOUT_MACBOOK_ISO;
         [self updateShortcutKeyCodes:@{@"increase": @"]", @"decrease": @"["}];
 
-        self.keyfileDirectory = [[NSFileManager defaultManager] applicationSupportDirectory];
+        // Explicitly set keyfile directory to avoid confusion when running from plugin bundle
+        NSArray *appSupportPaths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
+        NSString *appSupportPath = [appSupportPaths firstObject];
+        self.keyfileDirectory = [appSupportPath stringByAppendingPathComponent:@"VSCOKeys"];
+        DualLog(@"Keyfile directory set to: %@", self.keyfileDirectory);
 
         [self copyBaseKeyfilesToDirectory];
 
@@ -249,8 +257,14 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
 
         [self initAppList];
         [self initMappings];
-                self.hiddenCommandIdentifiers = [NSSet set];
-                [self refreshPluginSettings:nil];
+        self.hiddenCommandIdentifiers = [NSSet set];
+        [self refreshPluginSettings:nil];
+
+        // Initialize queues for immediate command dispatch
+        self.commandQueueSerial = dispatch_queue_create("com.vsco.keys.commandqueue", DISPATCH_QUEUE_SERIAL);
+        self.httpOperationQueue = [[NSOperationQueue alloc] init];
+        [self.httpOperationQueue setMaxConcurrentOperationCount:HTTP_MAX_CONCURRENT_REQUESTS];
+        self.lastCommandTime = 0;
                 self.pluginSettingsTimer = [NSTimer scheduledTimerWithTimeInterval:3.0
                                                                                                                                         target:self
                                                                                                                                     selector:@selector(refreshPluginSettings:)
@@ -303,17 +317,46 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
 
 - (void)sendUpdate:(NSDictionary *)update
 {
-    self.isServerAvailable = false;
+    dispatch_async(self.commandQueueSerial, ^{
+        @autoreleasepool {
+            NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+            NSTimeInterval timeSinceLastCommand = now - self.lastCommandTime;
 
-    [HttpRequest sendJsonTo:SERVER_UPDATE_ENDPOINT data:update
-                  responded:^(NSURLConnection *connection, NSURLResponse *response, NSData *data, NSString *mimeType) {
-                      DualLog(@"SendUpdate success: %@", update);
-                      self.isServerAvailable = true;
-                  }
-                     failed:^(NSURLConnection *connection, NSError *error) {
-                         DualLog(@"server connect failed with error: %@", error);
-                         self.isServerAvailable = false;
+            // Rate limit: wait if commands are coming too fast
+            if (timeSinceLastCommand < COMMAND_RATE_LIMIT_INTERVAL) {
+                NSTimeInterval delay = COMMAND_RATE_LIMIT_INTERVAL - timeSinceLastCommand;
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), self.commandQueueSerial, ^{
+                    [self sendUpdateNow:update];
+                });
+            } else {
+                [self sendUpdateNow:update];
+            }
+        }
+    });
+}
+
+- (void)sendUpdateNow:(NSDictionary *)update
+{
+    self.lastCommandTime = [NSDate timeIntervalSinceReferenceDate];
+
+    // Send immediately on background queue (no main thread blocking)
+    [self.httpOperationQueue addOperationWithBlock:^{
+        self.isServerAvailable = false;
+
+        [HttpRequest sendJsonTo:SERVER_UPDATE_ENDPOINT data:update
+                      responded:^(NSURLResponse *response, NSData *data, NSString *mimeType) {
+                          dispatch_async(self.commandQueueSerial, ^{
+                              DualLog(@"SendUpdate success: %@", update);
+                              self.isServerAvailable = true;
+                          });
+                      }
+                     failed:^(NSError *error) {
+                          dispatch_async(self.commandQueueSerial, ^{
+                              DualLog(@"SendUpdate failed with error: %@", error);
+                              self.isServerAvailable = false;
+                          });
                      }];
+    }];
 }
 
 
@@ -324,13 +367,13 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
 
 - (void)loadAvailableDevelopPresetsWithCompletion:(void (^)(NSArray *presets))completion
 {
-    [HttpRequest sendGetTo:SERVER_PRESETS_ENDPOINT responded:^(NSURLConnection *connection, NSURLResponse *response, NSData *data, NSString *mimeType) {
+    [HttpRequest sendGetTo:SERVER_PRESETS_ENDPOINT responded:^(NSURLResponse *response, NSData *data, NSString *mimeType) {
         NSString *body = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
         id decoded = [body JSONValue];
         NSArray *presets = [decoded isKindOfClass:[NSArray class]] ? decoded : [NSArray array];
         self.availableDevelopPresets = presets;
         if (completion) completion(presets);
-    } failed:^(NSURLConnection *connection, NSError *error) {
+    } failed:^(NSError *error) {
         DualLog(@"Unable to load Lightroom develop presets: %@", error);
         if (completion) completion(self.availableDevelopPresets ?: [NSArray array]);
     }];
@@ -901,6 +944,13 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
 
 - (void)importKeyFile:(NSString *)keyFilePath
 {
+    // Skip files that don't have valid keyfile extensions
+    NSString *fileExtension = [keyFilePath pathExtension];
+    if (!([fileExtension isEqualToString:KEYFILE_VKEYS_EXTENSION] || [fileExtension isEqualToString:KEYFILE_JSON_EXTENSION])) {
+        DualLog(@"Skipping import of non-keyfile: %@", keyFilePath);
+        return;
+    }
+
     // copy file to resources
     NSError *error;
 
@@ -1005,6 +1055,13 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
         {
             [fm removeItemAtPath:[self.keyfileDirectory stringByAppendingPathComponent:file] error:NULL];
         }
+    }
+
+    // Skip copying base keyfiles when running from plugin directory to avoid scanning plugin files
+    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
+    if ([bundlePath containsString:@"VSCOKeys.lrplugin"]) {
+        DualLog(@"Skipping base keyfile copy - running from plugin directory");
+        return;
     }
 
     NSDirectoryEnumerator *dirEnum = [fm enumeratorAtPath:[[NSBundle mainBundle] resourcePath]];
@@ -1180,7 +1237,19 @@ static BOOL VSCOFindMenuShortcut(AXUIElementRef element, NSString *menuTitle, CG
 
 - (void)initAppList
 {
-    self.appIdList = [NSArray arrayWithObjects:LIGHTROOM_BUNDLE_LR3,LIGHTROOM_BUNDLE_LR4,LIGHTROOM_BUNDLE_LR5,LIGHTROOM_BUNDLE_LR6,LIGHTROOM_BUNDLE_LR7, nil];
+    self.appIdList = [NSArray arrayWithObjects:
+        LIGHTROOM_BUNDLE_LR3,
+        LIGHTROOM_BUNDLE_LR4,
+        LIGHTROOM_BUNDLE_LR5,
+        LIGHTROOM_BUNDLE_LR6,
+        LIGHTROOM_BUNDLE_LR7,
+        LIGHTROOM_BUNDLE_LR8,
+        LIGHTROOM_BUNDLE_LR9,
+        LIGHTROOM_BUNDLE_LR10,
+        LIGHTROOM_BUNDLE_LR11,
+        LIGHTROOM_BUNDLE_LR12,
+        LIGHTROOM_BUNDLE_LR13,
+        nil];
 }
 
 - (NSRunningApplication*)getLRRunningInstance
@@ -1318,12 +1387,33 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
 {
     NSData *data = [NSData dataWithContentsOfFile:filePath];
 
+    if (data == nil) {
+        DualLog(@"Could not read file: %@", filePath);
+        return nil;
+    }
+
     if( [[filePath pathExtension] isEqualToString:KEYFILE_VKEYS_EXTENSION] == YES )
         data = [data decrypt];
 
+    if (data == nil) {
+        DualLog(@"Decryption failed for file: %@", filePath);
+        return nil;
+    }
+
     NSString *content = [[NSString alloc] initWithBytes:[data bytes] length:[data length] encoding:NSUTF8StringEncoding];
 
-    return [content JSONValue];
+    if (content == nil) {
+        DualLog(@"Could not decode content from file: %@", filePath);
+        return nil;
+    }
+
+    NSDictionary *parsed = [content JSONValue];
+    if (parsed == nil) {
+        DualLog(@"JSON parsing failed for file: %@", filePath);
+        return nil;
+    }
+
+    return [parsed mutableCopy];
 }
 
 - (BOOL)verifyKeyfileFormat:(NSDictionary *)settingsDict filename:(NSString *)file
@@ -1392,14 +1482,22 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
     NSString *file;
     while (file = [dirEnum nextObject])
     {
+        // Only process files with valid keyfile extensions
         if (([[file pathExtension] isEqualToString: KEYFILE_VKEYS_EXTENSION]) ||
             ([[file pathExtension] isEqualToString: KEYFILE_JSON_EXTENSION]) )
         {
             NSMutableDictionary *settingsDict = [self decryptAndParseKeyfile:[self.keyfileDirectory stringByAppendingPathComponent:file]];
 
+            // Skip files that failed to parse (likely not keyfiles)
+            if (settingsDict == nil) {
+                DualLog(@"Skipping non-keyfile: %@", file);
+                continue;
+            }
+
             NSString *vers = [settingsDict objectForKey:KEYFILE_LRVERSION_NODENAME];
             if (![self verifyKeyfileFormat:settingsDict filename:file] || [self.lrVersion caseInsensitiveCompare:vers] != NSOrderedSame)
             {
+                DualLog(@"Skipping invalid keyfile: %@ (version mismatch or bad format)", file);
                 continue;
             }
 
@@ -1600,7 +1698,7 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
 {
     if (self.pluginSettingsRequestInProgress) return;
     self.pluginSettingsRequestInProgress = YES;
-    [HttpRequest sendGetTo:SERVER_SETTINGS_ENDPOINT responded:^(NSURLConnection *connection, NSURLResponse *response, NSData *data, NSString *mimeType) {
+    [HttpRequest sendGetTo:SERVER_SETTINGS_ENDPOINT responded:^(NSURLResponse *response, NSData *data, NSString *mimeType) {
         self.pluginSettingsRequestInProgress = NO;
         NSString *body = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
         id settings = [body JSONValue];
@@ -1640,7 +1738,7 @@ void AXCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef noti
         self.commandCategories = visibleCategories;
         [self.mainController.keyboardEditorController reloadActionCatalog];
         [self.mainController.editorController reloadActionCatalog];
-    } failed:^(NSURLConnection *connection, NSError *error) {
+    } failed:^(NSError *error) {
         self.pluginSettingsRequestInProgress = NO;
     }];
 }
@@ -1971,6 +2069,12 @@ CGEventRef myCGCreateEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 
 
 - (void)toggleKeyboardHUDShortLabels:(id)sender {
+}
+
+- (void)dealloc
+{
+    [self.httpOperationQueue cancelAllOperations];
+    self.httpOperationQueue = nil;
 }
 
 @end

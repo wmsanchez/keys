@@ -25,20 +25,10 @@
 
 #import <Foundation/Foundation.h>
 
-typedef void (^RespondedBlock)(NSURLConnection *connection, NSURLResponse *response, NSData *data, NSString *mimeType);
-typedef void (^FailedBlock)(NSURLConnection *connection, NSError *error);
+typedef void (^RespondedBlock)(NSURLResponse *response, NSData *data, NSString *mimeType);
+typedef void (^FailedBlock)(NSError *error);
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-@interface HttpRequest : NSObject<NSURLConnectionDelegate>
-#pragma clang diagnostic pop
-
-@property (retain) NSURLResponse *response;
-@property (retain) NSString *mimeType;
-@property (retain) NSMutableData *data;
-
-@property (copy) RespondedBlock responded;
-@property (copy) FailedBlock failed;
+@interface HttpRequest : NSObject
 
 +(void)sendRequestTo:(NSString*)endpoint withMethod:(NSString*)method contentType:(NSString *)contentType data:(NSData *)data responded:(RespondedBlock)respondedBlock failed:(FailedBlock)failedBlock;
 
@@ -51,4 +41,3 @@ typedef void (^FailedBlock)(NSURLConnection *connection, NSError *error);
 +(void)sendGetTo:(NSString*)endpoint responded:(RespondedBlock)respondedBlock failed:(FailedBlock)failedBlock;
 
 @end
-#pragma clang diagnostic pop

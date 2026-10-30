@@ -29,20 +29,9 @@
 
 @implementation HttpRequest
 
-@synthesize response;
-@synthesize mimeType;
-@synthesize data;
-
-@synthesize responded;
-@synthesize failed;
-
 
 +(void)sendRequestTo:(NSString*)endpoint withMethod:(NSString*)method contentType:(NSString *)contentType data:(NSData *)data responded:(RespondedBlock)respondedBlock failed:(FailedBlock)failedBlock
 {
-    HttpRequest *httpRequest = [[HttpRequest alloc] init];
-    httpRequest.responded = respondedBlock;
-    httpRequest.failed = failedBlock;
-
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc]
                                     initWithURL:[NSURL
                                                  URLWithString:endpoint]];
@@ -58,14 +47,23 @@
         [request setHTTPBody:data];
     }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    NSURLConnection *connection = [[NSURLConnection alloc] initWithRequest:request delegate:httpRequest startImmediately:NO];
-#pragma clang diagnostic pop
-    if (connection) {
-        [connection setDelegateQueue:[NSOperationQueue mainQueue]];
-        [connection start];
-    }
+    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:config];
+
+    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
+                                            completionHandler:^(NSData *responseData, NSURLResponse *response, NSError *error) {
+        if (error) {
+            if (failedBlock) {
+                failedBlock(error);
+            }
+        } else {
+            if (respondedBlock) {
+                respondedBlock(response, responseData, response.MIMEType);
+            }
+        }
+    }];
+
+    [task resume];
 }
 
 
@@ -90,39 +88,5 @@
 {
     [HttpRequest sendRequestTo:endpoint withMethod:@"GET" contentType:nil data:nil responded:respondedBlock failed:failedBlock];
 }
-
-#pragma mark Connection Delegate Methods
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)_response
-{
-    self.response = _response;
-    self.mimeType = _response.MIMEType;
-}
-
-- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)_data
-{
-    if (self.data == nil)
-    {
-        self.data = [_data mutableCopy];
-    }
-    else
-    {
-        [self.data appendData:_data];
-    }
-}
-
-- (void)connectionDidFinishLoading:(NSURLConnection *)connection
-{
-    self.responded(connection, self.response, self.data, self.mimeType);
-}
-
-- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
-{
-    self.failed(connection, error);
-}
-#pragma clang diagnostic pop
-
 
 @end
