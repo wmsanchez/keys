@@ -375,15 +375,18 @@
     "items": [
       {
         "id": "SwToMlibrary",
-        "name": "Show Library"
+        "name": "Show Library",
+        "type": "api"
       },
       {
         "id": "ShoVwpeople",
-        "name": "Primary Display People"
+        "name": "Primary Display People",
+        "type": "api"
       },
       {
         "id": "ShoVwgrid",
-        "name": "Primary Display Grid"
+        "name": "Primary Display Grid",
+        "type": "api"
       },
       {
         "id": "GridViewStyle",
@@ -928,23 +931,37 @@
     "items": [
       {
         "id": "SwToMdevelop",
-        "name": "Show Develop"
+        "name": "Show Develop",
+        "type": "api"
       },
       {
         "id": "LRCopy",
-        "name": "Lightroom Copy Settings"
+        "name": "Lightroom Copy Settings",
+        "type": "api"
       },
       {
         "id": "LRPaste",
-        "name": "Lightroom Paste Settings"
+        "name": "Lightroom Paste Settings",
+        "type": "api"
       },
       {
         "id": "PasteSettingsFromPrevious",
         "name": "Paste Settings from Previous",
+        "type": "keyboard",
         "shortcut": {
           "menuTitle": "Paste Settings from Previous",
           "fallbackKey": "v",
           "fallbackModifiers": ["command", "option"]
+        }
+      },
+      {
+        "id": "NewSnapshot",
+        "name": "New Snapshot...",
+        "type": "keyboard",
+        "shortcut": {
+          "menuTitle": "New Snapshot...",
+          "fallbackKey": "n",
+          "fallbackModifiers": ["command"]
         }
       },
       {

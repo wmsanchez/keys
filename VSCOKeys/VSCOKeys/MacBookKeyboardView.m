@@ -339,6 +339,7 @@
             @"LRCopy": @"doc.on.doc",
             @"LRPaste": @"doc.on.clipboard",
             @"PasteSettingsFromPrevious": @"doc.on.clipboard",
+            @"NewSnapshot": @"camera.viewfinder",
             @"AutoTone": @"wand.and.stars",
             @"WhiteBalanceAuto": @"eyedropper",
             @"VirtualCopy": @"plus.square.on.square",
