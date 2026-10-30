@@ -379,6 +379,121 @@
         };
     }
 
+    // Special handling for ChangeBrushSize - return dual icon format
+    if ([action isEqualToString:@"ChangeBrushSize"] && amount.length > 0) {
+        NSScanner *scanner = [NSScanner scannerWithString:amount];
+        double value = 0;
+        if ([scanner scanDouble:&value] && [scanner isAtEnd]) {
+            NSString *directionSymbol = value < 0 ? @"minus.circle" : @"plus.circle";
+            return [NSString stringWithFormat:@"%@|paintbrush.pointed.fill", directionSymbol];
+        }
+    }
+
+    // Special handling for ChangeFeatherSize - return dual icon format
+    if ([action isEqualToString:@"ChangeFeatherSize"] && amount.length > 0) {
+        NSScanner *scanner = [NSScanner scannerWithString:amount];
+        double value = 0;
+        if ([scanner scanDouble:&value] && [scanner isAtEnd]) {
+            NSString *directionSymbol = value < 0 ? @"minus.circle" : @"plus.circle";
+            return [NSString stringWithFormat:@"%@|circle.dashed", directionSymbol];
+        }
+    }
+
+    // Special handling for CropZoomIn - return dual icon format
+    if ([action isEqualToString:@"CropZoomIn"]) {
+        return @"plus.magnifyingglass|crop";
+    }
+
+    // Special handling for CropZoomOut - return dual icon format
+    if ([action isEqualToString:@"CropZoomOut"]) {
+        return @"minus.magnifyingglass|crop";
+    }
+
+    // Special handling for ResetCrop - return dual icon format
+    if ([action isEqualToString:@"ResetCrop"]) {
+        return @"arrow.counterclockwise|crop";
+    }
+
+    // Special handling for ResetstraightenAngle - return dual icon format
+    if ([action isEqualToString:@"ResetstraightenAngle"]) {
+        return @"arrow.counterclockwise|crop.rotate";
+    }
+
+    // Special handling for local_Exposure - return dual icon format
+    if ([action isEqualToString:@"local_Exposure"]) {
+        return @"sun.min|paintbrush.pointed.fill";
+    }
+
+    // Special handling for MaskNewGrad - return icon
+    if ([action isEqualToString:@"MaskNewGrad"]) {
+        return @"lightspectrum.horizontal";
+    }
+
+    // Special handling for TogglePick - return icon
+    if ([action isEqualToString:@"TogglePick"]) {
+        return @"flag.fill";
+    }
+
+    // Special handling for ToggleReject - return icon
+    if ([action isEqualToString:@"ToggleReject"]) {
+        return @"xmark.square";
+    }
+
+    // Special handling for local_Contrast - return dual icon format
+    if ([action isEqualToString:@"local_Contrast"] && amount.length > 0) {
+        NSScanner *scanner = [NSScanner scannerWithString:amount];
+        double value = 0;
+        if ([scanner scanDouble:&value] && [scanner isAtEnd]) {
+            NSString *directionSymbol = value < 0 ? @"minus.circle" : @"plus.circle";
+            return [NSString stringWithFormat:@"%@|circle.righthalf.filled", directionSymbol];
+        }
+    }
+
+    // Special handling for Contrast - return dual icon format
+    if ([action isEqualToString:@"Contrast"] && amount.length > 0) {
+        NSScanner *scanner = [NSScanner scannerWithString:amount];
+        double value = 0;
+        if ([scanner scanDouble:&value] && [scanner isAtEnd]) {
+            NSString *directionSymbol = value < 0 ? @"minus.circle" : @"plus.circle";
+            return [NSString stringWithFormat:@"%@|circle.righthalf.filled", directionSymbol];
+        }
+    }
+
+    // Special handling for Undo - return single icon
+    if ([action isEqualToString:@"Undo"]) {
+        return @"arrow.counterclockwise";
+    }
+
+    // Special handling for Redo - return single icon
+    if ([action isEqualToString:@"Redo"]) {
+        return @"arrow.clockwise";
+    }
+
+    // Special handling for RedoUndo - return dual icon format
+    if ([action isEqualToString:@"RedoUndo"]) {
+        return @"arrow.clockwise|arrow.counterclockwise";
+    }
+
+    // Special handling for QuickDevCropAspectAsShot - return dual icon format
+    if ([action isEqualToString:@"QuickDevCropAspectAsShot"]) {
+        return @"crop|camera.badge.clock";
+    }
+
+    // Special handling for ColorGradeReset3way - return dual icon format
+    if ([action isEqualToString:@"ColorGradeReset3way"]) {
+        return @"slider.horizontal.2.arrow.trianglehead.counterclockwise|camera.filters";
+    }
+
+    // Special handling for RotateLeft - return icon
+    if ([action isEqualToString:@"RotateLeft"]) {
+        return @"rotate.left";
+    }
+
+    // Special handling for RotateRight - return icon
+    if ([action isEqualToString:@"RotateRight"]) {
+        return @"rotate.right";
+    }
+
     NSDictionary *variants = directionalSymbols[action];
     if (variants && amount.length > 0) {
         NSScanner *scanner = [NSScanner scannerWithString:amount];
@@ -499,16 +614,40 @@
                 NSString *symbolName = assignmentDetailsForKey.count == 1
                     ? [[self class] symbolNameForAction:firstDetail[@"action"] amount:amount] : nil;
                 if (symbolName && subtitle.length == 0) {
-                    CGFloat symbolSize = 24;
-                    NSImage *symbol = [NSImage imageWithSystemSymbolName:symbolName accessibilityDescription:actionTitle];
-                    NSImageSymbolConfiguration *sizeConfiguration = [NSImageSymbolConfiguration configurationWithPointSize:symbolSize
-                                                                                                                      weight:NSFontWeightRegular];
-                    NSImageSymbolConfiguration *colorConfiguration = [NSImageSymbolConfiguration configurationWithHierarchicalColor:textColor];
-                    NSImageSymbolConfiguration *configuration = [sizeConfiguration configurationByApplyingConfiguration:colorConfiguration];
-                    symbol = [symbol imageWithSymbolConfiguration:configuration];
-                    [symbol drawInRect:NSMakeRect(NSMidX(keyRect) - symbolSize / 2,
-                                                  NSMidY(keyRect) - symbolSize / 2,
-                                                  symbolSize, symbolSize)];
+                    // Check if this is a dual-icon format (separated by |)
+                    NSArray *symbols = [symbolName componentsSeparatedByString:@"|"];
+                    if (symbols.count > 1) {
+                        // Draw multiple icons side by side
+                        CGFloat iconSize = 14;
+                        CGFloat spacing = 4;
+                        CGFloat totalWidth = symbols.count * iconSize + (symbols.count - 1) * spacing;
+                        CGFloat startX = NSMidX(keyRect) - totalWidth / 2;
+
+                        for (NSUInteger i = 0; i < symbols.count; i++) {
+                            NSString *singleSymbol = symbols[i];
+                            NSImage *symbol = [NSImage imageWithSystemSymbolName:singleSymbol accessibilityDescription:actionTitle];
+                            NSImageSymbolConfiguration *sizeConfiguration = [NSImageSymbolConfiguration configurationWithPointSize:iconSize
+                                                                                                                              weight:NSFontWeightRegular];
+                            NSImageSymbolConfiguration *colorConfiguration = [NSImageSymbolConfiguration configurationWithHierarchicalColor:textColor];
+                            NSImageSymbolConfiguration *configuration = [sizeConfiguration configurationByApplyingConfiguration:colorConfiguration];
+                            symbol = [symbol imageWithSymbolConfiguration:configuration];
+
+                            NSRect iconRect = NSMakeRect(startX + i * (iconSize + spacing), NSMidY(keyRect) - iconSize / 2, iconSize, iconSize);
+                            [symbol drawInRect:iconRect];
+                        }
+                    } else {
+                        // Single icon (original behavior)
+                        CGFloat symbolSize = 24;
+                        NSImage *symbol = [NSImage imageWithSystemSymbolName:symbolName accessibilityDescription:actionTitle];
+                        NSImageSymbolConfiguration *sizeConfiguration = [NSImageSymbolConfiguration configurationWithPointSize:symbolSize
+                                                                                                                          weight:NSFontWeightRegular];
+                        NSImageSymbolConfiguration *colorConfiguration = [NSImageSymbolConfiguration configurationWithHierarchicalColor:textColor];
+                        NSImageSymbolConfiguration *configuration = [sizeConfiguration configurationByApplyingConfiguration:colorConfiguration];
+                        symbol = [symbol imageWithSymbolConfiguration:configuration];
+                        [symbol drawInRect:NSMakeRect(NSMidX(keyRect) - symbolSize / 2,
+                                                      NSMidY(keyRect) - symbolSize / 2,
+                                                      symbolSize, symbolSize)];
+                    }
                 }
                 NSRect keyLabelRect = NSMakeRect(NSMinX(keyRect) + 4, NSMinY(keyRect) + 2, NSWidth(keyRect) * 0.55, 13);
                 [self drawString:label ?: @"" inRect:keyLabelRect fontSize:8 color:textColor];
