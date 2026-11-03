@@ -13,6 +13,7 @@
 @property (nonatomic, assign) NSString *dragAnchorKeyCode;
 @property (assign) NSPoint mouseDownPoint;
 @property (assign) BOOL dragSessionStarted;
+@property (assign) BOOL pendingDeselectionOnMouseUp;
 @property (assign) CGFloat layoutMinX;
 @property (assign) CGFloat layoutMinY;
 @property (assign) CGFloat layoutWidthUnits;
@@ -29,6 +30,7 @@
 @synthesize usesMotibodoLabels = _usesMotibodoLabels, showsIncrementAmounts, allowsInlineLabelEditing = _allowsInlineLabelEditing;
 @synthesize selectedKeyCode, selectedKeyCodes, capturedKeyCode, capturedKeyHasBinding, delegate;
 @synthesize listeningForKeys, glowPhase, glowRemaining, glowTimer, selectionAnchorKeyCode;
+@synthesize pendingDeselectionOnMouseUp;
 
 - (void)setKeyboardLayoutDefinition:(NSDictionary *)layout
 {
@@ -176,6 +178,72 @@
     }
 
     return keyCodes;
+}
+
+- (NSDictionary *)keyItemForCode:(NSString *)keyCode
+{
+    if (keyCode.length == 0) return nil;
+    for (NSDictionary *item in self.keyItems) {
+        if ([item[@"code"] isEqualToString:keyCode]) return item;
+    }
+    return nil;
+}
+
+- (NSString *)labelForKeyCode:(NSString *)keyCode
+{
+    NSDictionary *item = [self keyItemForCode:keyCode];
+    if (item && [item[@"label"] length] > 0) {
+        return item[@"label"];
+    }
+    return keyCode;
+}
+
+- (NSString *)nextKeyCodeToTheRightOf:(NSString *)targetKeyCode
+{
+    NSDictionary *targetItem = [self keyItemForCode:targetKeyCode];
+    if (!targetItem) return nil;
+
+    CGFloat targetY = [targetItem[@"y"] doubleValue];
+    CGFloat targetX = [targetItem[@"x"] doubleValue];
+
+    NSDictionary *bestItem = nil;
+    CGFloat minX = CGFLOAT_MAX;
+
+    for (NSDictionary *item in self.keyItems) {
+        NSString *code = item[@"code"];
+        if (code.length == 0) continue;
+        if ([code isEqualToString:targetKeyCode]) continue;
+
+        CGFloat itemY = [item[@"y"] doubleValue];
+        if (fabs(itemY - targetY) > 0.5) continue;
+
+        CGFloat itemX = [item[@"x"] doubleValue];
+        if (itemX > targetX && itemX < minX) {
+            minX = itemX;
+            bestItem = item;
+        }
+    }
+
+    return bestItem[@"code"];
+}
+
+- (NSArray *)sortedKeyCodesForKeys:(NSSet *)keyCodes
+{
+    if (keyCodes.count <= 1) return [keyCodes allObjects] ?: @[];
+
+    return [[keyCodes allObjects] sortedArrayUsingComparator:^NSComparisonResult(NSString *code1, NSString *code2) {
+        NSUInteger idx1 = NSNotFound;
+        NSUInteger idx2 = NSNotFound;
+        for (NSUInteger i = 0; i < self.keyItems.count; i++) {
+            NSString *c = self.keyItems[i][@"code"];
+            if ([c isEqualToString:code1]) idx1 = i;
+            if ([c isEqualToString:code2]) idx2 = i;
+        }
+        if (idx1 == NSNotFound && idx2 == NSNotFound) return [code1 compare:code2];
+        if (idx1 == NSNotFound) return NSOrderedDescending;
+        if (idx2 == NSNotFound) return NSOrderedAscending;
+        return (idx1 < idx2) ? NSOrderedAscending : (idx1 > idx2 ? NSOrderedDescending : NSOrderedSame);
+    }];
 }
 
 - (void)setListeningForKeys:(BOOL)enabled
@@ -768,6 +836,7 @@
     self.dragSourceKeyCode = nil;
     self.dragAnchorKeyCode = nil;
     self.dragSessionStarted = NO;
+    self.pendingDeselectionOnMouseUp = NO;
     for (NSDictionary *item in [self.keyItems reverseObjectEnumerator]) {
         NSString *code = [item objectForKey:@"code"];
         if (code && NSPointInRect(point, [self frameForKeyItem:item])) {
@@ -797,11 +866,17 @@
                 self.selectedKeyCodes = selection;
                 self.selectionAnchorKeyCode = code;
             } else {
-                // Normal click: select just this key
-                [selection addObject:code];
-                self.selectedKeyCodes = selection;
-                self.selectedKeyCode = code;
-                self.selectionAnchorKeyCode = code;
+                // Normal click: if clicking on a key that's already in a multi-selection,
+                // preserve the selection for dragging; deselect to single key on mouseUp if no drag starts.
+                if ([self.selectedKeyCodes containsObject:code] && self.selectedKeyCodes.count > 1) {
+                    self.pendingDeselectionOnMouseUp = YES;
+                    self.selectedKeyCode = code;
+                } else {
+                    [selection addObject:code];
+                    self.selectedKeyCodes = selection;
+                    self.selectedKeyCode = code;
+                    self.selectionAnchorKeyCode = code;
+                }
             }
 
             self.dragAnchorKeyCode = self.selectedKeyCode;
@@ -823,30 +898,61 @@
     NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
     if (hypot(point.x - self.mouseDownPoint.x, point.y - self.mouseDownPoint.y) < 5) return;
 
-    NSMutableArray *boundSelectedKeys = [NSMutableArray array];
-    for (NSString *keyCode in self.selectedKeyCodes) {
-        if ([self.assignmentLabels[keyCode] length] > 0) [boundSelectedKeys addObject:keyCode];
+    if (self.selectedKeyCodes.count > 2) {
+        if ([self.delegate respondsToSelector:@selector(keyboardView:swapFailedWithMessage:)]) {
+            [self.delegate keyboardView:self swapFailedWithMessage:@"Can only swap 1 or 2 keys at a time."];
+        }
+        return;
     }
-    if (boundSelectedKeys.count == 0) return;
+
+    NSArray *keysToDrag = [self sortedKeyCodesForKeys:self.selectedKeyCodes];
+    if (keysToDrag.count == 0 && self.dragSourceKeyCode) {
+        keysToDrag = @[self.dragSourceKeyCode];
+    }
+    if (keysToDrag.count == 0) return;
+
+    BOOL hasAnyBinding = NO;
+    for (NSString *keyCode in keysToDrag) {
+        if ([self.assignmentLabels[keyCode] length] > 0) {
+            hasAnyBinding = YES;
+            break;
+        }
+    }
+    if (!hasAnyBinding) return;
+
+    self.pendingDeselectionOnMouseUp = NO;
 
     NSPasteboardItem *pasteboardItem = [[NSPasteboardItem alloc] init];
-    [pasteboardItem setPropertyList:@{@"keyCodes": boundSelectedKeys, @"anchorKeyCode": self.dragAnchorKeyCode}
+    [pasteboardItem setPropertyList:@{@"keyCodes": keysToDrag,
+                                      @"anchorKeyCode": self.dragAnchorKeyCode ?: keysToDrag.firstObject}
                             forType:@"com.vsco.keys.binding-key-codes"];
     NSDraggingItem *draggingItem = [[NSDraggingItem alloc] initWithPasteboardWriter:pasteboardItem];
-    NSImage *dragImage = [[NSImage alloc] initWithSize:NSMakeSize(96, 34)];
-    [dragImage lockFocus];
-    [[NSColor colorWithCalibratedWhite:0.22 alpha:0.92] setFill];
-    [[NSBezierPath bezierPathWithRoundedRect:NSMakeRect(0, 0, 96, 34) xRadius:5 yRadius:5] fill];
-    NSString *dragTitle = boundSelectedKeys.count > 1
-        ? [NSString stringWithFormat:@"%lu keys", (unsigned long)boundSelectedKeys.count]
-        : self.dragSourceKeyCode;
+
+    NSString *dragTitle = nil;
+    if (keysToDrag.count == 1) {
+        NSString *lbl = [self labelForKeyCode:keysToDrag[0]];
+        dragTitle = [NSString stringWithFormat:@"Swap %@", lbl];
+    } else {
+        NSString *lbl1 = [self labelForKeyCode:keysToDrag[0]];
+        NSString *lbl2 = [self labelForKeyCode:keysToDrag[1]];
+        dragTitle = [NSString stringWithFormat:@"Swap %@, %@", lbl1, lbl2];
+    }
+
     NSDictionary *attributes = @{
-        NSFontAttributeName: [NSFont boldSystemFontOfSize:13],
+        NSFontAttributeName: [NSFont boldSystemFontOfSize:12],
         NSForegroundColorAttributeName: [NSColor whiteColor]
     };
-    [dragTitle drawAtPoint:NSMakePoint(8, 10) withAttributes:attributes];
+    NSSize titleSize = [dragTitle sizeWithAttributes:attributes];
+    CGFloat imageWidth = fmax(96.0, titleSize.width + 24.0);
+    CGFloat imageHeight = 34.0;
+    NSImage *dragImage = [[NSImage alloc] initWithSize:NSMakeSize(imageWidth, imageHeight)];
+    [dragImage lockFocus];
+    [[NSColor colorWithCalibratedWhite:0.20 alpha:0.92] setFill];
+    [[NSBezierPath bezierPathWithRoundedRect:NSMakeRect(0, 0, imageWidth, imageHeight) xRadius:6 yRadius:6] fill];
+    [dragTitle drawAtPoint:NSMakePoint((imageWidth - titleSize.width) / 2.0, (imageHeight - titleSize.height) / 2.0) withAttributes:attributes];
     [dragImage unlockFocus];
-    NSRect keyFrame = NSMakeRect(point.x - 48, point.y - 17, 96, 34);
+
+    NSRect keyFrame = NSMakeRect(point.x - imageWidth / 2.0, point.y - imageHeight / 2.0, imageWidth, imageHeight);
     [draggingItem setDraggingFrame:keyFrame contents:dragImage];
     self.dragSessionStarted = YES;
     [self beginDraggingSessionWithItems:@[draggingItem] event:event source:self];
@@ -854,6 +960,17 @@
 
 - (void)mouseUp:(NSEvent *)event
 {
+    if (self.pendingDeselectionOnMouseUp && !self.dragSessionStarted && self.selectedKeyCode) {
+        self.selectedKeyCodes = [NSSet setWithObject:self.selectedKeyCode];
+        self.selectionAnchorKeyCode = self.selectedKeyCode;
+        [self setNeedsDisplay:YES];
+        if ([self.delegate respondsToSelector:@selector(keyboardView:didSelectKeyCodes:primaryKeyCode:)]) {
+            [self.delegate keyboardView:self didSelectKeyCodes:self.selectedKeyCodes primaryKeyCode:self.selectedKeyCode];
+        } else {
+            [self.delegate keyboardViewDidSelectKeyCode:self.selectedKeyCode];
+        }
+    }
+    self.pendingDeselectionOnMouseUp = NO;
     self.dragSourceKeyCode = nil;
     self.dragSessionStarted = NO;
 }
@@ -894,8 +1011,21 @@
     }
     NSArray *sourceKeyCodes = [payload isKindOfClass:[NSDictionary class]] ? payload[@"keyCodes"] : nil;
     NSString *anchorKeyCode = [payload isKindOfClass:[NSDictionary class]] ? payload[@"anchorKeyCode"] : nil;
-    if (![sourceKeyCodes isKindOfClass:[NSArray class]] || !anchorKeyCode || !targetKeyCode) return NO;
-    if ([self.delegate respondsToSelector:@selector(keyboardView:didMoveBindingsFromKeys:anchorKey:toKey:)]) {
+    if (![sourceKeyCodes isKindOfClass:[NSArray class]] || !targetKeyCode) return NO;
+
+    if (sourceKeyCodes.count > 2) {
+        if ([self.delegate respondsToSelector:@selector(keyboardView:swapFailedWithMessage:)]) {
+            [self.delegate keyboardView:self swapFailedWithMessage:@"Can only swap 1 or 2 keys at a time."];
+        }
+        return NO;
+    }
+
+    if ([self.delegate respondsToSelector:@selector(keyboardView:didSwapBindingsFromKeys:toTargetKey:)]) {
+        [self.delegate keyboardView:self didSwapBindingsFromKeys:sourceKeyCodes toTargetKey:targetKeyCode];
+        return YES;
+    }
+
+    if ([self.delegate respondsToSelector:@selector(keyboardView:didMoveBindingsFromKeys:anchorKey:toKey:)] && anchorKeyCode) {
         [self.delegate keyboardView:self didMoveBindingsFromKeys:sourceKeyCodes anchorKey:anchorKeyCode toKey:targetKeyCode];
         return YES;
     }

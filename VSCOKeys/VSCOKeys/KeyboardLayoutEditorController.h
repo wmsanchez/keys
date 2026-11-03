@@ -1,9 +1,10 @@
 #import <Cocoa/Cocoa.h>
+#import "MacBookKeyboardView.h"
 
 @class KeyControl;
 @class MainWindowController;
 
-@interface KeyboardLayoutEditorController : NSObject <NSTextFieldDelegate>
+@interface KeyboardLayoutEditorController : NSObject <NSTextFieldDelegate, MacBookKeyboardViewDelegate>
 
 @property (assign) MainWindowController *mainController;
 @property (retain) KeyControl *keyControl;
@@ -19,5 +20,6 @@
 - (CGFloat)keyboardPreviewUnitScale;
 - (CGFloat)keyboardPreviewUnitScaleForRootViewSize:(NSSize)size;
 - (void)saveClicked:(id)sender;
+- (BOOL)swapBindingsFromKeys:(NSArray *)sourceKeyCodes toTargetKey:(NSString *)targetKeyCode;
 
 @end

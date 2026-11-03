@@ -29,6 +29,34 @@
 #import "MacBookKeyboardView.h"
 #import "VSCOKeyCodeLookup.h"
 
+@interface TestKeyboardSwapDelegate : NSObject <MacBookKeyboardViewDelegate>
+@property (retain) NSArray *swappedSourceKeys;
+@property (retain) NSString *swappedTargetKey;
+@property (retain) NSString *failedMessage;
+@end
+
+@implementation TestKeyboardSwapDelegate
+- (void)keyboardViewDidSelectKeyCode:(NSString *)keyCode {}
+- (void)keyboardView:(MacBookKeyboardView *)keyboardView didSelectKeyCodes:(NSSet *)keyCodes primaryKeyCode:(NSString *)keyCode {}
+- (void)keyboardView:(MacBookKeyboardView *)keyboardView didSwapBindingsFromKeys:(NSArray *)sourceKeyCodes toTargetKey:(NSString *)targetKeyCode
+{
+    self.swappedSourceKeys = sourceKeyCodes;
+    self.swappedTargetKey = targetKeyCode;
+}
+- (void)keyboardView:(MacBookKeyboardView *)keyboardView swapFailedWithMessage:(NSString *)message
+{
+    self.failedMessage = message;
+}
+@end
+
+@interface TestDraggingInfo : NSObject
+@property (retain) NSPasteboard *draggingPasteboard;
+@property (assign) NSPoint draggingLocation;
+@end
+
+@implementation TestDraggingInfo
+@end
+
 @implementation VSCOKeysTests
 
 - (void)setUp
@@ -309,5 +337,83 @@
     }
 }
 
+- (void)testKeyboardSwapNextKeyOnRight
+{
+    MacBookKeyboardView *keyboardView = [[MacBookKeyboardView alloc] initWithFrame:NSMakeRect(0, 0, 825, 161)];
+    [keyboardView setKeyboardLayoutDefinition:[self keyboardLayoutNamed:@"AppleMagicANSIKeyboard"]];
+
+    // F8 ("100") -> next to right should be F9 ("101")
+    NSString *nextAfterF8 = [keyboardView nextKeyCodeToTheRightOf:@"100"];
+    XCTAssertEqualObjects(nextAfterF8, @"101", @"Next key to the right of F8 should be F9");
+
+    // F11 ("103") -> next to right should be F12 ("111")
+    NSString *nextAfterF11 = [keyboardView nextKeyCodeToTheRightOf:@"103"];
+    XCTAssertEqualObjects(nextAfterF11, @"111", @"Next key to the right of F11 should be F12");
+
+    // F12 ("111") is the rightmost key in row 0 -> should be nil
+    NSString *nextAfterF12 = [keyboardView nextKeyCodeToTheRightOf:@"111"];
+    XCTAssertNil(nextAfterF12, @"F12 is at the end of the row, so next key should be nil");
+
+    // Number row: "1" ("18") -> next to right is "2" ("19")
+    NSString *nextAfter1 = [keyboardView nextKeyCodeToTheRightOf:@"18"];
+    XCTAssertEqualObjects(nextAfter1, @"19", @"Next key to the right of 1 should be 2");
+}
+
+- (void)testKeyboardSwapSortedKeyCodes
+{
+    MacBookKeyboardView *keyboardView = [[MacBookKeyboardView alloc] initWithFrame:NSMakeRect(0, 0, 825, 161)];
+    [keyboardView setKeyboardLayoutDefinition:[self keyboardLayoutNamed:@"AppleMagicANSIKeyboard"]];
+
+    // Even if passed in reverse order {F12, F11}, sortedKeyCodesForKeys should return [F11, F12]
+    NSSet *keys = [NSSet setWithObjects:@"111", @"103", nil];
+    NSArray *sorted = [keyboardView sortedKeyCodesForKeys:keys];
+    NSArray *expected = @[@"103", @"111"];
+    XCTAssertEqualObjects(sorted, expected, @"Keys should be sorted in layout order: F11 before F12");
+
+    // F8 and F9
+    NSSet *f8f9 = [NSSet setWithObjects:@"101", @"100", nil];
+    NSArray *sortedF8F9 = [keyboardView sortedKeyCodesForKeys:f8f9];
+    NSArray *expectedF8F9 = @[@"100", @"101"];
+    XCTAssertEqualObjects(sortedF8F9, expectedF8F9, @"Keys should be sorted: F8 before F9");
+}
+
+- (void)testKeyboardSwapDragOperation
+{
+    MacBookKeyboardView *keyboardView = [[MacBookKeyboardView alloc] initWithFrame:NSMakeRect(0, 0, 825, 161)];
+    [keyboardView setKeyboardLayoutDefinition:[self keyboardLayoutNamed:@"AppleMagicANSIKeyboard"]];
+
+    TestKeyboardSwapDelegate *delegate = [[TestKeyboardSwapDelegate alloc] init];
+    keyboardView.delegate = delegate;
+
+    // Find the center point of F8 ("100")
+    NSDictionary *f8Item = [keyboardView keyItemForCode:@"100"];
+    XCTAssertNotNil(f8Item);
+    NSRect f8Frame = [keyboardView frameForKeyItem:f8Item];
+    NSPoint f8Center = NSMakePoint(NSMidX(f8Frame), NSMidY(f8Frame));
+
+    // Test dropping 2 keys (F11 and F12) onto F8
+    NSPasteboard *pasteboard = [NSPasteboard pasteboardWithUniqueName];
+    [pasteboard setPropertyList:@{@"keyCodes": @[@"103", @"111"], @"anchorKeyCode": @"103"}
+                        forType:@"com.vsco.keys.binding-key-codes"];
+
+    TestDraggingInfo *info = [[TestDraggingInfo alloc] init];
+    info.draggingPasteboard = pasteboard;
+    info.draggingLocation = f8Center;
+
+    BOOL result = [keyboardView performDragOperation:(id<NSDraggingInfo>)info];
+    XCTAssertTrue(result);
+    XCTAssertEqualObjects(delegate.swappedSourceKeys, (@[@"103", @"111"]));
+    XCTAssertEqualObjects(delegate.swappedTargetKey, @"100");
+
+    // Test dropping more than 2 keys (e.g. 3 keys) -> should be rejected
+    NSPasteboard *pasteboard3 = [NSPasteboard pasteboardWithUniqueName];
+    [pasteboard3 setPropertyList:@{@"keyCodes": @[@"100", @"101", @"109"], @"anchorKeyCode": @"100"}
+                         forType:@"com.vsco.keys.binding-key-codes"];
+    info.draggingPasteboard = pasteboard3;
+
+    BOOL result3 = [keyboardView performDragOperation:(id<NSDraggingInfo>)info];
+    XCTAssertFalse(result3);
+    XCTAssertEqualObjects(delegate.failedMessage, @"Can only swap 1 or 2 keys at a time.");
+}
 
 @end

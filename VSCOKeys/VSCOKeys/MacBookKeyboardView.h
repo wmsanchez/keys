@@ -9,6 +9,8 @@
 - (void)keyboardViewDidFinishEditingShortLabel:(MacBookKeyboardView *)keyboardView;
 - (void)keyboardView:(MacBookKeyboardView *)keyboardView didMoveBindingFromKey:(NSString *)sourceKeyCode toKey:(NSString *)targetKeyCode;
 - (void)keyboardView:(MacBookKeyboardView *)keyboardView didMoveBindingsFromKeys:(NSArray *)sourceKeyCodes anchorKey:(NSString *)anchorKeyCode toKey:(NSString *)targetKeyCode;
+- (void)keyboardView:(MacBookKeyboardView *)keyboardView didSwapBindingsFromKeys:(NSArray *)sourceKeyCodes toTargetKey:(NSString *)targetKeyCode;
+- (void)keyboardView:(MacBookKeyboardView *)keyboardView swapFailedWithMessage:(NSString *)message;
 @required
 - (void)keyboardViewDidSelectKeyCode:(NSString *)keyCode;
 - (void)keyboardView:(MacBookKeyboardView *)keyboardView didSelectKeyCodes:(NSSet *)keyCodes primaryKeyCode:(NSString *)keyCode;
@@ -41,6 +43,10 @@
 - (CGFloat)keyboardUnitScale;
 - (NSSize)canvasSizeForKeyboardUnitScale:(CGFloat)scale;
 - (NSRect)frameForKeyItem:(NSDictionary *)item;
+- (NSDictionary *)keyItemForCode:(NSString *)keyCode;
+- (NSString *)labelForKeyCode:(NSString *)keyCode;
+- (NSString *)nextKeyCodeToTheRightOf:(NSString *)targetKeyCode;
+- (NSArray *)sortedKeyCodesForKeys:(NSSet *)keyCodes;
 - (void)showCapturedKeyCode:(NSString *)keyCode hasBinding:(BOOL)hasBinding;
 - (void)showCapturedKeyCode:(NSString *)keyCode hasBinding:(BOOL)hasBinding actionTitle:(NSString *)actionTitle;
 - (void)advanceGlowAnimation:(NSTimer *)timer;

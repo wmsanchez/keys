@@ -713,6 +713,149 @@
     [self.statusLabel setStringValue:message];
 }
 
+- (void)keyboardView:(MacBookKeyboardView *)keyboardView swapFailedWithMessage:(NSString *)message
+{
+    if (message.length > 0) {
+        [self.statusLabel setStringValue:message];
+    }
+}
+
+- (void)keyboardView:(MacBookKeyboardView *)keyboardView didSwapBindingsFromKeys:(NSArray *)sourceKeyCodes toTargetKey:(NSString *)targetKeyCode
+{
+    [self swapBindingsFromKeys:sourceKeyCodes toTargetKey:targetKeyCode];
+}
+
+- (BOOL)swapBindingsFromKeys:(NSArray *)sourceKeyCodes toTargetKey:(NSString *)targetKeyCode
+{
+    if (sourceKeyCodes.count == 0 || sourceKeyCodes.count > 2) {
+        [self.statusLabel setStringValue:@"Can only swap 1 or 2 keys at a time."];
+        return NO;
+    }
+    if (targetKeyCode.length == 0) return NO;
+
+    NSArray *sortedSource = [self.keyboardView sortedKeyCodesForKeys:[NSSet setWithArray:sourceKeyCodes]];
+    if (sortedSource.count == 0) {
+        sortedSource = sourceKeyCodes;
+    }
+
+    NSArray *targetKeyCodes = nil;
+    if (sortedSource.count == 1) {
+        targetKeyCodes = @[targetKeyCode];
+    } else {
+        NSString *nextKey = [self.keyboardView nextKeyCodeToTheRightOf:targetKeyCode];
+        if (!nextKey) {
+            NSString *targetLabel = [self displayLabelForKeyCode:targetKeyCode] ?: targetKeyCode;
+            [self.statusLabel setStringValue:[NSString stringWithFormat:@"Cannot swap: no adjacent key to the right of %@.", targetLabel]];
+            return NO;
+        }
+        targetKeyCodes = @[targetKeyCode, nextKey];
+    }
+
+    if ([sortedSource isEqualToArray:targetKeyCodes]) {
+        [self.statusLabel setStringValue:@"Keys dropped onto themselves. No change."];
+        return NO;
+    }
+
+    NSSet *sourceSet = [NSSet setWithArray:sortedSource];
+    NSSet *targetSet = [NSSet setWithArray:targetKeyCodes];
+    if ([sourceSet intersectsSet:targetSet]) {
+        [self.statusLabel setStringValue:@"Cannot swap overlapping keys."];
+        return NO;
+    }
+
+    NSString *modifier = self.previewModifierValue ?: @"0";
+    NSString *s1 = sortedSource[0];
+    NSString *t1 = targetKeyCodes[0];
+    NSInteger s1Idx = [self bindingIndexForKeyCode:s1 modifierValue:modifier];
+    NSDictionary *s1Binding = (s1Idx != NSNotFound) ? [self.bindings[(NSUInteger)s1Idx] copy] : nil;
+    NSInteger t1Idx = [self bindingIndexForKeyCode:t1 modifierValue:modifier];
+    NSDictionary *t1Binding = (t1Idx != NSNotFound) ? [self.bindings[(NSUInteger)t1Idx] copy] : nil;
+
+    NSString *s2 = nil;
+    NSString *t2 = nil;
+    NSDictionary *s2Binding = nil;
+    NSDictionary *t2Binding = nil;
+    NSInteger s2Idx = NSNotFound;
+    NSInteger t2Idx = NSNotFound;
+
+    if (sortedSource.count == 2) {
+        s2 = sortedSource[1];
+        t2 = targetKeyCodes[1];
+        s2Idx = [self bindingIndexForKeyCode:s2 modifierValue:modifier];
+        s2Binding = (s2Idx != NSNotFound) ? [self.bindings[(NSUInteger)s2Idx] copy] : nil;
+        t2Idx = [self bindingIndexForKeyCode:t2 modifierValue:modifier];
+        t2Binding = (t2Idx != NSNotFound) ? [self.bindings[(NSUInteger)t2Idx] copy] : nil;
+    }
+
+    if (!s1Binding && !t1Binding && !s2Binding && !t2Binding) {
+        [self.statusLabel setStringValue:@"None of the selected or target keys have bindings in this modifier layer."];
+        return NO;
+    }
+
+    NSMutableIndexSet *indexesToRemove = [NSMutableIndexSet indexSet];
+    if (s1Idx != NSNotFound) [indexesToRemove addIndex:(NSUInteger)s1Idx];
+    if (t1Idx != NSNotFound) [indexesToRemove addIndex:(NSUInteger)t1Idx];
+    if (s2Idx != NSNotFound) [indexesToRemove addIndex:(NSUInteger)s2Idx];
+    if (t2Idx != NSNotFound) [indexesToRemove addIndex:(NSUInteger)t2Idx];
+    [self.bindings removeObjectsAtIndexes:indexesToRemove];
+
+    // S1 gets T1's binding
+    if (t1Binding) {
+        NSMutableDictionary *newS1 = [t1Binding mutableCopy];
+        newS1[KEYFILE_KEY_NODENAME] = s1;
+        newS1[KEYFILE_MODIFIERS_NODENAME] = modifier;
+        [self.bindings addObject:newS1];
+    }
+    // T1 gets S1's binding
+    if (s1Binding) {
+        NSMutableDictionary *newT1 = [s1Binding mutableCopy];
+        newT1[KEYFILE_KEY_NODENAME] = t1;
+        newT1[KEYFILE_MODIFIERS_NODENAME] = modifier;
+        [self.bindings addObject:newT1];
+    }
+    if (sortedSource.count == 2) {
+        // S2 gets T2's binding
+        if (t2Binding) {
+            NSMutableDictionary *newS2 = [t2Binding mutableCopy];
+            newS2[KEYFILE_KEY_NODENAME] = s2;
+            newS2[KEYFILE_MODIFIERS_NODENAME] = modifier;
+            [self.bindings addObject:newS2];
+        }
+        // T2 gets S2's binding
+        if (s2Binding) {
+            NSMutableDictionary *newT2 = [s2Binding mutableCopy];
+            newT2[KEYFILE_KEY_NODENAME] = t2;
+            newT2[KEYFILE_MODIFIERS_NODENAME] = modifier;
+            [self.bindings addObject:newT2];
+        }
+    }
+
+    NSSet *newSelection = [NSSet setWithArray:targetKeyCodes];
+    self.selectedKeyCodes = newSelection;
+    self.keyboardView.selectedKeyCodes = newSelection;
+    [self selectKeyCode:targetKeyCodes.firstObject modifierValue:modifier];
+    self.selectedKeyCodes = newSelection;
+    self.keyboardView.selectedKeyCodes = newSelection;
+    [self.keyboardView setNeedsDisplay:YES];
+    [self refreshKeyStates];
+    [self rebuildBindingRows];
+    [self updateBindingTransferButtons];
+    [self markAsChanged];
+
+    if (sortedSource.count == 1) {
+        NSString *s1Label = [self displayLabelForKeyCode:s1] ?: s1;
+        NSString *t1Label = [self displayLabelForKeyCode:t1] ?: t1;
+        [self.statusLabel setStringValue:[NSString stringWithFormat:@"Swapped bindings between %@ and %@. Save to apply.", s1Label, t1Label]];
+    } else {
+        NSString *s1Label = [self displayLabelForKeyCode:s1] ?: s1;
+        NSString *s2Label = [self displayLabelForKeyCode:s2] ?: s2;
+        NSString *t1Label = [self displayLabelForKeyCode:t1] ?: t1;
+        NSString *t2Label = [self displayLabelForKeyCode:t2] ?: t2;
+        [self.statusLabel setStringValue:[NSString stringWithFormat:@"Swapped bindings: (%@, %@) ⇄ (%@, %@). Save to apply.", s1Label, s2Label, t1Label, t2Label]];
+    }
+    return YES;
+}
+
 - (void)keyboardView:(MacBookKeyboardView *)keyboardView didMoveBindingFromKey:(NSString *)sourceKeyCode toKey:(NSString *)targetKeyCode
 {
     [self keyboardView:keyboardView didMoveBindingsFromKeys:@[sourceKeyCode]
